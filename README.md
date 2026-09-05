@@ -15,6 +15,10 @@ modifying firmware, the kernel, or Intel's drivers**. It runs from the initramfs
 at every boot, before the GPU driver loads, and it includes the diagnostics that
 tell you whether you have the problem and prove the fix worked.
 
+![Intel Arc B580 Limited Edition, exploded view](docs/img/intel-arc-b580-press.jpg)
+
+<sub>Intel Arc B580 Limited Edition. Photo © Intel Corporation, from Intel's newsroom press kit for the Arc B-Series launch (Dec 2024), reproduced with credit. The photo is Intel's and is **not** covered by this project's licence.</sub>
+
 ![Why the VRAM window is stuck at 256 MB and how arc-rebar fixes it](docs/img/arc-rebar-pin.svg)
 
 **Tested on** a Supermicro X9DRH-7TF (Intel C602, two Xeon E5-2670 v2, AMI BIOS
@@ -353,7 +357,8 @@ diagnose.sh  prepare.sh  live-test.sh  install.sh  verify.sh  uninstall.sh
 bin/arc-rebar                     the `arc-rebar` command (installed by the .deb)
 diag/                             diagnostics: bin/ (five tools), src/ocl_test.c, Makefile, README, INSTALL
 debian/  build-deb.sh             .deb build inputs and the script that builds it
-docs/img/arc-rebar-pin.svg        the diagram above (original artwork)
+docs/img/intel-arc-b580-press.jpg  Intel's press photo of the card (© Intel Corporation, credited; not under this licence)
+docs/img/arc-rebar-pin.svg        the mechanism diagram (original artwork)
 docs/ROOT-CAUSE.md                the full investigation, with the kernel log evidence
 docs/TESTS.md                     every test command used, with before/after numbers
 INSTALL.md  DISCLAIMER.md  LICENSE  CHANGELOG.md
@@ -383,7 +388,9 @@ Software License Agreement in [LICENSE](LICENSE):
   Free redistribution of complete, unmodified copies is permitted.
 - **No warranty** — see LICENSE §5–6 and [DISCLAIMER.md](DISCLAIMER.md).
 
-Not an open-source licence. The underlying technique — programming the ReBAR
+Not an open-source licence. The B580 product photo in `docs/img/` is © Intel
+Corporation (Intel newsroom press kit) and is excluded from this licence. The
+underlying technique — programming the ReBAR
 control register and re-enumerating the root port — is not claimed; it was first
 published by andersevenrud for a Supermicro H11SSL-i. This licence covers this
 implementation only.
