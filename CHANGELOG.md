@@ -4,6 +4,12 @@ All revisions on 2026-09-05, developed and verified on a Supermicro X9DRH-7TF
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
+## Unreleased — docs
+- GPU firmware updates ruled out by direct test, not assumption: FWCODE
+  21.1137 → 21.1182 and OptionROM 23.1051.0.0 → 23.1066.0.0 (LVFS, Sept 2026)
+  leave the power-up BAR size field unchanged, the kernel resize still fails
+  `-ENOSPC`, and the hook still has to fire. Recorded in ROOT-CAUSE and README.
+
 ## 1.0.3 — packaging and licence
 - Licence: commercial and enterprise use requires separate licensing (§9), and Commercial Use
   expressly covers hardware/GPU/platform vendors, driver/OS vendors, and any

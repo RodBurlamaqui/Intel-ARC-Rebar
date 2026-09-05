@@ -84,6 +84,14 @@ port window fully consumed), `pci=hpmemprefsize` (root port is `Slot-`), other
 slots, Mesa 25→26, BIOS 3.3 (microcode-only), any Intel GPU firmware (the card
 already advertises 256MB..16GB — the host is the problem).
 
+On that last point, tested rather than assumed (Sept 2026): flashing FWCODE
+21.1137 → **21.1182** and OptionROM code 23.1051.0.0 → **23.1066.0.0** from LVFS
+changes nothing. The card still powers up at size field 8 (256 MB), the kernel
+still fails the resize with `-ENOSPC`, and the hook still has to fire to reach
+16 G. `cap` reads `0x0007f000` before and after. The OptionROM is the part that
+would plausibly govern pre-boot BAR sizing, and it moved a full version without
+changing the power-up size field. Do not spend a flash on this.
+
 ## Two traps for anyone debugging this
 
 - `current_link_speed` on the GPU function reads **2.5 GT/s x1**. That's the

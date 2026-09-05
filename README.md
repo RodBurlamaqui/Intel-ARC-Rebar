@@ -167,6 +167,11 @@ Nothing else. No firmware, no BIOS settings, no driver files, no kernel modules.
   because the *root port* is Gen3 — that is the platform's maximum.
 - It does not fix the separate VAAPI `SIGBUS` crash the Intel media driver has on
   small-BAR cards. That is [arc-b580-vaapi-sigbus-fix](https://github.com/RodBurlamaqui/Intel-ARC-B580-vaapi-sigbus-fix) (§10).
+- Updating the GPU's firmware is not an alternative to it. Tested on this card:
+  FWCODE 21.1137 → 21.1182 and OptionROM 23.1051.0.0 → 23.1066.0.0 changed
+  nothing — the BAR still comes up at 256 MB and the kernel resize still fails
+  with `-ENOSPC`. The card already advertises the full 256MB..16GB range; the
+  constraint is on the host side. See [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 
 ## 4. Requirements
 
