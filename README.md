@@ -160,7 +160,7 @@ Nothing else. No firmware, no BIOS settings, no driver files, no kernel modules.
 - It does not change the PCIe link speed. On the test board the card runs Gen3 x8
   because the *root port* is Gen3 — that is the platform's maximum.
 - It does not fix the separate VAAPI `SIGBUS` crash the Intel media driver has on
-  small-BAR cards. That is [arc-b580-vaapi-sigbus-fix](https://github.com/RodBurlamaqui/arc-b580-vaapi-sigbus-fix) (§10).
+  small-BAR cards. That is [arc-b580-vaapi-sigbus-fix](https://github.com/RodBurlamaqui/Intel-ARC-B580-vaapi-sigbus-fix) (§10).
 
 ## 4. Requirements
 
@@ -289,7 +289,7 @@ Run them before and after to capture your own before/after numbers.
 
 ## 10. Related project
 
-**[arc-b580-vaapi-sigbus-fix](https://github.com/RodBurlamaqui/arc-b580-vaapi-sigbus-fix)**
+**[Intel-ARC-B580-vaapi-sigbus-fix](https://github.com/RodBurlamaqui/Intel-ARC-B580-vaapi-sigbus-fix)**
 — the other half of the story on the same hardware. Before the BAR could be
 enlarged, Intel's media driver crashed outright (`SIGBUS` in `vaInitialize`) on
 any small-BAR card; that project backports Intel's upstream fix into a Debian 13
