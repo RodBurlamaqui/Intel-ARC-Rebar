@@ -24,7 +24,15 @@ but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
 ## 1. Get the tool (both paths)
 
-**From the .deb** (download from https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases):
+**From the .deb.** Download it and its checksum file:
+```
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.3_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
+```
+```
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.3_all.deb: OK
+```
+Then install it:
 ```
 sudo apt install ./arc-rebar_1.0.3_all.deb
 ```

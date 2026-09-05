@@ -205,8 +205,15 @@ targets both).
 Full step-by-step with the exact output you should see at every step, and what
 to do if you don't: **[INSTALL.md](INSTALL.md)**. The short form:
 
-**Debian / Ubuntu, from the `.deb`** (from [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)):
+**Debian / Ubuntu, from the `.deb`** — download it from the [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page, or:
 
+```
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.3_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
+```
+```
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.3_all.deb: OK
+```
 ```
 sudo apt install ./arc-rebar_1.0.3_all.deb    # step 0: installs the tool; ENABLES NOTHING
 ```
@@ -326,7 +333,14 @@ sudo ./uninstall.sh             # source checkout
 
 `apt remove` (without purge) removes the tool and deliberately leaves an enabled
 boot hook in place. Both leave `pci=realloc` in GRUB; it is harmless. To revert
-it: `sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub && sudo update-grub`.
+it:
+
+```
+sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
+```
+```
+sudo update-grub
+```
 
 ## 12. Repository layout
 
