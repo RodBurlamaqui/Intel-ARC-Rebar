@@ -47,6 +47,10 @@ never a bridge's *own BAR*. So the root port window stays pinned at 264 MB and t
 Intel wrote a quirk for exactly this ("PCI: Release BAR0 of an integrated
 bridge to allow GPU BAR resize", Ilpo Järvinen / Lucas De Marchi, Sept–Oct 2025,
 IDs 0x4fa0/0x4fa1/0xe2ff). It stalled in review and is not in mainline as of 7.1.
+Its companion, "drm/xe: Move rebar to be done earlier" (which handles the GPU's
+*own* BAR0), did merge to drm-xe-next in October 2025 — but the switch's BAR0 is
+what pins the window here, and that half is the one still pending. Upstream
+tracking: gitlab.freedesktop.org/drm/xe/kernel issue 6356.
 
 ## The fix
 
