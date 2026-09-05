@@ -173,6 +173,38 @@ Nothing else. No firmware, no BIOS settings, no driver files, no kernel modules.
   with `-ENOSPC`. The card already advertises the full 256MB..16GB range; the
   constraint is on the host side. See [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 
+### Firmware versions tested
+
+Every GPU firmware component was flashed to the newest version LVFS offers
+(September 2026), then the full before/after invariant set was re-run across a
+complete power cycle. Nothing about the BAR changed.
+
+| Component | Before | After | Effect |
+|---|---|---|---|
+| FWCODE | `21.1137` | **`21.1182`** | none |
+| OptionROM Code | `23.1051.0.0` | **`23.1066.0.0`** | none |
+| FWDATA | `203.1` | `203.1` | LVFS offers no update |
+| OptionROM Data | `23.1051.0.0` | `23.1051.0.0` | LVFS offers no update |
+| GuC | `70.65.0` | `70.65.0` | none — ships in the host firmware package, not on the card |
+| HuC | `8.2.10` | `8.2.10` | none — as above |
+
+Cab `intel-arc-bmg-21.1180.cab`, sha256 `a4dedea0…5637`, LVFS releases 143096
+(FWCODE) and 143112 (OPROMCODE). Two traps worth knowing: a single
+`fwupdmgr update` against the **FWCODE** device flashes the **OptionROM too** —
+both payloads ride in the same cab — and neither part reads as live until a full
+power cycle, so a version check taken right after the write still shows the old
+numbers.
+
+The same flash was checked against all three known problems on this hardware:
+
+| Problem | Fixed by the firmware? | Why not |
+|---|---|---|
+| BAR2 stuck at 256 MB, kernel resize fails `-ENOSPC` | **No** | the pin is a *host* bridge BAR0 inside the root port window. The card already advertises the full range — `cap = 0x0007f000`, identical before and after |
+| VAAPI `SIGBUS` in `vaInitialize` | **No** | a bug in Intel's userspace media driver, not firmware — see [§10](#10-related-project) |
+| Vulkan falls back to `llvmpipe` | **No** | OS configuration — the user is not in the `render` group |
+
+Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
+
 ## 4. Requirements
 
 - Debian or Ubuntu (`initramfs-tools`). Kernel 6.12 or newer recommended (the
