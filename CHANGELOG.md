@@ -5,7 +5,7 @@ All revisions on 2026-09-05, developed and verified on a Supermicro X9DRH-7TF
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
 ## 1.0.3 — packaging and licence
-- Licence: commercial licences are explicitly for sale (§9), and Commercial Use
+- Licence: commercial and enterprise use requires separate licensing (§9), and Commercial Use
   expressly covers hardware/GPU/platform vendors, driver/OS vendors, and any
   incorporation of the code into another product, driver, firmware, kernel or
   package (§3.1).

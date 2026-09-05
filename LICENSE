@@ -39,8 +39,9 @@ Software.
 3.  RESTRICTIONS
 
 3.1 Commercial Use. Commercial Use of the Software is prohibited unless the
-    Licensee has first purchased a written commercial licence from the
-    Licensor. Commercial licences are available for sale; see Section 9.
+    Licensee has first obtained a written commercial licence from the
+    Licensor. Enterprise and commercial licensing terms are set out in
+    Section 9.
     Without limitation, the following require a commercial licence:
     (a) use by or on behalf of any hardware manufacturer, GPU, chipset,
         platform or system vendor, or original equipment manufacturer;
@@ -141,11 +142,12 @@ Software.
     resale shall be directed to the Licensor, Rod Burlamaqui, through the
     issue tracker at https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues.
 
-9.  COMMERCIAL LICENSING
+9.  COMMERCIAL AND ENTERPRISE LICENSING
 
-9.1 Availability. The Licensor offers commercial licences for the Software
-    for sale. A commercial licence is the only lawful basis for any
-    Commercial Use, including the uses listed in Section 3.1.
+9.1 Availability. Commercial and enterprise use of the Software requires a
+    separate licence granted in writing by the Licensor. Such a licence is
+    the only lawful basis for any Commercial Use, including the uses listed
+    in Section 3.1.
 
 9.2 Scope. Commercial licences are negotiated individually and may cover,
     without limitation: use within an organisation; incorporation into or
@@ -157,7 +159,7 @@ Software.
 9.3 No implied licence. No Commercial Use is permitted, and no commercial
     rights arise, until a written commercial licence agreement has been
     signed by the Licensor and the agreed fees have been paid. Evaluation of
-    the Software by an entity for the purpose of deciding whether to purchase
+    the Software by an entity for the purpose of deciding whether to obtain
     a commercial licence is permitted for thirty (30) days on non-production
     systems only.
 

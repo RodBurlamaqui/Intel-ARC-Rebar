@@ -22,5 +22,5 @@ Description: Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
  ceiling, GPU health.
  .
  Proprietary licence: personal, non-commercial use free of charge;
- commercial licences are for sale (including to hardware, driver and OS
- vendors). See /usr/share/doc/arc-rebar/copyright.
+ commercial and enterprise use requires separate licensing (including
+ hardware, driver and OS vendors). See /usr/share/doc/arc-rebar/copyright.

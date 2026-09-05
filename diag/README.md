@@ -81,5 +81,5 @@ prior written approval (LICENSE §3.2) — open an issue first.
 ## Licence
 
 Copyright (c) 2026 Rod Burlamaqui. Personal, non-commercial use free of charge.
-Commercial licences are for sale (LICENSE §9); Modification and resale require
-prior written approval. See [../LICENSE](../LICENSE). Not an open-source licence.
+Commercial and enterprise use requires separate licensing (LICENSE §9);
+Modification and resale require prior written approval. See [../LICENSE](../LICENSE). Not an open-source licence.

@@ -1,6 +1,6 @@
 # arc-rebar — Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
 
-Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial licences for sale** — see [LICENSE](LICENSE) §9.
+Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enterprise use requires separate licensing** — see [LICENSE](LICENSE) §9.
 
 > **USE AT YOUR OWN RISK. NO WARRANTY.** Provided "as is". The author accepts no
 > liability for data loss, hardware damage, downtime or any other loss arising
@@ -377,11 +377,12 @@ Copyright (c) 2026 Rod Burlamaqui. Licensed, not sold, under the arc-rebar
 Software License Agreement in [LICENSE](LICENSE):
 
 - **Personal Use** — free of charge for private, non-commercial use by an individual.
-- **Commercial Use — licences are for sale.** Any use by or for a business,
-  institution, hardware or software vendor, or in providing services to others,
-  and any incorporation of this code into another product, driver, firmware,
-  kernel or package, requires a purchased commercial licence (LICENSE §3.1, §9).
-  Enquiries welcome, including from GPU and platform vendors — contact in LICENSE §9.4.
+- **Commercial and enterprise use — separate licensing required.** Any use by or
+  for a business, institution, hardware or software vendor, or in providing services
+  to others, and any incorporation of this code into another product, driver,
+  firmware, kernel or package, requires a separate written commercial licence
+  (LICENSE §3.1, §9). Enquiries welcome, including from GPU and platform vendors —
+  contact in LICENSE §9.4.
 - **Modification** — no derivative works, ports or modified distributions without
   prior written approval. Bug reports and proposed changes are welcome.
 - **Resale** — no sale, sublicensing or distribution for payment without approval.

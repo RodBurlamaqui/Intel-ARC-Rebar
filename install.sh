@@ -44,8 +44,8 @@ echo "  Provided AS IS, no warranty. The authors accept no liability for data lo
 echo "  hardware damage, downtime or any other loss. It writes a PCI register and"
 echo "  re-enumerates a PCIe root port at boot. Designed to fail safe; not guaranteed."
 echo "  Full text: $S/DISCLAIMER.md.  Back up your data first."
-echo "  Licence: (c) 2026 Rod Burlamaqui. Personal Use free; commercial licences are for sale;"
-echo "  Modification and resale require prior written approval. Full terms: $S/LICENSE"
+echo "  Licence: (c) 2026 Rod Burlamaqui. Personal Use free; commercial and enterprise use"
+echo "  requires separate licensing; Modification and resale need approval. Full terms: $S/LICENSE"
 if [ -z "$YES" ]; then
   read -r -p "Type ACCEPT to accept the disclaimer and proceed: " a
   [ "$a" = ACCEPT ] || { echo "not accepted; nothing changed"; exit 1; }
