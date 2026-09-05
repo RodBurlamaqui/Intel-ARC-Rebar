@@ -1,0 +1,26 @@
+Package: arc-rebar
+Version: 1.0.3
+Section: admin
+Priority: optional
+Architecture: all
+Depends: pciutils, initramfs-tools
+Suggests: vulkan-tools, mesa-opencl-icd, ocl-icd-libopencl1, gcc, make
+Maintainer: Rod Burlamaqui <RodBurlamaqui@users.noreply.github.com>
+Homepage: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
+Description: Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
+ Enables the full VRAM aperture of Intel Arc (Battlemage / Alchemist) discrete
+ GPUs on motherboards whose firmware has no Resizable BAR option, without
+ modifying firmware. Runs from the initramfs before the GPU driver binds.
+ .
+ Installing this package enables NOTHING by itself. Run 'arc-rebar diagnose',
+ then 'arc-rebar install' to enable it after safety checks and acceptance of
+ the licence and disclaimer.
+ .
+ Also ships read-only diagnostics under /usr/share/arc-rebar/diag
+ ('arc-rebar diag <tool>'): which PCIe link is real, which bridge BAR0 pins the
+ root port window, Vulkan heap interpretation, the real OpenCL allocation
+ ceiling, GPU health.
+ .
+ Proprietary licence: personal, non-commercial use free of charge;
+ commercial licences are for sale (including to hardware, driver and OS
+ vendors). See /usr/share/doc/arc-rebar/copyright.

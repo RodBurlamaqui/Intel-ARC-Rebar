@@ -1,0 +1,169 @@
+                      ARC-REBAR SOFTWARE LICENSE AGREEMENT
+
+Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+
+This Software License Agreement (the "Agreement") is a legal agreement between
+you, either an individual or a single entity (the "Licensee"), and Rod
+Burlamaqui (the "Licensor"), governing the use of the arc-rebar software,
+including all associated scripts, documentation and files (collectively, the
+"Software"). By downloading, installing, copying or otherwise using the
+Software, the Licensee agrees to be bound by the terms of this Agreement. If
+the Licensee does not agree to these terms, the Licensee must not use the
+Software.
+
+1.  DEFINITIONS
+
+1.1 "Personal Use" means use by a natural person for private, non-commercial
+    purposes on hardware owned or controlled by that person. It excludes any
+    use by or on behalf of a business, company, partnership, institution,
+    government body, non-profit organisation or other entity, and any use in
+    connection with the provision of services to third parties, whether or not
+    for payment.
+
+1.2 "Commercial Use" means any use of the Software that is not Personal Use.
+
+1.3 "Modification" means any alteration, adaptation, translation, port,
+    extension or derivative work of the Software, in whole or in part.
+
+2.  GRANT OF LICENSE
+
+2.1 Subject to the terms of this Agreement, the Licensor grants the Licensee a
+    non-exclusive, non-transferable, non-sublicensable, revocable,
+    royalty-free licence to download, install and use the Software solely for
+    Personal Use.
+
+2.2 The Licensee may redistribute complete and unmodified copies of the
+    Software free of charge, provided that this Agreement, the above copyright
+    notice and the file DISCLAIMER.md are included with every copy.
+
+3.  RESTRICTIONS
+
+3.1 Commercial Use. Commercial Use of the Software is prohibited unless the
+    Licensee has first purchased a written commercial licence from the
+    Licensor. Commercial licences are available for sale; see Section 9.
+    Without limitation, the following require a commercial licence:
+    (a) use by or on behalf of any hardware manufacturer, GPU, chipset,
+        platform or system vendor, or original equipment manufacturer;
+    (b) use by or on behalf of any software, driver, firmware, operating
+        system or distribution vendor or maintainer;
+    (c) incorporation of the Software, or any part of its code, scripts,
+        logic or documentation, into any other product, driver, firmware,
+        kernel, package, image, installer, service or offering, whether or
+        not distributed for a fee;
+    (d) use by cloud, hosting, managed-service or system-integration
+        providers in the course of serving their customers;
+    (e) any use in the course of paid work or commercial support.
+
+3.2 Modification. The Licensee shall not create, use or distribute any
+    Modification of the Software without the prior written approval of the
+    Licensor. The Licensee may submit bug reports and proposed changes to the
+    Licensor for consideration; such submissions confer no rights upon the
+    Licensee and are made without obligation on the Licensor.
+
+3.3 Resale and Distribution for Consideration. The Licensee shall not sell,
+    resell, rent, lease, lend, sublicense, bundle with any paid product or
+    service, or otherwise distribute the Software for any payment or other
+    consideration without the prior written approval of the Licensor.
+
+3.4 Notices. The Licensee shall not remove, alter or obscure any copyright,
+    licence or disclaimer notice contained in or accompanying the Software.
+
+4.  INTELLECTUAL PROPERTY
+
+4.1 The Software is licensed, not sold. The Licensor retains all right, title
+    and interest in and to the Software, including all intellectual property
+    rights therein. No rights are granted to the Licensee except as expressly
+    set out in this Agreement.
+
+4.2 Nothing in this Agreement grants or claims any rights in the underlying
+    technical method of programming the PCI Express Resizable BAR control
+    register and re-enumerating a PCI Express root port, which is publicly
+    known and was first documented by andersevenrud. This Agreement applies to
+    the Licensor's implementation: all of the Software's code, scripts,
+    detection and safety logic, packaging, and documentation are the
+    Licensor's original work and are licensed only as set out herein.
+
+5.  DISCLAIMER OF WARRANTY
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF
+    ANY KIND, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING WITHOUT
+    LIMITATION ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+    PURPOSE, TITLE, NON-INFRINGEMENT, OR THAT THE SOFTWARE WILL BE ERROR-FREE
+    OR OPERATE WITHOUT INTERRUPTION. THE LICENSEE ACKNOWLEDGES THAT THE
+    SOFTWARE MODIFIES PCI CONFIGURATION REGISTERS AND RE-ENUMERATES PCI
+    EXPRESS DEVICES DURING SYSTEM BOOT, AND ASSUMES ALL RISK ARISING FROM ITS
+    USE. THE ACCOMPANYING FILE DISCLAIMER.md FORMS PART OF THIS AGREEMENT.
+
+6.  LIMITATION OF LIABILITY
+
+    TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+    LICENSOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, CONSEQUENTIAL OR PUNITIVE DAMAGES WHATSOEVER, INCLUDING WITHOUT
+    LIMITATION LOSS OF DATA, DAMAGE TO HARDWARE, LOSS OF USE, DOWNTIME, LOSS
+    OF PROFITS OR BUSINESS INTERRUPTION, HOWEVER CAUSED AND UNDER ANY THEORY
+    OF LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THIS
+    AGREEMENT, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGES. WHERE LIABILITY CANNOT BE EXCLUDED BY LAW, IT SHALL BE
+    LIMITED TO THE AMOUNT PAID BY THE LICENSEE FOR THE SOFTWARE, WHICH FOR
+    PERSONAL USE IS NIL.
+
+7.  TERMINATION
+
+7.1 This Agreement is effective until terminated. It shall terminate
+    automatically and without notice if the Licensee breaches any of its
+    terms.
+
+7.2 Upon termination, the Licensee shall immediately cease all use of the
+    Software and destroy all copies in the Licensee's possession or control.
+
+7.3 Sections 4, 5, 6, 7, 8 and 9 shall survive termination.
+
+8.  GENERAL
+
+8.1 Entire Agreement. This Agreement, together with DISCLAIMER.md, constitutes
+    the entire agreement between the parties concerning the Software and
+    supersedes all prior or contemporaneous understandings.
+
+8.2 Severability. If any provision of this Agreement is held to be invalid or
+    unenforceable, the remaining provisions shall remain in full force and
+    effect, and the affected provision shall be enforced to the maximum extent
+    permitted by law.
+
+8.3 No Waiver. Failure by the Licensor to enforce any provision of this
+    Agreement shall not constitute a waiver of the right to enforce that or
+    any other provision.
+
+8.4 Governing Law. This Agreement shall be governed by and construed in
+    accordance with the laws of the jurisdiction in which the Licensor
+    resides, without regard to its conflict-of-law principles.
+
+8.5 Contact. Requests for approval of Modifications or permission for
+    resale shall be directed to the Licensor, Rod Burlamaqui, through the
+    issue tracker at https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues.
+
+9.  COMMERCIAL LICENSING
+
+9.1 Availability. The Licensor offers commercial licences for the Software
+    for sale. A commercial licence is the only lawful basis for any
+    Commercial Use, including the uses listed in Section 3.1.
+
+9.2 Scope. Commercial licences are negotiated individually and may cover,
+    without limitation: use within an organisation; incorporation into or
+    bundling with a product, driver, firmware, kernel, distribution or
+    service; source-code access and the right to create and distribute
+    Modifications; redistribution and resale; and support. Terms, territory,
+    duration and fees are as agreed in writing.
+
+9.3 No implied licence. No Commercial Use is permitted, and no commercial
+    rights arise, until a written commercial licence agreement has been
+    signed by the Licensor and the agreed fees have been paid. Evaluation of
+    the Software by an entity for the purpose of deciding whether to purchase
+    a commercial licence is permitted for thirty (30) days on non-production
+    systems only.
+
+9.4 Enquiries. Commercial licensing enquiries, including from hardware and
+    software vendors, shall be directed to the Licensor, Rod Burlamaqui, at
+    burlam1nx@gmail.com, or through the issue tracker at
+    https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues.
+
+                                                            Rod Burlamaqui, 2026

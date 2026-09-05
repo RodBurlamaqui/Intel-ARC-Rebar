@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+if [ "$1" = purge ]; then
+  if [ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ]; then
+    if [ "$(cat /var/lib/arc-rebar/hook-origin 2>/dev/null)" = deb ]; then
+      rm -f /etc/initramfs-tools/hooks/arc-rebar /etc/initramfs-tools/scripts/init-premount/arc-rebar /var/lib/arc-rebar/hook-origin
+      command -v update-initramfs >/dev/null 2>&1 && update-initramfs -u >/dev/null 2>&1 || true
+      echo "arc-rebar: boot hook removed (it was installed by this package). pci=realloc left in GRUB."
+    else
+      echo "arc-rebar: boot hook in /etc/initramfs-tools was NOT installed by this package (installed from source); leaving it in place."
+      echo "           To remove it: run uninstall.sh from your source checkout, or add 'norebar' to the kernel cmdline."
+    fi
+  fi
+  rmdir /var/lib/arc-rebar 2>/dev/null || true
+fi

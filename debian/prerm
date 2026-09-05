@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+if [ "$1" = remove ] && [ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ]; then
+  echo "arc-rebar: the boot hook in /etc/initramfs-tools stays active after 'remove'."
+  echo "           'apt purge arc-rebar' removes it only if this package installed it."
+fi

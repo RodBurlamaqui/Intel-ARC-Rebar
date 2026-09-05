@@ -1,0 +1,5 @@
+dist/
+build/
+*.tar.gz
+*.deb
+diag/bin/ocl_test

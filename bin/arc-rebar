@@ -1,0 +1,20 @@
+#!/bin/sh
+# arc-rebar command dispatcher (installed to /usr/bin by the .deb)
+D=/usr/share/arc-rebar
+case "$ARC_REBAR_HOME" in /*) [ -d "$ARC_REBAR_HOME" ] && D=$ARC_REBAR_HOME;; esac
+cmd=$1; [ $# -gt 0 ] && shift
+case "$cmd" in
+  diagnose|prepare|live-test|install|verify|uninstall) exec "$D/$cmd.sh" "$@" ;;
+  diag) t=$1; [ $# -gt 0 ] && shift; case "$t" in bar-pin-check|pcie-link-truth|vulkan-heaps|ocl-alloc-ceiling|gpu-health) exec "$D/diag/bin/$t.sh" "$@";;
+        *) echo "usage: arc-rebar diag {bar-pin-check|pcie-link-truth|vulkan-heaps|ocl-alloc-ceiling|gpu-health}"; echo "docs: $D/diag/README.md"; exit 1;; esac ;;
+  *) echo "usage: arc-rebar {diagnose|prepare|live-test|install|verify|uninstall|diag <tool>} [options]"
+     echo "  diagnose   PRE:  do you have the pinned-window Small BAR problem; would the fix apply safely"
+     echo "  prepare    PRE:  (cautious path) add pci=realloc to GRUB only, so live-test can run after a reboot
+  live-test  PRE:  run the fix once, live, no reboot, nothing persistent"
+     echo "  install         enable at boot (safety checks, licence + disclaimer acceptance, backups)"
+     echo "  verify     POST: PASS/FAIL after a reboot"
+     echo "  uninstall       remove the boot hook
+  diag <tool>     read-only diagnostics: bar-pin-check | pcie-link-truth | vulkan-heaps |
+                  ocl-alloc-ceiling | gpu-health   (see diag/README.md)"
+     echo "docs: $D/README.md   licence: $D/LICENSE (personal use only)"; exit 1;;
+esac

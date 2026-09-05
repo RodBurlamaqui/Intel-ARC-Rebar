@@ -1,0 +1,9 @@
+#!/bin/sh
+# arc-rebar initramfs hook: ship setpci into the initramfs.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0;; esac
+. /usr/share/initramfs-tools/hook-functions
+SETPCI=$(command -v setpci) || true
+[ -n "$SETPCI" ] || { echo "arc-rebar hook: setpci not found — install pciutils" >&2; exit 1; }
+copy_exec "$SETPCI" /usr/bin

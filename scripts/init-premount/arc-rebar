@@ -1,0 +1,134 @@
+#!/bin/sh
+# arc-rebar: Resizable BAR for Intel Arc dGPUs on firmware without ReBAR support.
+#
+# Mechanism: Arc cards carry an integrated PCIe switch whose upstream port has
+# its own small BAR0 inside the root port's prefetchable window. The kernel's
+# resize path releases bridge windows but never that BAR0, so the root port
+# window stays pinned ("was not released (still contains assigned resources)")
+# and the resize fails with -ENOSPC. Fix: program the ReBAR control register
+# to the target size, then remove and rescan the root port so BAR0 and the big
+# GPU BAR are allocated fresh together. Must run before the xe driver binds.
+#
+# Every exit is via plan(), which logs "arc-rebar: PLAN: <verdict>" and exits 0.
+# Boot is never failed. Verdicts: act | done | none | skip | rolled-back | FAILED
+#
+# Kernel cmdline knobs:  norebar                   disable entirely (escape hatch)
+#                        rebar.dev=DDDD:BB:DD.F    pick the GPU explicitly
+#                        rebar.size=N              size field (2^(N+20) bytes),
+#                                                  capped to what fits
+# Env (for install/diagnose):  ARC_REBAR_DRYRUN=1  check everything, change nothing
+#                              ARC_REBAR_ASSUME_REALLOC=1  pretend pci=realloc is set
+#                              ARC_REBAR_IOMEM=file        alternate /proc/iomem (tests)
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0;; esac
+
+log()  { echo "arc-rebar: $*"; [ -n "$DRY" ] || echo "arc-rebar: $*" > /dev/kmsg 2>/dev/null; }
+plan() { log "PLAN: $*"; exit 0; }
+D=/sys/bus/pci/devices
+IOMEM=${ARC_REBAR_IOMEM:-/proc/iomem}
+CMDLINE=$(cat /proc/cmdline 2>/dev/null)
+DRY=${ARC_REBAR_DRYRUN:-}
+
+case " $CMDLINE " in *" norebar "*) plan "skip reason=norebar";; esac
+command -v setpci >/dev/null 2>&1 || plan "skip reason=no-setpci"
+case " $CMDLINE " in *" pci=realloc"*) ;; *)
+  [ -n "$ARC_REBAR_ASSUME_REALLOC" ] || plan "skip reason=no-pci-realloc (add pci=realloc to the kernel cmdline)";;
+esac
+
+# --- 1. GPU: explicit rebar.dev=, else first Intel VGA device with a ReBAR capability
+GPU=""
+for w in $CMDLINE; do case "$w" in rebar.dev=*) GPU=${w#rebar.dev=};; esac; done
+case "$GPU" in ''|[0-9a-f][0-9a-f][0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f].[0-7]) ;; *) log "ignoring malformed rebar.dev=$GPU"; GPU="";; esac
+if [ -z "$GPU" ]; then
+  for d in $D/*; do
+    [ "$(cat "$d/vendor" 2>/dev/null)" = "0x8086" ] || continue
+    case "$(cat "$d/class" 2>/dev/null)" in 0x0300*) ;; *) continue;; esac
+    setpci -s "${d##*/}" ECAP_REBAR+4.l >/dev/null 2>&1 || continue
+    GPU=${d##*/}; break
+  done
+fi
+[ -n "$GPU" ] && [ -e "$D/$GPU" ] || plan "none reason=no-intel-gpu-with-rebar"
+
+# --- 2. topology: expect  root-port / switch-upstream / switch-downstream / GPU
+p=$(readlink -f "$D/$GPU"); rel=${p#/sys/devices/pci*/}; RP=${rel%%/*}
+[ -e "$D/$RP" ] && [ "$RP" != "$GPU" ] || plan "skip reason=no-root-port gpu=$GPU"
+set -- $(echo "$rel" | tr '/' ' '); depth=$#; US=$2
+[ "$depth" -eq 4 ] || plan "skip reason=unexpected-topology depth=$depth path=$rel (external switch, riser or Thunderbolt?)"
+
+# --- 3. the root port must carry ONLY this card (its switch, its GPU, its audio)
+for d in $D/*; do
+  q=$(readlink -f "$d")
+  case "$q" in */$RP/*) ;; *) continue;; esac
+  b=${d##*/}; [ "$b" = "$GPU" ] && continue
+  case "$q" in */$RP/$US|*/$RP/$US/*) ;; *) plan "skip reason=shared-root-port other-device=$b";; esac
+  [ "$(cat "$d/vendor" 2>/dev/null)" = "0x8086" ] || plan "skip reason=non-intel-device-on-card device=$b"
+  case "$(cat "$d/class" 2>/dev/null)" in 0x0604*|0x0403*) ;; *) plan "skip reason=unexpected-device-on-card device=$b class=$(cat "$d/class")";; esac
+  [ "$(basename "$(readlink -f "$d/driver" 2>/dev/null)" 2>/dev/null)" = thunderbolt ] && plan "skip reason=thunderbolt"
+done
+
+# --- 4. sizes: current, card maximum, optional override
+cap=$(setpci -s "$GPU" ECAP_REBAR+4.l 2>/dev/null); ctl=$(setpci -s "$GPU" ECAP_REBAR+8.l 2>/dev/null)
+case "$cap$ctl" in ''|*[!0-9a-fA-F]*) plan "skip reason=rebar-registers-unreadable gpu=$GPU";; esac
+[ ${#cap} -eq 8 ] && [ ${#ctl} -eq 8 ] || plan "skip reason=rebar-registers-unreadable gpu=$GPU"
+cur=$(( (0x$ctl >> 8) & 0x3f ))
+bits=$(( 0x$cap >> 4 )); tgtmax=0; i=0
+while [ $i -lt 28 ]; do [ $(( (bits >> i) & 1 )) -eq 1 ] && tgtmax=$i; i=$((i+1)); done
+tgt=$tgtmax
+for w in $CMDLINE; do case "$w" in rebar.size=*) o=${w#rebar.size=}; case "$o" in ''|*[!0-9]*) ;; *) [ "$o" -le "$tgtmax" ] && tgt=$o;; esac;; esac; done
+
+# --- 5. MMIO room: largest top-level "PCI Bus <root bus>" window above 4G in /proc/iomem
+RB=${RP%:*}; win=0; wstart=0
+while IFS= read -r line; do
+  case "$line" in " "*) continue;; esac
+  case "$line" in *" : PCI Bus $RB") ;; *) continue;; esac
+  r=${line%% :*}; s=$(( 0x${r%-*} )); e=$(( 0x${r#*-} ))
+  [ $s -ge $(( 0x100000000 )) ] || continue
+  sz=$(( e - s + 1 )); [ $sz -gt $win ] && { win=$sz; wstart=$s; }
+done < "$IOMEM"
+[ $win -gt 0 ] || plan "skip reason=no-mmio-window-above-4g bus=$RB (enable Above 4G Decoding in BIOS)"
+fit=$tgt
+while [ $fit -ge 9 ]; do
+  size=$(( 1 << (fit + 20) )); need=$(( size + (64 << 20) ))
+  [ $(( wstart % size )) -ne 0 ] && need=$(( size * 2 ))
+  [ $win -ge $need ] && break
+  fit=$(( fit - 1 ))
+done
+[ $fit -ge 9 ] || plan "skip reason=mmio-window-too-small window=$(( win >> 20 ))M bus=$RB"
+[ $fit -lt $tgt ] && log "note: MMIO window is $(( win >> 20 ))M, stepping target down from $tgt to $fit"
+tgt=$fit
+
+log "gpu=$GPU rootport=$RP switch=$US cap=0x$cap ctl=0x$ctl size_field current=$cur target=$tgt mmio_window=$(( win >> 20 ))M"
+[ "$cur" -ge "$tgt" ] && plan "none reason=already-at-target current=$cur"
+[ -n "$DRY" ] && plan "act gpu=$GPU rootport=$RP from=$cur to=$tgt (dry run, nothing changed)"
+
+# --- 6. unbind anything already attached beneath the root port (xe, snd_hda_intel)
+for d in $D/*; do
+  case "$(readlink -f "$d")" in */$RP/*) ;; *) continue;; esac
+  [ -L "$d/driver" ] || continue
+  drv=$(basename "$(readlink -f "$d/driver")")
+  [ "$drv" = pcieport ] && continue
+  echo "${d##*/}" > "$d/driver/unbind" 2>/dev/null && log "unbound $drv from ${d##*/}"
+done
+sleep 1
+
+# --- 7. program the size, then re-enumerate everything below the root port
+new=$(printf '%08x' $(( (0x$ctl & 0xffffc0ff) | (tgt << 8) )))
+setpci -s "$GPU" ECAP_REBAR+8.l="$new" || plan "skip reason=setpci-write-failed"
+log "wrote ECAP_REBAR ctl=0x$new; removing $RP and rescanning"
+echo 1 > "$D/$RP/remove" 2>/dev/null; sleep 2
+echo 1 > /sys/bus/pci/rescan;          sleep 3
+
+# --- 8. verify; roll back to the original size if BAR2 did not get assigned
+bar2() { [ -r "$D/$GPU/resource" ] && sed -n 3p "$D/$GPU/resource"; }
+set -- $(bar2)
+[ -n "$1" ] && [ "$1" != "0x0000000000000000" ] && plan "done gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M"
+log "WARNING: BAR2 unassigned after rescan (gpu present: $([ -e "$D/$GPU" ] && echo yes || echo no)); rolling back to size field $cur"
+if [ -e "$D/$GPU" ]; then
+  setpci -s "$GPU" ECAP_REBAR+8.l="$ctl" 2>/dev/null
+  echo 1 > "$D/$RP/remove" 2>/dev/null; sleep 2
+fi
+echo 1 > /sys/bus/pci/rescan; sleep 3
+set -- $(bar2)
+[ -n "$1" ] && [ "$1" != "0x0000000000000000" ] && plan "rolled-back gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M (MMIO too tight; see README)"
+plan "FAILED gpu=$GPU BAR2 still unassigned after rollback; GPU may be unusable this boot. Reboot with norebar."

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+  echo "arc-rebar installed. Nothing is enabled yet."
+  echo "  1. sudo arc-rebar diagnose    # do you have the problem; is the fix safe here"
+  echo "  2. sudo arc-rebar live-test   # optional: prove it without rebooting"
+  echo "  3. sudo arc-rebar install     # enable at boot (checks + licence/disclaimer acceptance)"
+  echo "  Licence: personal use only. /usr/share/doc/arc-rebar/copyright"
+fi
