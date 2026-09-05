@@ -84,8 +84,11 @@ reports in log: 0`, and temperatures that look sane.
 
 ```
 mkdir -p ~/arc-baseline
-for t in bar-pin-check pcie-link-truth gpu-health; do sudo bin/$t.sh > ~/arc-baseline/$t.txt 2>&1; done
-for t in vulkan-heaps ocl-alloc-ceiling;          do      bin/$t.sh > ~/arc-baseline/$t.txt 2>&1; done
+sudo bin/bar-pin-check.sh    > ~/arc-baseline/bar-pin-check.txt    2>&1
+sudo bin/pcie-link-truth.sh  > ~/arc-baseline/pcie-link-truth.txt  2>&1
+sudo bin/gpu-health.sh       > ~/arc-baseline/gpu-health.txt       2>&1
+bin/vulkan-heaps.sh          > ~/arc-baseline/vulkan-heaps.txt     2>&1
+bin/ocl-alloc-ceiling.sh     > ~/arc-baseline/ocl-alloc-ceiling.txt 2>&1
 ls ~/arc-baseline
 ```
 Re-run the same loop into a second folder after the fix and `diff` them.

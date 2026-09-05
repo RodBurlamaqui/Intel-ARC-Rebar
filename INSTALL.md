@@ -39,7 +39,8 @@ Installing the package changes nothing on your system yet.
 
 **From the tarball instead:**
 ```
-tar xzf arc-rebar-1.0.3.tar.gz && cd arc-rebar
+tar xzf arc-rebar-1.0.3.tar.gz
+cd arc-rebar
 ```
 Then everywhere below, replace `sudo arc-rebar <command>` with `sudo ./<command>.sh`.
 
@@ -118,6 +119,9 @@ lines:
 ### B3. Add pci=realloc only
 ```
 sudo arc-rebar prepare
+```
+Then, as a separate step:
+```
 sudo reboot
 ```
 After the reboot, confirm:
@@ -192,5 +196,6 @@ sudo ./uninstall.sh
 
 Both leave `pci=realloc` in GRUB; it is harmless. To remove it:
 ```
-sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub && sudo update-grub
+sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
+sudo update-grub
 ```

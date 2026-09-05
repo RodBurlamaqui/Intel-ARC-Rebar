@@ -208,18 +208,38 @@ to do if you don't: **[INSTALL.md](INSTALL.md)**. The short form:
 **Debian / Ubuntu, from the `.deb`** (from [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)):
 
 ```
-sudo apt install ./arc-rebar_1.0.3_all.deb    # installs the tool; ENABLES NOTHING
-sudo arc-rebar diagnose                         # last line must be: YES: pinned window, all safety checks pass
-sudo arc-rebar install                          # pre-checks, plan, type ACCEPT, backup, install, post-checks
-sudo reboot
-sudo arc-rebar verify                           # expect: RESULT: PASS
+sudo apt install ./arc-rebar_1.0.3_all.deb    # step 0: installs the tool; ENABLES NOTHING
+```
+```
+sudo arc-rebar diagnose                         # step 1: last line must be "YES: pinned window, all safety checks pass"
+```
+```
+sudo arc-rebar install                          # step 2: pre-checks, plan, type ACCEPT, backup, install, post-checks
+```
+```
+sudo reboot                                     # step 3
+```
+```
+sudo arc-rebar verify                           # step 4, after the reboot: expect "RESULT: PASS"
 ```
 
 **From source:**
 
 ```
-git clone https://github.com/RodBurlamaqui/Intel-ARC-Rebar.git && cd Intel-ARC-Rebar
-sudo ./diagnose.sh && sudo ./install.sh && sudo reboot && sudo ./verify.sh
+git clone https://github.com/RodBurlamaqui/Intel-ARC-Rebar.git
+cd Intel-ARC-Rebar
+```
+```
+sudo ./diagnose.sh          # step 1: last line must be "YES: pinned window, all safety checks pass"
+```
+```
+sudo ./install.sh           # step 2: pre-checks, plan, type ACCEPT, backup, install, post-checks
+```
+```
+sudo reboot                 # step 3
+```
+```
+sudo ./verify.sh            # step 4, after the reboot: expect "RESULT: PASS"
 ```
 
 **Cautious path** (recommended on a board nobody has tried): prove it live

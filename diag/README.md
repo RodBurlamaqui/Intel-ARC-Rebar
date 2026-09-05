@@ -36,7 +36,8 @@ Two traps these tools exist to catch:
 
 ```
 sudo apt install pciutils vulkan-tools mesa-opencl-icd ocl-icd-libopencl1 gcc make
-cd diag && make
+cd diag
+make
 sudo bin/bar-pin-check.sh        # read the VERDICT line
 sudo bin/pcie-link-truth.sh
 bin/vulkan-heaps.sh
