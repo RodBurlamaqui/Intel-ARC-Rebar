@@ -15,6 +15,8 @@ modifying firmware, the kernel, or Intel's drivers**. It runs from the initramfs
 at every boot, before the GPU driver loads, and it includes the diagnostics that
 tell you whether you have the problem and prove the fix worked.
 
+![Why the VRAM window is stuck at 256 MB and how arc-rebar fixes it](docs/img/arc-rebar-pin.svg)
+
 **Tested on** a Supermicro X9DRH-7TF (Intel C602, two Xeon E5-2670 v2, AMI BIOS
 3.2 from 2015 — no ReBAR option) with an Intel Arc B580 12 GB, Debian 13, kernel
 7.1.8, `xe` driver. Persistent across reboots; the real boot log is below.
@@ -351,6 +353,7 @@ diagnose.sh  prepare.sh  live-test.sh  install.sh  verify.sh  uninstall.sh
 bin/arc-rebar                     the `arc-rebar` command (installed by the .deb)
 diag/                             diagnostics: bin/ (five tools), src/ocl_test.c, Makefile, README, INSTALL
 debian/  build-deb.sh             .deb build inputs and the script that builds it
+docs/img/arc-rebar-pin.svg        the diagram above (original artwork)
 docs/ROOT-CAUSE.md                the full investigation, with the kernel log evidence
 docs/TESTS.md                     every test command used, with before/after numbers
 INSTALL.md  DISCLAIMER.md  LICENSE  CHANGELOG.md

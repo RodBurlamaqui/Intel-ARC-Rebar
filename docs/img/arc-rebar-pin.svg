@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#374151"/></marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="560" rx="14" fill="#ffffff" stroke="#d1d5db"/>
+  <text x="480" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#111827">Intel Arc on a board without Resizable BAR: why the VRAM window is stuck at 256 MB, and what arc-rebar does</text>
+
+  <!-- ================= BEFORE ================= -->
+  <text x="40" y="76" font-size="15" font-weight="700" fill="#b91c1c">BEFORE — every boot, without arc-rebar</text>
+  <!-- topology -->
+  <g font-size="12.5" fill="#111827">
+    <rect x="40" y="90" width="200" height="34" rx="6" fill="#f3f4f6" stroke="#9ca3af"/><text x="140" y="112" text-anchor="middle">Root port (motherboard)</text>
+    <line x1="140" y1="124" x2="140" y2="142" stroke="#374151" stroke-width="1.5" marker-end="url(#arr)"/>
+    <rect x="40" y="144" width="200" height="34" rx="6" fill="#fee2e2" stroke="#b91c1c"/><text x="140" y="166" text-anchor="middle">Card's own PCIe switch, upstream</text>
+    <line x1="140" y1="178" x2="140" y2="196" stroke="#374151" stroke-width="1.5" marker-end="url(#arr)"/>
+    <rect x="40" y="198" width="200" height="34" rx="6" fill="#f3f4f6" stroke="#9ca3af"/><text x="140" y="220" text-anchor="middle">Switch, downstream</text>
+    <line x1="140" y1="232" x2="140" y2="250" stroke="#374151" stroke-width="1.5" marker-end="url(#arr)"/>
+    <rect x="40" y="252" width="200" height="34" rx="6" fill="#dbeafe" stroke="#1d4ed8"/><text x="140" y="274" text-anchor="middle" font-weight="700">Arc GPU (VRAM BAR)</text>
+  </g>
+  <!-- window before -->
+  <text x="270" y="104" font-size="12.5" fill="#374151">Root port's memory window, as firmware laid it out:</text>
+  <rect x="270" y="112" width="264" height="44" rx="5" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="272" y="114" width="248" height="40" fill="#bfdbfe" stroke="#1d4ed8"/><text x="396" y="138" text-anchor="middle" font-size="12" fill="#1e3a8a">GPU BAR2 — 256 MB</text>
+  <rect x="521" y="114" width="11" height="40" fill="#fca5a5" stroke="#b91c1c"/>
+  <text x="544" y="126" font-size="12" fill="#b91c1c" font-weight="700">← switch's own BAR0, 8 MB</text>
+  <text x="544" y="142" font-size="11.5" fill="#7f1d1d">unused by anything — but never released</text>
+  <text x="270" y="172" font-size="11.5" fill="#374151">window = 264 MB, completely full</text>
+  <!-- request -->
+  <text x="270" y="204" font-size="12.5" fill="#111827">Driver at boot: “resize BAR2 to 16 GB”</text>
+  <text x="270" y="222" font-size="12" fill="#374151">Kernel releases the bridge windows up the chain…</text>
+  <text x="270" y="240" font-size="12" fill="#374151">…reaches the root port, finds BAR0 still assigned inside, stops:</text>
+  <rect x="270" y="250" width="440" height="22" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="278" y="265" font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#7f1d1d">bridge window: was not released (still contains assigned resources)</text>
+  <text x="270" y="292" font-size="12.5" fill="#b91c1c" font-weight="700">→ -ENOSPC → “Small BAR device”. Only 256 MB of VRAM is CPU-visible.</text>
+  <!-- free space note -->
+  <rect x="560" y="112" width="360" height="44" rx="5" fill="#f9fafb" stroke="#d1d5db" stroke-dasharray="4 3"/>
+  <text x="740" y="130" text-anchor="middle" font-size="12" fill="#6b7280">address space above 4 GB: 64 GB, 63.5 GB free</text>
+  <text x="740" y="146" text-anchor="middle" font-size="11.5" fill="#6b7280">plenty of room — irrelevant, the window is pinned</text>
+
+  <line x1="40" y1="312" x2="920" y2="312" stroke="#e5e7eb"/>
+
+  <!-- ================= AFTER ================= -->
+  <text x="40" y="340" font-size="15" font-weight="700" fill="#047857">AFTER — arc-rebar, from the initramfs, before the driver binds</text>
+  <g font-size="12.5" fill="#111827">
+    <circle cx="52" cy="366" r="10" fill="#047857"/><text x="52" y="370" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">1</text>
+    <text x="70" y="370">Program the card's Resizable-BAR control register: size = the largest the card supports (16 GB here)</text>
+    <circle cx="52" cy="394" r="10" fill="#047857"/><text x="52" y="398" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">2</text>
+    <text x="70" y="398">Remove the root port — the whole card leaves the kernel's view, <tspan font-weight="700" fill="#b91c1c">including the switch's BAR0 that was pinning the window</tspan></text>
+    <circle cx="52" cy="422" r="10" fill="#047857"/><text x="52" y="426" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">3</text>
+    <text x="70" y="426">Rescan — the kernel re-enumerates the card from scratch and lays out a new window for what it now asks for:</text>
+  </g>
+  <rect x="70" y="440" width="700" height="44" rx="5" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="72" y="442" width="660" height="40" fill="#bfdbfe" stroke="#1d4ed8"/><text x="402" y="466" text-anchor="middle" font-size="12" fill="#1e3a8a" font-weight="700">GPU BAR2 — 16 GB window (all 12 GB of VRAM mapped into it)</text>
+  <rect x="733" y="442" width="35" height="40" fill="#bbf7d0" stroke="#047857"/>
+  <text x="780" y="456" font-size="12" fill="#047857" font-weight="700">← BAR0, 8 MB</text>
+  <text x="780" y="472" font-size="11.5" fill="#065f46">allocated fresh, alongside</text>
+  <text x="70" y="506" font-size="12.5" fill="#047857" font-weight="700">→ driver re-binds on the full window. Nothing was pinned, because nothing was left behind to pin it.</text>
+  <text x="70" y="532" font-size="11.5" fill="#6b7280">Measured on a Supermicro X9DRH-7TF (2015 BIOS, no ReBAR option) + Arc B580: CPU-visible VRAM 256 MB → 12 GB; single allocation 256 MB → 1 GB+; bandwidth 15 → 392 GB/s.</text>
+  <text x="920" y="546" text-anchor="end" font-size="10.5" fill="#9ca3af">arc-rebar · github.com/RodBurlamaqui/Intel-ARC-Rebar</text>
+</svg>
