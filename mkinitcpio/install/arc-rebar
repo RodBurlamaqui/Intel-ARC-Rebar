@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# arc-rebar mkinitcpio install hook (Arch Linux / CachyOS).
+# Ships setpci and the boot script; the runtime half is mkinitcpio/hooks/arc-rebar.
+# Put 'arc-rebar' in HOOKS after 'udev' and BEFORE 'kms' (the fix must run before
+# the graphics driver probes the card).
+
+build() {
+    [ -x /usr/lib/arc-rebar/arc-rebar-boot ] || {
+        error "arc-rebar: /usr/lib/arc-rebar/arc-rebar-boot missing (rerun install-arch.sh)"
+        return 1
+    }
+    add_binary /usr/bin/setpci
+    # mkinitcpio's bundled busybox has no 'tr' applet, and the boot script uses
+    # it to split the device path. Ship coreutils' tr or the fix silently turns
+    # into 'skip reason=unexpected-topology'.
+    add_binary /usr/bin/tr
+    add_file /usr/lib/arc-rebar/arc-rebar-boot /arc-rebar-boot 0755
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+Resizable BAR for Intel Arc dGPUs on firmware without ReBAR support. Runs
+scripts/init-premount/arc-rebar from the initramfs, before the xe/i915 driver
+probes the card. Needs pciutils (setpci) and pci=realloc on the kernel command
+line. Place this hook after 'udev' and before 'kms' in HOOKS.
+HELPEOF
+}
+
+# vim: set ft=sh ts=4 sw=4 et:

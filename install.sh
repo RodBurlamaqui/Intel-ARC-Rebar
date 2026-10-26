@@ -8,6 +8,8 @@ for a in "$@"; do case "$a" in
   *) echo "usage: $0 [--yes] [--live-test] [--reinstall]"; exit 1;; esac; done
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
+# Arch / CachyOS: hand over to the mkinitcpio installer.
+if [ ! -d /etc/initramfs-tools ] && [ -f /etc/mkinitcpio.conf ]; then exec "$S/install-arch.sh" "$@"; fi
 HOOK_DST=/etc/initramfs-tools/hooks/arc-rebar
 SCR_DST=/etc/initramfs-tools/scripts/init-premount/arc-rebar
 INITRD=/boot/initrd.img-$(uname -r)

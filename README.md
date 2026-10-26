@@ -207,17 +207,18 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 
 ## 4. Requirements
 
-- Debian or Ubuntu (`initramfs-tools`). Kernel 6.12 or newer recommended (the
-  `xe` driver's ReBAR support). `pciutils`.
+- Debian or Ubuntu (`initramfs-tools`), or Arch Linux / CachyOS (`mkinitcpio` —
+  `install.sh` hands over to `install-arch.sh`). Kernel 6.12 or newer
+  recommended (the `xe` driver's ReBAR support). `pciutils`.
 - **Above 4G Decoding enabled in BIOS**, and an MMIO window above 4 GB at least
   as large as your VRAM rounded up to a power of two. `diagnose` checks this.
 - The GPU directly in a slot on a root port of its own (no external PCIe switch,
   riser, or Thunderbolt in between). `diagnose` checks this.
 - A second way into the machine (SSH) if you run the optional live test, which
   turns the local display off for about ten seconds.
-- Other initramfs systems (dracut, mkinitcpio): the boot script is plain POSIX
-  `sh` and needs only `setpci`; porting it is a Modification under the licence —
-  ask first.
+- Other initramfs systems (dracut): the boot script is plain POSIX `sh` and needs
+  only `setpci`; porting it is a Modification under the licence — ask first.
+  mkinitcpio is already ported: see [INSTALL.md](INSTALL.md#arch-linux--cachyos-mkinitcpio).
 
 ## 5. Where it applies — and where it refuses
 

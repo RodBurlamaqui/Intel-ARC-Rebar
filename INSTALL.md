@@ -2,6 +2,8 @@
 
 **Applies to:** Debian 12/13, Ubuntu 22.04 or newer, or any distro using
 `initramfs-tools`. Kernel 6.12 or newer recommended. You need `sudo`.
+Arch Linux / CachyOS (mkinitcpio) is supported too — see
+[Arch Linux / CachyOS](#arch-linux--cachyos-mkinitcpio) below.
 
 **Do this over SSH if you can.** The optional live test turns the local display
 off for about 10 seconds; if the machine were to hang, you want a second way in.
@@ -162,6 +164,49 @@ Now do **A3**, **A4**, **A5** above.
 
 ---
 
+## Arch Linux / CachyOS (mkinitcpio)
+
+The boot script is the same file; only the initramfs plumbing differs.
+`install.sh` detects `mkinitcpio` and hands over to `install-arch.sh`, so the
+flow is still diagnose → (optional) live-test → install → reboot → verify:
+
+```
+sudo pacman -S --needed pciutils mkinitcpio
+sudo ./diagnose.sh
+sudo ./install.sh          # on Arch this runs install-arch.sh
+sudo reboot
+sudo ./verify.sh
+```
+
+`install-arch.sh` does the same safety checks and the same licence/disclaimer
+acceptance, then:
+
+- installs the boot script to `/usr/lib/arc-rebar/arc-rebar-boot`
+- installs `/etc/initcpio/install/arc-rebar` (build hook) and
+  `/etc/initcpio/hooks/arc-rebar` (runtime hook)
+- adds `arc-rebar` to `HOOKS` in `/etc/mkinitcpio.conf`, immediately **before
+  `kms`**, and leaves the rest of the array alone
+- adds `pci=realloc` to `/etc/default/grub` and runs `grub-mkconfig` if it is not
+  there yet (any other bootloader: add it by hand)
+- runs `mkinitcpio -P` and post-checks the image for the boot script, the hook,
+  `setpci` and `tr`
+
+Two things that are mkinitcpio-specific:
+
+- **`arc-rebar` must stay before `kms`.** That hook is what loads `i915`/`xe`;
+  running after it means the driver has already claimed the card.
+- **mkinitcpio's bundled busybox has no `tr` applet**, which the boot script uses
+  to split the device path. The build hook therefore also copies coreutils' `tr`
+  into the image. Without it the script would log
+  `skip reason=unexpected-topology` and silently do nothing.
+
+GRUB on Arch has no `update-grub`; regenerate with
+`sudo grub-mkconfig -o /boot/grub/grub.cfg`. Uninstall with
+`sudo ./uninstall-arch.sh` (removes both hooks, drops `arc-rebar` from `HOOKS`,
+rebuilds the initramfs).
+
+---
+
 ## If something is wrong
 
 **The machine does not boot, or boots with no display, after install.**
@@ -202,8 +247,13 @@ sudo apt purge arc-rebar      # removes the tool AND the boot hook (only if the 
 sudo ./uninstall.sh
 ```
 
-Both leave `pci=realloc` in GRUB; it is harmless. To remove it:
+**Arch / CachyOS:**
+```
+sudo ./uninstall-arch.sh
+```
+
+All leave `pci=realloc` in GRUB; it is harmless. To remove it:
 ```
 sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
-sudo update-grub
+sudo update-grub          # Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```

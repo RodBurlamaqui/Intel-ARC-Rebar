@@ -3,7 +3,8 @@
 fail=0; ok(){ echo "  [ok]   $*"; }; bad(){ echo "  [FAIL] $*"; fail=1; }; warn(){ echo "  [warn] $*"; }
 echo "== arc-rebar verify (boot $(uptime -s)) =="
 grep -q 'pci=realloc' /proc/cmdline && ok "pci=realloc active" || bad "pci=realloc not on the kernel cmdline"
-[ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ] && ok "hook installed" || warn "hook not installed (live-only run?)"
+{ [ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ] || [ -e /etc/initcpio/install/arc-rebar ]; } \
+  && ok "hook installed" || warn "hook not installed (live-only run?)"
 plan=$(dmesg 2>/dev/null | grep 'arc-rebar: PLAN' | tail -1 | sed 's/.*PLAN: //')
 case "$plan" in
   done*)        ok   "boot verdict: $plan";;
