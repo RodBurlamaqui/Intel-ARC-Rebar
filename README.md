@@ -435,7 +435,7 @@ implementation only.
 
 ## 15. Credits
 
-- andersevenrud — the setpci + remove/rescan method, in a gist for the H11SSL-i + B580.
+- @andersevenrud — the setpci + remove/rescan method, in a [gist for the H11SSL-i + B580](https://gist.github.com/andersevenrud/eec93e9151117bc0d6b6133b40eaffa5).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
