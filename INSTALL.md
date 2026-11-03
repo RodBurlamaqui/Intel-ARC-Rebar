@@ -207,3 +207,43 @@ Both leave `pci=realloc` in GRUB; it is harmless. To remove it:
 sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
 sudo update-grub
 ```
+
+### Debian/Ubuntu installer failure recovery
+
+The source installer snapshots the previous hooks, origin marker, GRUB defaults,
+GRUB menu, running kernel's initramfs, and corresponding backup files before
+mutation. A failed command or caught INT/TERM/HUP restores those files (including
+an existing installation during `--reinstall`) and returns failure. Rebuild errors
+are fatal even if an old image passes content checks. Only the running kernel is
+rebuilt, explicitly with `update-initramfs -u -k`.
+
+Diagnostics and snapshots remain in `/var/lib/arc-rebar/install-transaction` on
+failure. A new installation refuses to overwrite that journal. After checking the
+error and resolving any storage problem, run from the same source checkout:
+
+```bash
+sudo ./install.sh --recover
+```
+
+Recovery needs no GPU probe and can be retried if restoration fails. Do not reboot
+if recovery reports failure. Successful recovery removes the journal; copy its
+logs first if needed. Original `.arc-rebar.bak` escape-hatch backups are preserved.
+A lock serializes this installer, but does not lock package managers or other boot
+configuration tools: do not run them concurrently. Required boot files and hook
+directories must already exist; symlink file destinations and nonliteral or
+ambiguous GRUB default assignments are refused before installation.
+
+This is file-level recovery, not an atomic boot transaction or a guarantee against
+power loss, disk failure, or arbitrary third-party update hooks. SIGKILL/power loss
+cannot trigger immediate rollback: recover before rebooting, using rescue media if
+necessary. Custom update hooks may modify files outside the snapshot; UKIs and
+nonstandard boot layouts are not covered. `--live-test` hardware effects and the
+separate uninstaller are outside this transaction's scope.
+
+Validation before release: run the mocked suite (`python3 -m unittest discover -s
+ tests -v`, on one line), then validate normal installation, warm/cold boot,
+reinstallation, `norebar` recovery, and removal on disposable Debian/Ubuntu systems
+with the affected Intel Arc hardware, checking BAR allocation, driver binding and
+a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
+Mocked tests do not establish bootability or hardware correctness. This change is
+independent of the pending Arch/mkinitcpio work.
