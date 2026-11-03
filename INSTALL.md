@@ -109,7 +109,8 @@ sudo reboot
 ```
 sudo arc-rebar verify
 ```
-You should see every line `[ok]` and, at the end, `RESULT: PASS`. The important
+A clean check ends with `RESULT: PASS`. `RESULT: WARN` (exit 2) means PCIe
+health remains inconclusive; it is not a clean pass. The important
 lines:
 ```
   [ok]   boot verdict: done gpu=0000:XX:00.0 bar2=16384M
@@ -179,8 +180,14 @@ Your MMIO window is too small for the full BAR. Try a smaller one: add
 A safety check refused at boot. The reason maps to the table in README.md.
 
 **`verify` shows `RESULT: FAIL` on DevSta or AER.**
-Your GPU is reporting PCIe errors. That is not caused by this tool but you
-should not ignore it. Uninstall and investigate the errors first.
+PCIe error evidence remains; its cause is not established by verification.
+Preserve diagnostics and investigate before adopting the workaround.
+
+**`verify` shows `RESULT: WARN` for latched DevSta bits.**
+BAR allocation can succeed while previously latched correctable/Unsupported
+Request bits remain. They are not automatically harmless or caused by ReBAR.
+Default verification does not clear them. See the explicit recheck procedure
+and hardware-validation limits in [README.md](README.md#pcie-status-and-rechecks).
 
 **`dmesg` still shows `Small BAR device`.**
 Normal. That is the driver's *first* probe, before the fix runs at boot. Judge by

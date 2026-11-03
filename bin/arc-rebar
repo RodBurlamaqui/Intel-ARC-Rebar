@@ -12,7 +12,7 @@ case "$cmd" in
      echo "  prepare    PRE:  (cautious path) add pci=realloc to GRUB only, so live-test can run after a reboot
   live-test  PRE:  run the fix once, live, no reboot, nothing persistent"
      echo "  install         enable at boot (safety checks, licence + disclaimer acceptance, backups)"
-     echo "  verify     POST: PASS/FAIL after a reboot"
+     echo "  verify     POST: PASS/FAIL/WARN after a reboot (verify --help)"
      echo "  uninstall       remove the boot hook
   diag <tool>     read-only diagnostics: bar-pin-check | pcie-link-truth | vulkan-heaps |
                   ocl-alloc-ceiling | gpu-health   (see diag/README.md)"

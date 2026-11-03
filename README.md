@@ -440,3 +440,48 @@ implementation only.
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
   resources)`, which was the whole answer once someone read it.
+
+### PCIe status and rechecks
+
+`verify` separates BAR allocation/driver binding from PCIe status evidence.
+A bound driver or successful transcode alone does not prove GPU memory/compute
+health. The boot hook is unchanged; verification is read-only by default.
+
+| Evidence | Result / exit |
+|---|---|
+| Existing checks pass, endpoint DevSta clean | PASS / 0 (checks only, not a workload certification) |
+| Only correctable / Unsupported Request DevSta bits (0/3) latched | WARN / 2 (age/cause unresolved) |
+| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable DevSta or kernel log | FAIL / 1 |
+| New/persistent DevSta error or changed AER counters during recheck | FAIL / 1 |
+
+After saving `sudo lspci -Dvv`, `sudo dmesg` and `sudo arc-rebar diagnose`, an
+operator can explicitly request a one-shot GPU endpoint status clear and timed
+observation on the affected host:
+
+```bash
+hostname
+sudo arc-rebar verify --recheck-pcie 60
+```
+
+This writes only **observed DevSta bits 0/3**, using a 16-bit W1C write, once
+per checked GPU. It never clears nonfatal/fatal status, upstream status, AER
+registers, or logs, and never changes error reporting masks. Existing failures
+prevent the clear. Do not automate repeated clears: they destroy evidence.
+The raw DevSta and available endpoint/parent AER counters are printed before
+clearing. Capture this output as part of the diagnostic record.
+
+Run a representative GPU workload in another terminal during observation.
+The verifier reads immediately after the clear, then every second (1–3600
+seconds per GPU), and compares endpoint/ancestor AER counters with the baseline.
+Any change, including reset/disappearance, fails conservatively; root-port
+reports may concern another device in the hierarchy. A clean interval does not
+prove boot-time origin, and a run that started with latched bits **still returns
+WARN**, even if they do not recur. No automatic clean bill of health is issued.
+
+Missing AER counters make rechecks inconclusive. Present counters may still
+miss masked or firmware-owned events; sampling may miss status the kernel
+clears. The default endpoint status check is not a complete upstream AER audit.
+Inspect bridge status separately; this patch deliberately does not reproduce
+the reporter's upstream-register clears. Kernel-log matching retains a
+conservative system-wide failure policy and can include unrelated devices.
+See [the hardware acceptance checklist](docs/VERIFY-PCIE.md) before adoption.
