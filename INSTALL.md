@@ -2,7 +2,7 @@
 
 **Applies to:** Debian 12/13, Ubuntu 22.04 or newer, or any distro using
 `initramfs-tools`. Kernel 6.12 or newer recommended. You need `sudo`.
-Arch Linux / CachyOS (mkinitcpio) is supported too — see
+Draft Arch Linux / CachyOS (mkinitcpio) support is described under
 [Arch Linux / CachyOS](#arch-linux--cachyos-mkinitcpio) below.
 
 **Do this over SSH if you can.** The optional live test turns the local display
@@ -188,7 +188,7 @@ acceptance, then:
   `kms`**, and leaves the rest of the array alone
 - adds `pci=realloc` to `/etc/default/grub` and runs `grub-mkconfig` if it is not
   there yet (any other bootloader: add it by hand)
-- runs `mkinitcpio -P` and post-checks the image for the boot script, the hook,
+- backs up managed configuration/hooks, runs `mkinitcpio -P`, and post-checks the image for the boot script, the hook,
   `setpci` and `tr`
 
 Two things that are mkinitcpio-specific:
@@ -203,7 +203,7 @@ Two things that are mkinitcpio-specific:
 GRUB on Arch has no `update-grub`; regenerate with
 `sudo grub-mkconfig -o /boot/grub/grub.cfg`. Uninstall with
 `sudo ./uninstall-arch.sh` (removes both hooks, drops `arc-rebar` from `HOOKS`,
-rebuilds the initramfs).
+rebuilds the initramfs). See [installer safeguards](#arch-installer-safeguards-pending-hardware-validation) for rollback behavior and validation limits.
 
 ---
 
@@ -257,3 +257,44 @@ All leave `pci=realloc` in GRUB; it is harmless. To remove it:
 sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
 sudo update-grub          # Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
+
+### Arch installer safeguards (pending hardware validation)
+
+The source-tree Arch installer and uninstaller retain root-only backups of the
+managed configuration and hook files under `/var/lib/arc-rebar/backups/change.*`.
+Keep `arch-transaction.sh` alongside the scripts when running from a checkout.
+A failed file installation, GRUB generation, initramfs build, or post-check
+returns failure and restores the previous managed files, including an existing
+installation during `--reinstall`. It then attempts to rebuild the restored
+configuration. Build/recovery output is kept in that backup directory.
+
+If recovery also fails, the scripts explicitly say **do not reboot**: inspect
+the saved logs and repair the boot images first. These are configuration/hook
+backups, not copies of the boot images or a guarantee of recovery after power
+loss, disk failure, or forced termination. Do not run concurrent installers or
+package/kernel updates while changing these hooks.
+
+Automatic editing requires one simple single-line `HOOKS=(...)` assignment,
+with `udev` before `kms`; quoted hook names and trailing whitespace are accepted.
+Reinstallation moves `arc-rebar` before `kms` if needed. Config drop-ins and
+systemd-based initramfs configurations are refused rather than silently editing
+an ineffective setting. Managed symlinks are also refused.
+
+Before merging this Arch port, validate installation, an actual reboot with
+BAR allocation and driver binding, reinstallation, and removal on the
+contributor's CachyOS/A380 setup. Confirm the hook runs at the intended time;
+image membership alone does not prove runtime ordering. Preset-specific config
+or output paths, UKIs, early graphics modules and non-GRUB boot paths still
+need dedicated review/testing. The existing image post-check scans conventional
+paths; this draft is not a claim of support for every mkinitcpio layout.
+
+Hardware-free regression checks from the repository root:
+
+```bash
+python3 -m unittest discover -s tests -v
+bash -n install-arch.sh uninstall-arch.sh arch-transaction.sh
+```
+
+Configuration/preset reference:
+https://man.archlinux.org/man/mkinitcpio.conf.5.en and
+https://man.archlinux.org/man/mkinitcpio.8.en

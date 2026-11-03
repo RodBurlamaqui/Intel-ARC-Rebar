@@ -2,13 +2,24 @@
 # arc-rebar uninstaller for Arch Linux / CachyOS (mkinitcpio).
 set -e
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
+S=$(dirname "$(readlink -f "$0")")
+source "$S/arch-transaction.sh"
 CONF=/etc/mkinitcpio.conf
+command -v mkinitcpio >/dev/null || { echo "mkinitcpio missing" >&2; exit 1; }
+cur=$(arch_hooks) || exit 1
+arch_begin
 rm -f /etc/initcpio/install/arc-rebar /etc/initcpio/hooks/arc-rebar /usr/lib/arc-rebar/arc-rebar-boot /var/lib/arc-rebar/hook-origin
-rmdir /usr/lib/arc-rebar 2>/dev/null || true
-if [ -f "$CONF" ] && sed -n 's/^HOOKS=(\(.*\))[[:space:]]*$/\1/p' "$CONF" | head -1 | tr ' ' '\n' | grep -qx arc-rebar; then
-  nh=$(sed -n 's/^HOOKS=(\(.*\))[[:space:]]*$/\1/p' "$CONF" | head -1 | tr ' ' '\n' | grep -vx arc-rebar | tr '\n' ' ' | sed 's/ *$//')
-  sed -i -E "s|^HOOKS=\(.*\)$|HOOKS=($nh)|" "$CONF"
-  echo "removed arc-rebar from HOOKS"
+nh=
+for hook in $cur; do
+  [ "$hook" != arc-rebar ] || continue
+  nh="${nh:+$nh }$hook"
+done
+sed -i -E "s|^HOOKS=\(.*\)[[:space:]]*$|HOOKS=($nh)|" "$CONF"
+echo "removed arc-rebar from HOOKS"
+if ! mkinitcpio -P > "$ARCH_BACKUP/build.log" 2>&1; then
+  echo "ERROR: mkinitcpio failed; see $ARCH_BACKUP/build.log" >&2
+  exit 1
 fi
-mkinitcpio -P >/dev/null 2>&1 && echo "initramfs rebuilt without arc-rebar"
+rmdir /usr/lib/arc-rebar 2>/dev/null || true
+echo "initramfs rebuilt without arc-rebar"
 echo "pci=realloc left in GRUB (harmless). Remove it from GRUB_CMDLINE_LINUX_DEFAULT and rerun grub-mkconfig to revert."

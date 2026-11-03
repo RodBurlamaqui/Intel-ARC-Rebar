@@ -1,7 +1,7 @@
 #!/bin/bash
 # arc-rebar safe installer for Arch Linux / CachyOS (mkinitcpio).
 # Same contract as install.sh: refuses unless the boot script's own dry run says
-# it would act on this machine. No backups are made; uninstall-arch.sh undoes it.
+# it would act on this machine. Configuration/hooks are backed up before edits.
 set -e
 YES=; LIVE=; REINST=
 for a in "$@"; do case "$a" in
@@ -13,6 +13,7 @@ BOOT_DST=/usr/lib/arc-rebar/arc-rebar-boot
 HOOK_DST=/etc/initcpio/install/arc-rebar
 RUN_DST=/etc/initcpio/hooks/arc-rebar
 CONF=/etc/mkinitcpio.conf
+source "$S/arch-transaction.sh"
 
 echo "== arc-rebar safe install (mkinitcpio) =="
 echo; echo "== PRE-CHECKS: environment =="
@@ -25,13 +26,30 @@ case "$kmaj" in ''|*[!0-9]*) ;; *)
   if [ "$kmaj" -lt 6 ] || { [ "$kmaj" -eq 6 ] && [ "$kmin" -lt 12 ]; }; then
     echo "warning: kernel $kv is older than 6.12; xe ReBAR support may be missing"; fi;;
 esac
-# HOOKS must be a single line we can edit; refuse rather than guess.
-hooks_line() { sed -n 's/^HOOKS=(\(.*\))[[:space:]]*$/\1/p' "$CONF" | head -1; }
-[ -n "$(hooks_line)" ] || { echo "$CONF: no single-line HOOKS=(...) found; add 'arc-rebar' to HOOKS by hand (after udev, before kms)"; exit 1; }
-case " $(hooks_line) " in
-  *" kms "*) ;;
-  *) echo "warning: no 'kms' hook in HOOKS; make sure 'arc-rebar' ends up before the graphics driver loads";;
+# Drop-ins override this file; refuse rather than edit an ineffective setting.
+for override in /etc/mkinitcpio.conf.d/*.conf; do
+  [ ! -e "$override" ] || { echo "Unsupported config override: $override" >&2; exit 1; }
+done
+hooks_line(){ arch_hooks; }
+cur=$(hooks_line) || exit 1
+case " $cur " in
+  *" systemd "*) echo 'The runtime hook requires busybox/udev; systemd initramfs is not supported.' >&2; exit 1;;
 esac
+case " $cur " in
+  *" udev "*) ;;
+  *) echo 'The runtime hook requires udev in HOOKS.' >&2; exit 1;;
+esac
+case " $cur " in
+  *" kms "*) ;;
+  *) echo 'Expected kms in HOOKS so hook ordering can be checked.' >&2; exit 1;;
+esac
+seen_udev=
+for hook in $cur; do
+  [ "$hook" != udev ] || seen_udev=1
+  if [ "$hook" = kms ] && [ -z "$seen_udev" ]; then
+    echo 'Expected udev before kms.' >&2; exit 1
+  fi
+done
 if [ -e "$HOOK_DST" ] && [ -z "$REINST" ]; then
   echo "already installed: $HOOK_DST"; dmesg 2>/dev/null | grep -m1 'arc-rebar: PLAN' | sed 's/^/  this boot: /'
   echo "use --reinstall to refresh, or ./uninstall-arch.sh"; exit 0; fi
@@ -74,11 +92,15 @@ if [ -n "$LIVE" ]; then
   echo "live test passed"
 fi
 
+arch_begin
 echo; echo "== INSTALL =="
-install -d -m 0755 /usr/lib/arc-rebar
-install -m 0755 "$SCRIPT" "$BOOT_DST" && echo "boot script: $BOOT_DST"
-install -m 0755 "$S/mkinitcpio/install/arc-rebar" "$HOOK_DST" && echo "mkinitcpio hook: $HOOK_DST"
-install -m 0755 "$S/mkinitcpio/hooks/arc-rebar" "$RUN_DST" && echo "runtime hook: $RUN_DST"
+install -d -m 0755 /usr/lib/arc-rebar /etc/initcpio/install /etc/initcpio/hooks
+install -m 0755 "$SCRIPT" "$BOOT_DST"
+echo "boot script: $BOOT_DST"
+install -m 0755 "$S/mkinitcpio/install/arc-rebar" "$HOOK_DST"
+echo "mkinitcpio hook: $HOOK_DST"
+install -m 0755 "$S/mkinitcpio/hooks/arc-rebar" "$RUN_DST"
+echo "runtime hook: $RUN_DST"
 mkdir -p /var/lib/arc-rebar; echo arch > /var/lib/arc-rebar/hook-origin
 
 if ! grep -q 'pci=realloc' /proc/cmdline; then
@@ -87,7 +109,11 @@ if ! grep -q 'pci=realloc' /proc/cmdline; then
   elif [ -f /etc/default/grub ] && command -v grub-mkconfig >/dev/null; then
     sed -i -E "s|^GRUB_CMDLINE_LINUX_DEFAULT=['\"](.*)['\"]|GRUB_CMDLINE_LINUX_DEFAULT='\1 pci=realloc'|" /etc/default/grub
     grep -q 'pci=realloc' /etc/default/grub || { echo "ERROR: could not edit GRUB_CMDLINE_LINUX_DEFAULT. Add pci=realloc by hand."; exit 1; }
-    grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 && echo "GRUB: added pci=realloc" || echo "warning: grub-mkconfig failed; run it by hand"
+    if ! grub-mkconfig -o /boot/grub/grub.cfg > "$ARCH_BACKUP/grub-build.log" 2>&1; then
+      echo "ERROR: grub-mkconfig failed; see $ARCH_BACKUP/grub-build.log" >&2
+      exit 1
+    fi
+    echo "GRUB: added pci=realloc"
   else
     echo "ERROR: pci=realloc is not active and no GRUB config was found to edit."
     echo "       Add pci=realloc to your bootloader's kernel command line first, then rerun."
@@ -95,19 +121,21 @@ if ! grep -q 'pci=realloc' /proc/cmdline; then
   fi
 fi
 
+# Reposition an existing hook too, rather than accepting one after kms.
 cur=$(hooks_line)
-case " $cur " in
-  *" arc-rebar "*) echo "HOOKS: arc-rebar already present";;
-  *) case " $cur " in
-       *" kms "*)        nh=$(echo " $cur " | sed 's/ kms / arc-rebar kms /;s/^ //;s/ $//');;
-       *" udev "*)       nh=$(echo " $cur " | sed 's/ udev / udev arc-rebar /;s/^ //;s/ $//');;
-       *" base "*)       nh=$(echo " $cur " | sed 's/ base / base arc-rebar /;s/^ //;s/ $//');;
-       *)                nh="arc-rebar $cur";;
-     esac
-     sed -i -E "s|^HOOKS=\(.*\)$|HOOKS=($nh)|" "$CONF"
-     echo "HOOKS: $nh";;
-esac
-mkinitcpio -P >/dev/null 2>&1 && echo "initramfs rebuilt"
+nh=
+for hook in $cur; do
+  [ "$hook" != arc-rebar ] || continue
+  [ "$hook" != kms ] || nh="${nh:+$nh }arc-rebar"
+  nh="${nh:+$nh }$hook"
+done
+sed -i -E "s|^HOOKS=\(.*\)[[:space:]]*$|HOOKS=($nh)|" "$CONF"
+echo "HOOKS: $nh"
+if ! mkinitcpio -P > "$ARCH_BACKUP/build.log" 2>&1; then
+  echo "ERROR: mkinitcpio failed; see $ARCH_BACKUP/build.log" >&2
+  exit 1
+fi
+echo "initramfs rebuilt"
 
 echo; echo "== POST-CHECKS =="
 pc=0
@@ -118,7 +146,7 @@ case " $(hooks_line) " in
   *" arc-rebar "*) echo "  [ok] arc-rebar in $CONF";;
   *) echo "  [FAIL] arc-rebar not in HOOKS"; pc=1;;
 esac
-grep -q 'pci=realloc' /etc/default/grub 2>/dev/null && echo "  [ok] pci=realloc in /etc/default/grub" || { echo "  [FAIL] pci=realloc not in GRUB"; pc=1; }
+{ grep -q 'pci=realloc' /proc/cmdline || grep -q 'pci=realloc' /etc/default/grub 2>/dev/null; } && echo "  [ok] pci=realloc active or configured" || { echo "  [FAIL] pci=realloc missing"; pc=1; }
 grep -q 'pci=realloc' /proc/cmdline && echo "  [ok] pci=realloc active this boot" || echo "  [warn] pci=realloc not active yet: reboot before verify"
 imgs=$(ls -1 /boot/initramfs-*.img /efi/EFI/Linux/*.efi 2>/dev/null || true)
 [ -n "$imgs" ] || { echo "  [FAIL] no initramfs images found"; pc=1; }
@@ -132,10 +160,8 @@ done
 if [ $pc = 0 ]; then
   echo "  all post-checks passed"
 else
-  echo "ERROR: initramfs is missing pieces. Removing the hook and regenerating a clean initramfs."
-  rm -f "$HOOK_DST" "$RUN_DST" /var/lib/arc-rebar/hook-origin
-  sed -i -E "s|^HOOKS=\(.*\)$|HOOKS=($(hooks_line | tr ' ' '\n' | grep -vx arc-rebar | tr '\n' ' ' | sed 's/ *$//'))|" "$CONF"
-  mkinitcpio -P >/dev/null 2>&1; exit 3
+  echo "ERROR: post-checks failed; restoring the previous installation." >&2
+  exit 3
 fi
 echo; echo "Installed. Next:   sudo reboot   then   sudo $S/verify.sh"
 echo "Escape hatch if anything goes wrong at boot: GRUB menu -> e -> append 'norebar' -> boot."
