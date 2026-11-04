@@ -4,7 +4,14 @@ All revisions on 2026-09-05, developed and verified on a Supermicro X9DRH-7TF
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
-## Unreleased — docs
+## Unreleased
+- Debian/Ubuntu installer: restore previous managed boot files after failures and
+  support interrupted-run recovery with `--recover`, including reinstalls.
+  Refuse incompatible initramfs backends before probing hardware or changing boot
+  files, while retaining compatibility with older initramfs-tools frontends.
+- Document disposable-VM rollback validation and use `dmesg` for boot-script
+  messages that `journalctl -k` can omit. Hardware validation remains pending;
+  no new release is declared.
 - GPU firmware updates ruled out by direct test, not assumption: FWCODE
   21.1137 → 21.1182 and OptionROM 23.1051.0.0 → 23.1066.0.0 (LVFS, Sept 2026)
   leave the power-up BAR size field unchanged, the kernel resize still fails

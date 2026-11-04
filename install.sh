@@ -66,6 +66,32 @@ echo; echo "== PRE-CHECKS: environment =="
 [ -d /etc/initramfs-tools ] || { echo "no initramfs-tools here. Debian/Ubuntu only; for dracut/mkinitcpio port scripts/init-premount/arc-rebar by hand."; exit 1; }
 command -v setpci >/dev/null || { echo "pciutils missing:  apt install pciutils"; exit 1; }
 command -v update-initramfs >/dev/null || { echo "update-initramfs missing"; exit 1; }
+# Ubuntu and Debian may provide an update-initramfs command that delegates to
+# another image builder. The presence of the command and its config directories
+# does not prove that initramfs-tools hooks will be run.
+if backend_version=$(update-initramfs --version 2>&1); then
+  if [[ ! "$backend_version" =~ ^initramfs-tools[[:space:]]+[^[:space:]]+([[:space:]]|$) ]]; then
+    echo "unsupported initramfs backend: ${backend_version:-unknown}; this installer requires initramfs-tools"
+    exit 1
+  fi
+else
+  # Older initramfs-tools releases do not implement --version. In that case,
+  # verify the resolved frontend is owned by the exact package we support.
+  updater=$(command -v update-initramfs)
+  updater=$(readlink -f -- "$updater") || { echo "cannot resolve update-initramfs frontend"; exit 1; }
+  if ! command -v dpkg-query >/dev/null; then
+    echo "cannot verify legacy update-initramfs frontend (dpkg-query missing)"
+    exit 1
+  fi
+  backend_owner=$(dpkg-query -S "$updater" 2>/dev/null) || {
+    echo "cannot verify legacy update-initramfs frontend ownership: $updater"
+    exit 1
+  }
+  if [ "$backend_owner" != "initramfs-tools: $updater" ]; then
+    echo "unsupported legacy update-initramfs frontend owner: ${backend_owner:-unknown}"
+    exit 1
+  fi
+fi
 kv=$(uname -r); kmaj=${kv%%.*}; kmin=$(echo "$kv" | cut -d. -f2)
 if [ "$kmaj" -lt 6 ] || { [ "$kmaj" -eq 6 ] && [ "$kmin" -lt 12 ]; }; then
   echo "warning: kernel $kv is older than 6.12; xe ReBAR support may be missing"; fi

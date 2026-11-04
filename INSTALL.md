@@ -1,7 +1,10 @@
 # INSTALL — arc-rebar, step by step
 
 **Applies to:** Debian 12/13, Ubuntu 22.04 or newer, or any distro using
-`initramfs-tools`. Kernel 6.12 or newer recommended. You need `sudo`.
+an active `initramfs-tools` backend. Kernel 6.12 or newer recommended. You need
+`sudo`. A distribution version or the presence of `/etc/initramfs-tools` alone
+does not establish compatibility: some systems provide a dracut-backed
+`update-initramfs` command instead.
 
 **Do this over SSH if you can.** The optional live test turns the local display
 off for about 10 seconds; if the machine were to hang, you want a second way in.
@@ -19,6 +22,12 @@ sudo apt update
 sudo apt install pciutils initramfs-tools
 uname -r
 ```
+Review the package manager's proposed changes first. Installing `initramfs-tools`
+can replace a dracut frontend and rebuild boot images; do not switch a working
+production system's backend merely to bypass an installer refusal. The installer
+checks the selected updater and refuses incompatible or unidentifiable backends
+before hardware probing or boot-file changes. It does not convert backends.
+
 You should see a kernel version. If it is below `6.12`, the fix may still work
 but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
@@ -97,8 +106,10 @@ initramfs rebuilt
 
 Installed. Next:   sudo reboot   then   sudo arc-rebar verify
 ```
-If any line says `[FAIL]`, the installer restores the backup and removes itself.
-Nothing is enabled. Report the output.
+If any line says `[FAIL]`, the installer attempts to restore the state from before
+this installation attempt, including an existing working installation during
+`--reinstall`. Check the recovery result before rebooting; if restoration fails,
+follow [failure recovery](#debianubuntu-installer-failure-recovery) below.
 
 ### A4. Reboot
 ```
@@ -117,6 +128,17 @@ lines:
   [ok]   xe last probe VISIBLE VRAM: 0x..., 0x0000000400000000
 ```
 (`16384M` is for a 12 GB or 16 GB card. An 8 GB card shows `8192M`, a 6 GB card `8192M`.)
+
+To inspect the boot script's messages directly:
+
+```bash
+sudo dmesg | grep -F 'arc-rebar:'
+```
+
+`journalctl -k -b` can omit userspace messages written to `/dev/kmsg`, including
+the boot script's verdict. A missing journal match alone does not mean the script
+did not run. Use `dmesg` and the verifier; if the ring buffer has wrapped, gather
+the evidence after another controlled boot.
 
 **Done.** Go to "If something is wrong" only if you did not get `PASS`.
 
@@ -247,3 +269,6 @@ with the affected Intel Arc hardware, checking BAR allocation, driver binding an
 a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
 Mocked tests do not establish bootability or hardware correctness. This change is
 independent of the pending Arch/mkinitcpio work.
+
+See [VM installer validation](docs/INSTALLER-VM-TESTS.md) for the completed
+software checks, their limits, and the remaining release gates.
