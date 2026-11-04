@@ -1,7 +1,10 @@
 # INSTALL — arc-rebar, step by step
 
 **Applies to:** Debian 12/13, Ubuntu 22.04 or newer, or any distro using
-`initramfs-tools`. Kernel 6.12 or newer recommended. You need `sudo`.
+an active `initramfs-tools` backend. Kernel 6.12 or newer recommended. You need
+`sudo`. A distribution version or the presence of `/etc/initramfs-tools` alone
+does not establish compatibility: some systems provide a dracut-backed
+`update-initramfs` command instead.
 Draft Arch Linux / CachyOS (mkinitcpio) support is described under
 [Arch Linux / CachyOS](#arch-linux--cachyos-mkinitcpio) below.
 
@@ -21,6 +24,12 @@ sudo apt update
 sudo apt install pciutils initramfs-tools
 uname -r
 ```
+Review the package manager's proposed changes first. Installing `initramfs-tools`
+can replace a dracut frontend and rebuild boot images; do not switch a working
+production system's backend merely to bypass an installer refusal. The installer
+checks the selected updater and refuses incompatible or unidentifiable backends
+before hardware probing or boot-file changes. It does not convert backends.
+
 You should see a kernel version. If it is below `6.12`, the fix may still work
 but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
@@ -99,8 +108,10 @@ initramfs rebuilt
 
 Installed. Next:   sudo reboot   then   sudo arc-rebar verify
 ```
-If any line says `[FAIL]`, the installer restores the backup and removes itself.
-Nothing is enabled. Report the output.
+If any line says `[FAIL]`, the installer attempts to restore the state from before
+this installation attempt, including an existing working installation during
+`--reinstall`. Check the recovery result before rebooting; if restoration fails,
+follow [failure recovery](#debianubuntu-installer-failure-recovery) below.
 
 ### A4. Reboot
 ```
@@ -119,6 +130,17 @@ lines:
   [ok]   xe last probe VISIBLE VRAM: 0x..., 0x0000000400000000
 ```
 (`16384M` is for a 12 GB or 16 GB card. An 8 GB card shows `8192M`, a 6 GB card `8192M`.)
+
+To inspect the boot script's messages directly:
+
+```bash
+sudo dmesg | grep -F 'arc-rebar:'
+```
+
+`journalctl -k -b` can omit userspace messages written to `/dev/kmsg`, including
+the boot script's verdict. A missing journal match alone does not mean the script
+did not run. Use `dmesg` and the verifier; if the ring buffer has wrapped, gather
+the evidence after another controlled boot.
 
 **Done.** Go to "If something is wrong" only if you did not get `PASS`.
 
@@ -257,6 +279,49 @@ All leave `pci=realloc` in GRUB; it is harmless. To remove it:
 sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
 sudo update-grub          # Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
+
+### Debian/Ubuntu installer failure recovery
+
+The source installer snapshots the previous hooks, origin marker, GRUB defaults,
+GRUB menu, running kernel's initramfs, and corresponding backup files before
+mutation. A failed command or caught INT/TERM/HUP restores those files (including
+an existing installation during `--reinstall`) and returns failure. Rebuild errors
+are fatal even if an old image passes content checks. Only the running kernel is
+rebuilt, explicitly with `update-initramfs -u -k`.
+
+Diagnostics and snapshots remain in `/var/lib/arc-rebar/install-transaction` on
+failure. A new installation refuses to overwrite that journal. After checking the
+error and resolving any storage problem, run from the same source checkout:
+
+```bash
+sudo ./install.sh --recover
+```
+
+Recovery needs no GPU probe and can be retried if restoration fails. Do not reboot
+if recovery reports failure. Successful recovery removes the journal; copy its
+logs first if needed. Original `.arc-rebar.bak` escape-hatch backups are preserved.
+A lock serializes this installer, but does not lock package managers or other boot
+configuration tools: do not run them concurrently. Required boot files and hook
+directories must already exist; symlink file destinations and nonliteral or
+ambiguous GRUB default assignments are refused before installation.
+
+This is file-level recovery, not an atomic boot transaction or a guarantee against
+power loss, disk failure, or arbitrary third-party update hooks. SIGKILL/power loss
+cannot trigger immediate rollback: recover before rebooting, using rescue media if
+necessary. Custom update hooks may modify files outside the snapshot; UKIs and
+nonstandard boot layouts are not covered. `--live-test` hardware effects and the
+separate uninstaller are outside this transaction's scope.
+
+Validation before release: run the mocked suite (`python3 -m unittest discover -s
+ tests -v`, on one line), then validate normal installation, warm/cold boot,
+reinstallation, `norebar` recovery, and removal on disposable Debian/Ubuntu systems
+with the affected Intel Arc hardware, checking BAR allocation, driver binding and
+a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
+Mocked tests do not establish bootability or hardware correctness. This change is
+independent of the pending Arch/mkinitcpio work.
+
+See [VM installer validation](docs/INSTALLER-VM-TESTS.md) for the completed
+software checks, their limits, and the remaining release gates.
 
 ### Arch installer safeguards (pending hardware validation)
 

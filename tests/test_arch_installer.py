@@ -13,6 +13,38 @@ MANAGED = ('etc/mkinitcpio.conf', 'etc/default/grub', 'boot/grub/grub.cfg',
 
 
 class ArchInstallerTests(unittest.TestCase):
+    def test_entrypoint_hands_off_before_debian_backend_checks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / 'source'
+            source.mkdir()
+            (root / 'etc').mkdir()
+            (root / 'etc/mkinitcpio.conf').write_text('HOOKS=(base udev kms)\n')
+            text = (REPO / 'install.sh').read_text()
+            for prefix in ('/etc/', '/boot/', '/var/lib/', '/proc/'):
+                text = text.replace(prefix, str(root) + prefix)
+            (source / 'install.sh').write_text(text)
+            handoff = source / 'install-arch.sh'
+            handoff.write_text('#!/bin/sh\nprintf "arch: %s\\n" "$*"\nexit 23\n')
+            handoff.chmod(0o755)
+            mock = root / 'mock'
+            mock.mkdir()
+            for name, body in {
+                'id': 'echo 0',
+                'update-initramfs': f'touch "{root}/backend-probed"; exit 99',
+            }.items():
+                command = mock / name
+                command.write_text('#!/bin/sh\n' + body + '\n')
+                command.chmod(0o755)
+            result = subprocess.run(
+                ['bash', str(source / 'install.sh'), '--yes', '--reinstall'],
+                env=dict(os.environ, PATH=str(mock) + ':' + os.environ['PATH']),
+                capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 23, result.stdout + result.stderr)
+            self.assertEqual(result.stdout, 'arch: --yes --reinstall\n')
+            self.assertFalse((root / 'backend-probed').exists())
+            self.assertFalse((root / 'var').exists())
+
     def run_fixture(self, mode='ok', reinstall=False, uninstall=False,
                     missing=False, cmdline=True, grubfail=False, hookfail=False, hooks=None, override=False):
         with tempfile.TemporaryDirectory() as tmp:

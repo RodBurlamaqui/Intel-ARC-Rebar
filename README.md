@@ -207,9 +207,11 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 
 ## 4. Requirements
 
-- Debian or Ubuntu (`initramfs-tools`), or Arch Linux / CachyOS (`mkinitcpio` —
-  `install.sh` hands over to `install-arch.sh`). Kernel 6.12 or newer
-  recommended (the `xe` driver's ReBAR support). `pciutils`.
+- Debian or Ubuntu with an active `initramfs-tools` backend. A dracut-backed
+  `update-initramfs` is not supported by this installer, even if
+  `/etc/initramfs-tools` exists. Draft Arch Linux / CachyOS support uses
+  `mkinitcpio`; `install.sh` hands over to `install-arch.sh` on that layout.
+  Kernel 6.12 or newer recommended (the `xe` driver's ReBAR support). `pciutils`.
 - **Above 4G Decoding enabled in BIOS**, and an MMIO window above 4 GB at least
   as large as your VRAM rounded up to a power of two. `diagnose` checks this.
 - The GPU directly in a slot on a root port of its own (no external PCIe switch,
@@ -405,7 +407,9 @@ INSTALL.md  DISCLAIMER.md  LICENSE  CHANGELOG.md
 ## 13. Contributing
 
 Bug reports are welcome — open an issue with the output of `sudo arc-rebar
-diagnose` and `journalctl -k -b | grep -E 'arc-rebar|was not released|Small BAR'`.
+diagnose` and `sudo dmesg | grep -E 'arc-rebar|was not released|Small BAR'`.
+`journalctl -k -b` can omit userspace `/dev/kmsg` boot-script messages. Review
+diagnostics and redact private details before sharing them.
 Modifications and ports require the copyright holder's prior written approval
 (LICENSE §3.2): open an issue describing the change before writing it.
 
@@ -436,7 +440,7 @@ implementation only.
 
 ## 15. Credits
 
-- andersevenrud — the setpci + remove/rescan method, in a gist for the H11SSL-i + B580.
+- @andersevenrud — the setpci + remove/rescan method, in a [gist for the H11SSL-i + B580](https://gist.github.com/andersevenrud/eec93e9151117bc0d6b6133b40eaffa5).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
