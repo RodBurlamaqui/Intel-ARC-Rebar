@@ -5,6 +5,11 @@ All revisions on 2026-09-05, developed and verified on a Supermicro X9DRH-7TF
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
 ## Unreleased
+- Debian package purge: reject missing rebuild/inspection tools, fail on rebuild
+  errors or stale images, and restore prior managed hooks/boot files after
+  failure. Retain interrupted-purge recovery for `dpkg --purge` retries, preserve
+  source-owned hooks, and clean partial package-owned installations. Published
+  release assets are unchanged.
 - Surface community hardware reports for A750/A770 and pending A380 Arch
   validation alongside the original B580 tests. Link report evidence, retain
   known limitations, credit contributors/testers and invite additional model
