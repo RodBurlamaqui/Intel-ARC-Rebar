@@ -4,6 +4,21 @@ The original 2026-09-05 investigation was developed and verified on a Supermicro
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
+## 1.0.5 — 2026-11-05
+- Make PCIe verification explicitly read-only: unresolved correctable/Unsupported
+  Request DevSta bits return WARN (exit 2), with their age and cause unknown.
+  Severe status, PCIe error logs, invalid/unreadable registers and allocation or
+  driver failures retain FAIL (exit 1). A warning never overrides a failure.
+- Validate BAR resource values and reject malformed ReBAR registers cleanly.
+  Cover the reported A380/i915 and B580/VFIO resource layouts in mocked tests.
+- Preserve the optional register-clearing experiment on a separate branch;
+  exclude it from this release and reject `--recheck-pcie` before hardware access.
+- Include 44 hardware-free regression tests. Physical GPU stability and the
+  cause of the community's latched status remain unverified. The GPU boot hook
+  and installer/purge behavior are unchanged from v1.0.4.
+- Retain v1.0.4 and v1.0.3 downloads unchanged. Thanks to @TheKusja1 and @jacl3
+  for the A750/A380 evidence and @CelluloidRacer2 for the B580/VFIO report.
+
 ## 1.0.4 — 2026-11-05
 - Debian package purge: reject missing rebuild/inspection tools, fail on rebuild
   errors or stale images, and restore prior managed hooks/boot files after

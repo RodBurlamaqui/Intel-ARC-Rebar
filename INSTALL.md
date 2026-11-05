@@ -35,15 +35,15 @@ but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
 **From the .deb.** Download it and its checksum file:
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.4_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.5_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.4_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.5_all.deb: OK
 ```
 Then install it:
 ```
-sudo apt install ./arc-rebar_1.0.4_all.deb
+sudo apt install ./arc-rebar_1.0.5_all.deb
 ```
 You should see, at the end:
 ```
@@ -54,13 +54,15 @@ arc-rebar installed. Nothing is enabled yet.
 ```
 Installing the package changes nothing on your system yet.
 
-The older [v1.0.3 release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
-remains available for comparison or rollback. It lacks the installer/purge
-recovery fixes delivered in v1.0.4; keep backups before changing versions.
+Earlier [v1.0.4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.4)
+and [v1.0.3 release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
+remain available unchanged for comparison or rollback. Version 1.0.3 lacks the
+installer/purge recovery fixes delivered in v1.0.4; both older versions use the
+previous verifier classification. Keep backups before changing versions.
 
 **From the tarball instead:**
 ```
-tar xzf arc-rebar-1.0.4.tar.gz
+tar xzf arc-rebar-1.0.5.tar.gz
 cd arc-rebar
 ```
 Then everywhere below, replace `sudo arc-rebar <command>` with `sudo ./<command>.sh`.
@@ -124,7 +126,8 @@ sudo reboot
 ```
 sudo arc-rebar verify
 ```
-You should see every line `[ok]` and, at the end, `RESULT: PASS`. The important
+A clean check ends with `RESULT: PASS`. `RESULT: WARN` (exit 2) means PCIe
+health remains inconclusive; it is not a clean pass. The important
 lines:
 ```
   [ok]   boot verdict: done gpu=0000:XX:00.0 bar2=16384M
@@ -205,8 +208,15 @@ Your MMIO window is too small for the full BAR. Try a smaller one: add
 A safety check refused at boot. The reason maps to the table in README.md.
 
 **`verify` shows `RESULT: FAIL` on DevSta or AER.**
-Your GPU is reporting PCIe errors. That is not caused by this tool but you
-should not ignore it. Uninstall and investigate the errors first.
+PCIe error evidence remains; its cause is not established by verification.
+Preserve diagnostics and investigate before adopting the workaround.
+
+**`verify` shows `RESULT: WARN` for latched DevSta bits.**
+BAR allocation can succeed while previously latched correctable/Unsupported
+Request bits remain. They are not automatically harmless or caused by ReBAR.
+Verification never clears them or writes PCI registers. Exit 2 means unresolved
+PCIe status, not successful workload validation. See the evidence limits in
+[README.md](README.md#pcie-status).
 
 **`dmesg` still shows `Small BAR device`.**
 Normal. That is the driver's *first* probe, before the fix runs at boot. Judge by
