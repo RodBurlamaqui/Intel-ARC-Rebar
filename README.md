@@ -15,6 +15,31 @@ modifying firmware, the kernel, or Intel's drivers**. It runs from the initramfs
 at every boot, before the GPU driver loads, and it includes the diagnostics that
 tell you whether you have the problem and prove the fix worked.
 
+### Community hardware reports
+
+Developed and benchmarked on the **B580**, with community testing expanding
+coverage to other Intel Arc cards. Thank you to everyone sharing results and
+contributing ports. Here is the evidence reported so far:
+
+| Card | Evidence | Current limits / source |
+|---|---|---|
+| **B580** | Original project hardware tests, reboots and Vulkan/OpenCL workloads on Supermicro X9DRH-7TF, Debian, `xe` | [Recorded tests](docs/TESTS.md); benchmarks below belong to this setup |
+| **A750** | Community reports successful 8 GiB BAR2, persistent boot hook, `i915` and Jellyfin transcoding on Supermicro H11SSL-i / Proxmox | [Report #2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2); latched PCIe status still produces a verifier failure under investigation |
+| **A770 / A750** | Community reports success in an E5-2697 v2 LLM-server setup | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3); the script currently handles only the first qualifying GPU |
+| **A380** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the proposed Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [draft #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation pending |
+
+**Testing another model? Your report is welcome.** Additional Arc models may
+qualify when the PCIe topology, ReBAR capability and MMIO checks pass. A model
+name alone does not establish compatibility. Read the prerequisites and run
+`diagnose` first; never force a refusal.
+[Share a hardware report](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/new?template=hardware-report.md)
+or read the [compatibility evidence and reporting guide](docs/COMPATIBILITY.md).
+
+Community reports describe particular setups; they do not establish universal
+support. Stars show interest in the project; compatibility comes from documented
+hardware results. Arch support remains in draft, and multi-GPU operation is an
+open limitation.
+
 ![Intel Arc B580 Limited Edition, exploded view](docs/img/intel-arc-b580-press.jpg)
 
 <sub>Intel Arc B580 Limited Edition. Photo © Intel Corporation, from Intel's newsroom press kit for the Arc B-Series launch (Dec 2024), reproduced with credit. The photo is Intel's and is **not** covered by this project's licence.</sub>
@@ -207,7 +232,9 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 
 ## 4. Requirements
 
-- Debian or Ubuntu (`initramfs-tools`). Kernel 6.12 or newer recommended (the
+- Debian or Ubuntu with an active `initramfs-tools` backend. A dracut-backed
+  `update-initramfs` is not supported by this installer, even if
+  `/etc/initramfs-tools` exists. Kernel 6.12 or newer recommended (the
   `xe` driver's ReBAR support). `pciutils`.
 - **Above 4G Decoding enabled in BIOS**, and an MMIO window above 4 GB at least
   as large as your VRAM rounded up to a power of two. `diagnose` checks this.
@@ -237,11 +264,12 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 | BAR2 unassigned after the rescan | **rolls back** to the original size; `rolled-back` |
 | `norebar` on the kernel command line | `skip norebar` |
 
-Hardware-tested: Battlemage on the board above, plus the MMIO-too-small,
-no-window and step-down refusals against faked `/proc/iomem` files. The
-shared-root-port, unexpected-topology and rolled-back paths are reviewed, not
-hardware-tested. Alchemist is untested (same switch design; Intel's quirk
-targets both).
+Maintainer hardware validation covers the B580 setup above. Community Alchemist
+reports and their limits are listed in [Community hardware reports](#community-hardware-reports).
+The MMIO-too-small, no-window and step-down checks were also exercised against
+faked `/proc/iomem` files. The shared-root-port, unexpected-topology and
+rolled-back paths were reviewed, not hardware-tested. More model/platform
+reports are welcome; unreported combinations remain unverified.
 
 ## 6. Install
 
@@ -404,7 +432,9 @@ INSTALL.md  DISCLAIMER.md  LICENSE  CHANGELOG.md
 ## 13. Contributing
 
 Bug reports are welcome — open an issue with the output of `sudo arc-rebar
-diagnose` and `journalctl -k -b | grep -E 'arc-rebar|was not released|Small BAR'`.
+diagnose` and `sudo dmesg | grep -E 'arc-rebar|was not released|Small BAR'`.
+`journalctl -k -b` can omit userspace `/dev/kmsg` boot-script messages. Review
+diagnostics and redact private details before sharing them.
 Modifications and ports require the copyright holder's prior written approval
 (LICENSE §3.2): open an issue describing the change before writing it.
 
@@ -435,7 +465,14 @@ implementation only.
 
 ## 15. Credits
 
-- andersevenrud — the setpci + remove/rescan method, in a gist for the H11SSL-i + B580.
+- @andersevenrud — the setpci + remove/rescan method, in a [gist for the H11SSL-i + B580](https://gist.github.com/andersevenrud/eec93e9151117bc0d6b6133b40eaffa5).
+- @hrimfaxi — the original Arch/CachyOS mkinitcpio port and A380 image/dry-run
+  checks in [#4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), preserved
+  in [#6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6), pending runtime validation.
+- @TheKusja1 — the detailed A750/i915 boot, workload and PCIe-status report in
+  [#2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2).
+- @ThatGuy-Bob — A770/A750 results and the multi-GPU limitation report in
+  [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned

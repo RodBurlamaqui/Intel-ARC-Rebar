@@ -10,17 +10,20 @@ SOURCE = pathlib.Path(__file__).resolve().parents[1] / 'verify.sh'
 class VerifyTests(unittest.TestCase):
     def run_case(self, statuses=('0000',), seconds=0, counters='0',
                  later=None, write_fails=False, initial_fail=0, log='', full=False,
-                 bar='0x0000000200000000', driver=True, log_fails=False, parent=False):
+                 bar='0x0000000200000000', bar_end='0x00000003ffffffff',
+                 driver=True, driver_name='i915', log_fails=False, parent=False,
+                 cap='0003f000', ctl='00000d22', bdf='0000:83:00.0', device=True):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)
-            dev = root / '0000:83:00.0'
-            dev.mkdir()
-            (dev / 'vendor').write_text('0x8086\n')
-            (dev / 'class').write_text('0x030000\n')
-            (dev / 'resource').write_text('0 0 0\n0 0 0\n' + bar + ' 0x00000003ffffffff 0\n')
-            if driver:
-                (root / 'i915').mkdir()
-                (dev / 'driver').symlink_to(root / 'i915')
+            dev = root / bdf
+            if device:
+                dev.mkdir()
+                (dev / 'vendor').write_text('0x8086\n')
+                (dev / 'class').write_text('0x030000\n')
+                (dev / 'resource').write_text('0 0 0\n0 0 0\n' + bar + ' ' + bar_end + ' 0\n')
+                if driver:
+                    (root / driver_name).mkdir()
+                    (dev / 'driver').symlink_to(root / driver_name)
             if parent:
                 bridge = root / '0000:81:00.0'
                 bridge.mkdir()
@@ -29,7 +32,7 @@ class VerifyTests(unittest.TestCase):
                 counter = bridge / 'aer_rootport_total_err_cor'
             else:
                 counter = dev / 'aer_dev_correctable'
-            if counters is not None:
+            if counters is not None and device:
                 counter.write_text(('' if parent else 'TOTAL_ERR_COR ') + counters + '\n')
             (root / 'statuses').write_text('\n'.join(statuses) + '\n')
             (root / 'reads').write_text('0')
@@ -37,23 +40,24 @@ class VerifyTests(unittest.TestCase):
             (root / 'log').write_text(log)
             (root / 'cmdline').write_text('pci=realloc\n')
             # Test-only path substitution: no runtime environment can redirect sysfs.
-            source = SOURCE.read_text().replace('/sys/bus/pci/devices/*', str(root / '0000:*'))
+            source = SOURCE.read_text().replace('/sys/bus/pci/devices/*', str(root / '????:??:??.?'))
             source = source.replace('/proc/cmdline', str(root / 'cmdline'))
             (root / 'verify.sh').write_text(source)
             code = r'''
 source "$T/verify.sh"
 setpci(){
-  [[ $1 == -s && $2 == 0000:83:00.0 ]] || return 90
+  [[ ${3-} == *=* ]] && echo "$3" >> "$T/writes"
+  [[ $1 == -s && $2 == "$BDF" ]] || return 90
   case "$3" in
-    ECAP_REBAR+4.l) echo 0003f000;;
-    ECAP_REBAR+8.l) echo 00000d22;;
+    ECAP_REBAR+4.l) echo "$CAP";;
+    ECAP_REBAR+8.l) echo "$CTL";;
     CAP_EXP+0xa.w)
       n=$(cat "$T/reads"); n=$((n+1)); echo "$n" > "$T/reads"
       v=$(sed -n "${n}p" "$T/statuses")
       [[ -n $v ]] || v=$(tail -1 "$T/statuses")
       [[ $v != ERROR ]] || return 1
       echo "$v";;
-    CAP_EXP+0xa.w=*) echo "$3" >> "$T/writes"; return "$WRITE_FAILS";;
+    CAP_EXP+0xa.w=*) return "$WRITE_FAILS";;
     *) return 91;;
   esac
 }
@@ -68,7 +72,7 @@ fail=$INITIAL_FAIL; inconclusive=0
 if [[ $FULL == 1 ]]; then
   if (( SECONDS_TEST )); then main --recheck-pcie "$SECONDS_TEST"; else main; fi
 else
-  check_pcie "$T/0000:83:00.0" "$SECONDS_TEST"
+  check_pcie "$T/$BDF" "$SECONDS_TEST"
   check_kernel_log "$(cat "$T/log")"
   result
 fi
@@ -78,8 +82,10 @@ fi
                        LATER='' if later is None else later,
                        WRITE_FAILS=str(int(write_fails)), INITIAL_FAIL=str(initial_fail),
                        FULL=str(int(full)), LOG_FAILS=str(int(log_fails)), COUNTER_PATH=str(counter),
-                       COUNTER_PREFIX='' if parent else 'TOTAL_ERR_COR ')
-            p = subprocess.run(['bash', '-c', code], env=env, text=True, capture_output=True)
+                       COUNTER_PREFIX='' if parent else 'TOTAL_ERR_COR ',
+                       CAP=cap, CTL=ctl, BDF=bdf)
+            p = subprocess.run(['bash', '-c', code], env=env, text=True, capture_output=True,
+                               timeout=10)
             return p.returncode, p.stdout + p.stderr, (root / 'writes').read_text()
 
     def test_clean(self):
@@ -96,6 +102,34 @@ fi
             self.assertEqual(rc, 2, out)
             self.assertIn('age and cause unknown', out)
             self.assertEqual(writes, '')
+
+    def test_issue10_reported_a380_8gib_i915_latch_is_warn_only(self):
+        rc, out, writes = self.run_case(
+            statuses=('0008',), full=True, cap='0003f000', ctl='00000d22',
+            bar='0x0000000200000000', bar_end='0x00000003ffffffff', driver_name='i915')
+        self.assertEqual(rc, 2, out)
+        self.assertIn('BAR2 = 8192 MiB (size field 13 = card maximum)', out)
+        self.assertIn('driver: i915', out)
+        self.assertIn('latched correctable/Unsupported Request status; age and cause unknown', out)
+        self.assertEqual(writes, '')
+
+    def test_issue11_reported_b580_16gib_vfio_resources_do_not_claim_workload_health(self):
+        rc, out, writes = self.run_case(
+            statuses=('0000',), full=True, cap='0007f000', ctl='00000e22',
+            bar='0x0000000200000000', bar_end='0x00000005ffffffff',
+            driver_name='vfio-pci', log='')
+        self.assertEqual(rc, 0, out)
+        self.assertIn('BAR2 = 16384 MiB (size field 14 = card maximum)', out)
+        self.assertIn('driver: vfio-pci', out)
+        self.assertIn('no arc-rebar verdict in the kernel log this boot', out)
+        self.assertIn('Driver binding/BAR allocation do not establish GPU workload health.', out)
+        self.assertEqual(writes, '')
+
+    def test_no_intel_gpu_fails_without_pci_writes(self):
+        rc, out, writes = self.run_case(full=True, device=False)
+        self.assertEqual(rc, 1, out)
+        self.assertIn('no Intel GPU with a ReBAR capability found', out)
+        self.assertEqual(writes, '')
 
     def test_one_shot_mask_excludes_aux_power(self):
         rc, out, writes = self.run_case(('0019', '0010'), seconds=2, full=True)

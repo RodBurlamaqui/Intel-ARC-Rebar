@@ -75,3 +75,27 @@ Fixtures cover clean/auxiliary status, unresolved latches, one-shot exact W1C
 masks, immediate/delayed/new errors, severe errors, read/write failures,
 endpoint/parent counter changes and resets, missing/malformed counters,
 allocation/driver failures, unavailable/error-containing logs and CLI validation.
+
+## Additional report-shaped software checks (2026-11-05)
+
+The VM regression suite now includes two later community reports:
+
+- [A380 / ThinkCentre M900, issue #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10):
+  an 8 GiB assigned BAR, i915 binding and DevSta `0008`. The mocked default
+  verifier returns WARN (exit 2), preserves the unresolved latch and performs no
+  register writes. This is the expected proposed behavior, not a claim that the
+  reported latch is harmless or that the reporter has tested this PR.
+- [B580 / PowerEdge R720 with VFIO, issue #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11):
+  a 16 GiB assigned BAR and vfio-pci binding. Resource checks can pass with a
+  missing boot-verdict warning while explicitly saying that allocation/binding
+  do not establish guest GPU workload health. The reported guest copy-engine
+  faults need guest-side evidence and a comparison baseline; host PCIe checks
+  cannot identify their cause.
+
+A no-GPU fixture must fail rather than imply that a VM validated the hardware.
+The fixture now records every attempted register write before validating its
+address/register, so read-only assertions also catch unexpected write targets.
+All 25 verifier regression methods pass. PCI accesses, sysfs, kernel logs,
+counters and time are simulated; the executable verifier is unchanged. Physical
+GPU tests and the optional one-shot clear still need the hardware validation
+above. No raw machine logs or private infrastructure details are published.
