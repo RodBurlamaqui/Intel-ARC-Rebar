@@ -5,6 +5,8 @@ an active `initramfs-tools` backend. Kernel 6.12 or newer recommended. You need
 `sudo`. A distribution version or the presence of `/etc/initramfs-tools` alone
 does not establish compatibility: some systems provide a dracut-backed
 `update-initramfs` command instead.
+Experimental, source-only Arch Linux / CachyOS (mkinitcpio) support is described under
+[Arch Linux / CachyOS](#arch-linux--cachyos-mkinitcpio) below.
 
 **Do this over SSH if you can.** The optional live test turns the local display
 off for about 10 seconds; if the machine were to hang, you want a second way in.
@@ -191,6 +193,61 @@ Now do **A3**, **A4**, **A5** above.
 
 ---
 
+## Arch Linux / CachyOS (mkinitcpio)
+
+The boot script is the same file; the initramfs plumbing is experimental.
+Use a complete source checkout. `install.sh` detects `mkinitcpio` and requires
+`--experimental-arch` before handing over to `install-arch.sh`. The direct
+`install-arch.sh` entrypoint requires the same flag. Without it, both refuse
+before hardware probing or boot-file changes; `--yes` and `--reinstall` do not
+bypass the opt-in. Debian/Ubuntu installation rejects this Arch-only flag.
+
+Real Arch boot/GPU validation remains open in
+[#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). Software checks
+cannot establish boot ordering or workload health. Keep a restorable system
+backup, a known-good boot image and rescue access before trying the experiment.
+The flow is diagnose → explicitly opt in → install → reboot → verify:
+
+```
+sudo pacman -S --needed pciutils mkinitcpio
+sudo ./diagnose.sh
+sudo ./install.sh --experimental-arch   # explicitly opt in to the Arch port
+sudo reboot
+sudo ./verify.sh
+```
+
+`install-arch.sh --experimental-arch` does the same safety checks and the same licence/disclaimer
+acceptance, then:
+
+- installs the boot script to `/usr/lib/arc-rebar/arc-rebar-boot`
+- installs `/etc/initcpio/install/arc-rebar` (build hook) and
+  `/etc/initcpio/hooks/arc-rebar` (runtime hook)
+- adds `arc-rebar` to `HOOKS` in `/etc/mkinitcpio.conf`, immediately **before
+  `kms`**, and leaves the rest of the array alone
+- adds `pci=realloc` to `/etc/default/grub` and runs `grub-mkconfig` if it is not
+  there yet (any other bootloader: add it by hand)
+- backs up managed configuration/hooks, runs `mkinitcpio -P`, and post-checks the image for the boot script, the hook,
+  `setpci` and `tr`
+
+Two things that are mkinitcpio-specific:
+
+- **`arc-rebar` must stay after `udev` and before `kms`.** This is the supported
+  configuration; physical testing must still establish actual timing relative
+  to driver initialization, including any early graphics loading.
+- **mkinitcpio's bundled busybox has no `tr` applet**, which the boot script uses
+  to split the device path. The build hook therefore also copies coreutils' `tr`
+  into the image. Without it the script would log
+  `skip reason=unexpected-topology` and silently do nothing.
+
+GRUB on Arch has no `update-grub`; regenerate with
+`sudo grub-mkconfig -o /boot/grub/grub.cfg`. Uninstall with
+`sudo ./uninstall-arch.sh` (removes both hooks, drops `arc-rebar` from `HOOKS`,
+rebuilds the initramfs). Removal does not require the experimental flag.
+Reinstall with `sudo ./install.sh --experimental-arch --reinstall`.
+See [installer safeguards](#arch-installer-safeguards-pending-hardware-validation) for rollback behavior and validation limits.
+
+---
+
 ## If something is wrong
 
 **The machine does not boot, or boots with no display, after install.**
@@ -263,10 +320,15 @@ release remains available unchanged and does not contain them.
 sudo ./uninstall.sh
 ```
 
-Both leave `pci=realloc` in GRUB; it is harmless. To remove it:
+**Arch / CachyOS:**
+```
+sudo ./uninstall-arch.sh
+```
+
+All leave `pci=realloc` in GRUB; it is harmless. To remove it:
 ```
 sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
-sudo update-grub
+sudo update-grub          # Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
 ### Debian/Ubuntu installer failure recovery
@@ -307,7 +369,55 @@ reinstallation, `norebar` recovery, and removal on disposable Debian/Ubuntu syst
 with the affected Intel Arc hardware, checking BAR allocation, driver binding and
 a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
 Mocked tests do not establish bootability or hardware correctness. This change is
-independent of the pending Arch/mkinitcpio work.
+independent of the experimental Arch/mkinitcpio port.
 
 See [VM installer validation](docs/INSTALLER-VM-TESTS.md) for the completed
 software checks, their limits, and the remaining release gates.
+
+### Arch installer safeguards (pending hardware validation)
+
+The source-tree Arch installer and uninstaller retain root-only backups of the
+managed configuration and hook files under `/var/lib/arc-rebar/backups/change.*`.
+Keep `arch-transaction.sh` alongside the scripts when running from a checkout.
+A failed file installation, GRUB generation, initramfs build, or post-check
+returns failure and restores the previous managed files, including an existing
+installation during `--reinstall`. It then attempts to rebuild the restored
+configuration. Build/recovery output is kept in that backup directory.
+
+If recovery also fails, the scripts explicitly say **do not reboot**: inspect
+the saved logs and repair the boot images first. These are configuration/hook
+backups, not copies of the boot images or a guarantee of recovery after power
+loss, disk failure, or forced termination. Do not run concurrent installers or
+package/kernel updates while changing these hooks.
+
+Automatic editing requires one simple single-line `HOOKS=(...)` assignment,
+with `udev` before `kms`; quoted hook names and trailing whitespace are accepted.
+Reinstallation moves `arc-rebar` before `kms` if needed. Config drop-ins and
+systemd-based initramfs configurations are refused rather than silently editing
+an ineffective setting. Managed symlinks are also refused.
+
+The port is available as an explicit opt-in experiment. Before removing the
+experimental designation, record installation, warm/cold boot with BAR
+allocation and driver binding, workloads, reinstallation and removal on suitable
+Arch/CachyOS hardware in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
+Confirm the hook runs at the intended time;
+image membership alone does not prove runtime ordering. Preset-specific config
+or output paths, UKIs, early graphics modules and non-GRUB boot paths still
+need dedicated review/testing. The existing image post-check scans conventional
+paths; this experiment does not establish support for every mkinitcpio layout.
+
+Hardware-free regression checks from the repository root:
+
+```bash
+python3 -m unittest discover -s tests -v
+bash -n install-arch.sh uninstall-arch.sh arch-transaction.sh
+```
+
+Real moduleless mkinitcpio builds, inert-hook execution and rebuild/recovery tests
+also passed in an isolated userspace filesystem. See the
+[Arch userspace test record](docs/ARCH-USERSPACE-TESTS.md) for exact scope and
+remaining boot/hardware validation; those tests do not replace a real Arch boot.
+
+Configuration/preset reference:
+https://man.archlinux.org/man/mkinitcpio.conf.5.en and
+https://man.archlinux.org/man/mkinitcpio.8.en

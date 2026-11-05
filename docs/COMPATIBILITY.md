@@ -17,7 +17,7 @@ unreported model/platform combination will work.
 | A770 16 GB / A750 8 GB; Asus Z9PA-D8, E5-2697 v2, Debian SID / forced `xe` | Reporter describes appropriate BAR sizes with a locally modified multi-card loop and an LLM workload | [Issue #3 follow-up](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6649456377). Unmodified diagnostics and three-card testing are planned, not completed. This does not validate an upstream multi-GPU implementation. |
 | A380 6 GB; Lenovo ThinkCentre M900, OpenMediaVault/Debian, `i915`, initramfs-tools | Reporter describes boot persistence, an 8 GiB BAR at the card's advertised maximum, a `PLAN: done` boot verdict and normal GPU use | [Issue #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10). Before-size, BIOS/kernel versions and installed revision were not recorded; reinstall/removal were untested. Verifier FAIL is triggered by DevSta `0008`, with no AER reports in the supplied excerpt. A report-shaped PR #5 fixture returns unresolved WARN without writes; hardware validation and the latch's cause remain pending. This is Debian evidence, separate from the Arch port. |
 | B580 12 GB; Dell PowerEdge R720, Proxmox host / VFIO, Ubuntu guest / `xe` | Reporter describes a 256 MiB to 16 GiB BAR change, persistence across reported reboots, full guest-visible VRAM and llama.cpp workloads | [Issue #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11), closed by its author as a completed hardware report. The boot verdict is missing; the exact hook execution on that boot is unconfirmed. Guest copy-engine faults/hangs and slow pageable transfers are reported, with cause unassigned and no comparison baseline. These limits remain despite resource-check PASS. |
-| A380; CachyOS, `i915`, proposed mkinitcpio port | Contributor describes image contents and dry-run topology resolution inside the built image | [Original PR #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), preserved in [draft PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6). Successful real boot/runtime, workload, reinstall and removal validation remain pending. |
+| A380; CachyOS, `i915`, experimental mkinitcpio port | Contributor describes image contents and dry-run topology resolution inside the built image | [Original PR #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), preserved in [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6). Installation requires `--experimental-arch`. Successful real boot/runtime, workload, reinstall and removal validation are tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). |
 
 These rows reflect project tests and first-hand reports. Repeated articles about
 the original B580 test and GitHub stars are not additional hardware validations.
@@ -43,8 +43,10 @@ a modified fork does not automatically validate this project's version.
 - A750/A380 BAR/workload success does not establish that their PCIe latches are harmless.
   Report verifier failures and relevant kernel evidence as observed.
 - An [experimental Arch source preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/arch-preview-2026.11.05.1)
-  is public; #6 remains the main-merge/feedback thread. Debian/Ubuntu VM tests with an
-  inert boot payload validate installer plumbing, not GPU behavior or Arch.
+  remains public and unchanged. The current source installer requires
+  `--experimental-arch`; its hardware follow-up is [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
+  Mocked tests and isolated moduleless Arch userspace builds with an inert payload
+  validate installer plumbing, not a physical GPU or real Arch kernel boot.
 
 ## Share a result for your setup
 

@@ -1,0 +1,12 @@
+#!/bin/sh
+# arc-rebar mkinitcpio runtime hook: run the boot script once, before kms.
+# The script never fails the boot; every exit path logs 'arc-rebar: PLAN: ...'.
+# Escape hatch: add 'norebar' to the kernel command line.
+# Hooks are sourced by /init (busybox ash), so no shebang is used here; the boot
+# script itself is run through busybox sh from /usr/bin (there is no /bin/sh in
+# the image, so 'sh /arc-rebar-boot' rather than executing it via its shebang).
+
+run_hook() {
+    [ -f /arc-rebar-boot ] || return 0
+    sh /arc-rebar-boot
+}

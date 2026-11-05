@@ -46,7 +46,8 @@ case "$#:${1-}" in
 esac
 echo "== arc-rebar verify (boot $(uptime -s)) =="
 grep -q 'pci=realloc' /proc/cmdline && ok "pci=realloc active" || bad "pci=realloc not on the kernel cmdline"
-[ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ] && ok "hook installed" || warn "hook not installed (live-only run?)"
+{ [ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ] || [ -e /etc/initcpio/install/arc-rebar ]; } \
+  && ok "hook installed" || warn "hook not installed (live-only run?)"
 bootlog=$(dmesg 2>/dev/null) || bad 'kernel log unavailable; cannot verify PCIe reports'
 check_kernel_log "$bootlog"
 plan=$(printf '%s\n' "$bootlog" | grep 'arc-rebar: PLAN' | tail -1 | sed 's/.*PLAN: //')
