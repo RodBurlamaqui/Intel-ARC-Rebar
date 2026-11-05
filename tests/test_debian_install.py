@@ -130,6 +130,16 @@ fi
         self.assertFalse((self.root / 'var/lib/arc-rebar/install-transaction').exists())
         self.assertEqual((self.root / 'boot/initrd.img-6.12-test').read_text(), 'new\n')
 
+    def test_retained_purge_journal_blocks_install_and_install_recovery(self):
+        (self.root / 'var/lib/arc-rebar/purge-transaction').mkdir()
+        before = self.snapshot()
+        for args in ((), ('--recover',)):
+            result = self.run_install('', *args)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('purge transaction retained', result.stdout)
+            self.assertEqual(before, self.snapshot())
+            self.assertFalse((self.root / 'var/lib/arc-rebar/install-transaction').exists())
+
     def test_failures(self):
         for failure in ('grub', 'initramfs', 'stale', 'copy', 'partial', 'post', 'inspect', 'backup', 'term'):
             with self.subTest(failure=failure):

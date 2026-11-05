@@ -219,6 +219,31 @@ sudo apt purge arc-rebar      # removes the tool AND the boot hook (only if the 
 ```
 (`apt remove` removes only the tool and deliberately leaves the boot hook active.)
 
+Packages built from the current source snapshot package-owned hooks, their origin
+marker, GRUB files and existing conventional initramfs images before purging the
+hook. Purge rebuilds all kernel images and checks that the runtime script is gone.
+A missing tool, failed rebuild, failed archive inspection or stale image returns
+failure and attempts to restore the saved boot files. Source-owned/unknown hooks
+are preserved. Partial package-owned hook installations are also cleaned up.
+
+On purge failure, diagnostics/snapshots remain under
+`/var/lib/arc-rebar/purge-transaction`. Fix the reported storage or tool problem,
+then retry `sudo dpkg --purge arc-rebar`; the retained package maintainer script
+first recovers an interrupted transaction. Use this retry even though the
+package's ordinary commands may already have been removed. If recovery fails,
+**do not reboot** until the boot files have been repaired. A retained purge
+transaction blocks the source installer to prevent it overwriting recovery state.
+
+This is file-level recovery, not an atomic power-loss guarantee. Keep enough space
+for copies of all `/boot/initrd.img-*` files, including existing backups. Managed
+file symlinks/whitespace paths are refused, and concurrent manual boot updates or
+third-party hook side effects outside the snapshot are not covered. A shared lock
+file and original escape-hatch backups remain. See the
+[package lifecycle test record](docs/DEBIAN-PACKAGE-TESTS.md).
+
+These package-purge safeguards are a source-tree change; the published v1.0.3
+`.deb` is unchanged and does not contain them.
+
 **Tarball:**
 ```
 sudo ./uninstall.sh

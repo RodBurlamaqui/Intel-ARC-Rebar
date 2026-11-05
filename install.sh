@@ -20,6 +20,9 @@ TX=$STATE/install-transaction
 mkdir -p "$STATE"
 exec 9>"$STATE/install.lock"
 flock -n 9 || { echo "another installer is running"; exit 1; }
+[ ! -d "$STATE/purge-transaction" ] || {
+  echo 'Package purge transaction retained: fix the error and retry sudo dpkg --purge arc-rebar before installing.'; exit 1;
+}
 restore_transaction() {
   local failed=0 n path tmp
   while IFS=' ' read -r n path; do
