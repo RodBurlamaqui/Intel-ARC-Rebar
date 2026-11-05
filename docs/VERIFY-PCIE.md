@@ -10,11 +10,18 @@
 - [Issue #10, A380 / ThinkCentre M900 / i915 / OpenMediaVault](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10):
   the reporter describes a successful boot, normal GPU use, an 8 GiB assigned
   BAR, `PLAN: done` and DevSta `0008`. This is accepted community hardware
-  evidence; the unresolved verifier symptom is tracked with #2.
+  evidence; its legacy verifier classification is addressed by the same v1.0.5
+  fix as #2. The physical latch's cause remains unknown.
 - [Issue #11, B580 / PowerEdge R720 / VFIO](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11):
   a reported 16 GiB BAR and vfio-pci binding establish resource allocation,
   not the health of guest copy engines. Guest faults still need a comparison
   baseline and relevant guest evidence.
+
+The verifier classification fix is shipped in v1.0.5 through PR #5. Issue #2
+is closed for that software correction; closure does not establish the physical
+cause or harmlessness of the reported PCIe status. The 14 verifier regression
+methods also pass against the checksum-verified published v1.0.5 package with
+PCI access intercepted. Reporter confirmation on that release is still welcome.
 
 These reports were not independently reproduced on a physical GPU. Neither a
 successful workload nor a latched bit alone establishes the event's cause.
