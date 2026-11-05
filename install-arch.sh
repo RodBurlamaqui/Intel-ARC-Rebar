@@ -3,10 +3,14 @@
 # Same contract as install.sh: refuses unless the boot script's own dry run says
 # it would act on this machine. Configuration/hooks are backed up before edits.
 set -e
-YES=; LIVE=; REINST=
+YES=; LIVE=; REINST=; EXPERIMENTAL_ARCH=
 for a in "$@"; do case "$a" in
+  --experimental-arch) EXPERIMENTAL_ARCH=1;;
   --yes) YES=1;; --live-test) LIVE=1;; --reinstall) REINST=1;;
-  *) echo "usage: $0 [--yes] [--live-test] [--reinstall]"; exit 1;; esac; done
+  *) echo "usage: $0 --experimental-arch [--yes] [--live-test] [--reinstall]"; exit 1;; esac; done
+[ -n "$EXPERIMENTAL_ARCH" ] || {
+  echo 'Arch/CachyOS support is experimental; rerun with --experimental-arch to opt in. No boot files changed.'; exit 2;
+}
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
 BOOT_DST=/usr/lib/arc-rebar/arc-rebar-boot
@@ -15,7 +19,8 @@ RUN_DST=/etc/initcpio/hooks/arc-rebar
 CONF=/etc/mkinitcpio.conf
 source "$S/arch-transaction.sh"
 
-echo "== arc-rebar safe install (mkinitcpio) =="
+echo "== arc-rebar experimental install (mkinitcpio) =="
+echo 'Physical Arch boot/GPU validation is pending; see INSTALL.md and issue #15.'
 echo; echo "== PRE-CHECKS: environment =="
 [ -f "$CONF" ] || { echo "no $CONF: not an mkinitcpio system. Debian/Ubuntu: use install.sh."; exit 1; }
 command -v setpci >/dev/null || { echo "pciutils missing:  pacman -S pciutils"; exit 1; }

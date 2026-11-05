@@ -2,14 +2,26 @@
 # arc-rebar safe installer (Debian/Ubuntu, initramfs-tools).
 # Refuses unless the boot script's own dry run says it would act on this machine.
 set -e
-YES=; LIVE=; REINST=; RECOVER=
+YES=; LIVE=; REINST=; RECOVER=; EXPERIMENTAL_ARCH=
 for a in "$@"; do case "$a" in
+  --experimental-arch) EXPERIMENTAL_ARCH=1;;
   --recover) RECOVER=1;; --yes) YES=1;; --live-test) LIVE=1;; --reinstall) REINST=1;;
-  *) echo "usage: $0 [--yes] [--live-test] [--reinstall] [--recover]"; exit 1;; esac; done
+  *) echo "usage: $0 [--yes] [--live-test] [--reinstall] [--recover] [--experimental-arch]"; exit 1;; esac; done
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
-# Arch / CachyOS: hand over to the mkinitcpio installer.
-if [ ! -d /etc/initramfs-tools ] && [ -f /etc/mkinitcpio.conf ]; then exec "$S/install-arch.sh" "$@"; fi
+# Arch / CachyOS remains an explicit source-tree experiment.
+if [ ! -d /etc/initramfs-tools ] && [ -f /etc/mkinitcpio.conf ]; then
+  [ -n "$EXPERIMENTAL_ARCH" ] || {
+    echo 'Arch/CachyOS support is experimental; rerun with --experimental-arch to opt in. No boot files changed.'; exit 2;
+  }
+  [ -f "$S/install-arch.sh" ] || {
+    echo 'Experimental Arch support requires the complete source checkout; it is not shipped in the Debian package.'; exit 2;
+  }
+  exec "$S/install-arch.sh" "$@"
+fi
+[ -z "$EXPERIMENTAL_ARCH" ] || {
+  echo '--experimental-arch requires an Arch/mkinitcpio system; no boot files changed.'; exit 2;
+}
 HOOK_DST=/etc/initramfs-tools/hooks/arc-rebar
 SCR_DST=/etc/initramfs-tools/scripts/init-premount/arc-rebar
 INITRD=/boot/initrd.img-$(uname -r)

@@ -13,20 +13,24 @@ MANAGED = ('etc/mkinitcpio.conf', 'etc/default/grub', 'boot/grub/grub.cfg',
 
 
 class ArchInstallerTests(unittest.TestCase):
-    def test_entrypoint_hands_off_before_debian_backend_checks(self):
+    def run_entrypoint(self, args, arch=True, debian=False, helper=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / 'source'
             source.mkdir()
             (root / 'etc').mkdir()
-            (root / 'etc/mkinitcpio.conf').write_text('HOOKS=(base udev kms)\n')
+            if arch:
+                (root / 'etc/mkinitcpio.conf').write_text('HOOKS=(base udev kms)\n')
+            if debian:
+                (root / 'etc/initramfs-tools').mkdir()
             text = (REPO / 'install.sh').read_text()
             for prefix in ('/etc/', '/boot/', '/var/lib/', '/proc/'):
                 text = text.replace(prefix, str(root) + prefix)
             (source / 'install.sh').write_text(text)
-            handoff = source / 'install-arch.sh'
-            handoff.write_text('#!/bin/sh\nprintf "arch: %s\\n" "$*"\nexit 23\n')
-            handoff.chmod(0o755)
+            if helper:
+                handoff = source / 'install-arch.sh'
+                handoff.write_text('#!/bin/sh\nprintf "arch: %s\\n" "$*"\nexit 23\n')
+                handoff.chmod(0o755)
             mock = root / 'mock'
             mock.mkdir()
             for name, body in {
@@ -37,16 +41,42 @@ class ArchInstallerTests(unittest.TestCase):
                 command.write_text('#!/bin/sh\n' + body + '\n')
                 command.chmod(0o755)
             result = subprocess.run(
-                ['bash', str(source / 'install.sh'), '--yes', '--reinstall'],
+                ['bash', str(source / 'install.sh'), *args],
                 env=dict(os.environ, PATH=str(mock) + ':' + os.environ['PATH']),
                 capture_output=True, text=True, timeout=10)
-            self.assertEqual(result.returncode, 23, result.stdout + result.stderr)
-            self.assertEqual(result.stdout, 'arch: --yes --reinstall\n')
             self.assertFalse((root / 'backend-probed').exists())
             self.assertFalse((root / 'var').exists())
+            return result.returncode, result.stdout + result.stderr
+
+    def test_entrypoint_hands_off_before_debian_backend_checks(self):
+        rc, out = self.run_entrypoint(['--experimental-arch', '--yes', '--reinstall'])
+        self.assertEqual(rc, 23, out)
+        self.assertEqual(out, 'arch: --experimental-arch --yes --reinstall\n')
+
+    def test_entrypoint_requires_opt_in_before_arch_dispatch(self):
+        for args in ([], ['--yes'], ['--yes', '--reinstall']):
+            with self.subTest(args=args):
+                rc, out = self.run_entrypoint(args)
+                self.assertEqual(rc, 2, out)
+                self.assertIn('--experimental-arch', out)
+                self.assertNotIn('arch: ', out)
+
+    def test_entrypoint_rejects_arch_flag_on_debian_before_changes(self):
+        # initramfs-tools takes precedence even if mkinitcpio is also present.
+        for arch in (False, True):
+            rc, out = self.run_entrypoint(['--experimental-arch', '--yes'],
+                                          arch=arch, debian=True)
+            self.assertEqual(rc, 2, out)
+            self.assertNotIn('arch: ', out)
+
+    def test_entrypoint_reports_missing_arch_source(self):
+        rc, out = self.run_entrypoint(['--experimental-arch'], helper=False)
+        self.assertEqual(rc, 2, out)
+        self.assertIn('complete source checkout', out)
 
     def run_fixture(self, mode='ok', reinstall=False, uninstall=False,
-                    missing=False, cmdline=True, grubfail=False, hookfail=False, hooks=None, override=False):
+                    missing=False, cmdline=True, grubfail=False, hookfail=False,
+                    hooks=None, override=False, experimental=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / 'source'
@@ -63,7 +93,7 @@ class ArchInstallerTests(unittest.TestCase):
                 shutil.copyfile(REPO / name, path)
             boot = source / 'scripts/init-premount/arc-rebar'
             boot.parent.mkdir(parents=True)
-            boot.write_text('#!/bin/sh\necho "arc-rebar: PLAN: act gpu=mock"\n')
+            boot.write_text('#!/bin/sh\nprintf dryrun >> "$FIXTURE/probes"\necho "arc-rebar: PLAN: act gpu=mock"\n')
             for name, content in {
                 'etc/mkinitcpio.conf': 'MODULES=()\nHOOKS=(base udev kms filesystems)   \n',
                 'etc/default/grub': "GRUB_CMDLINE_LINUX_DEFAULT='quiet'\n",
@@ -94,7 +124,7 @@ class ArchInstallerTests(unittest.TestCase):
             binpath.mkdir()
             stubs = {
                 'id': 'echo 0',
-                'setpci': 'exit 0',
+                'setpci': 'printf setpci >> "$FIXTURE/probes"; exit 0',
                 'dmesg': 'echo "arc-rebar: PLAN: done gpu=mock"',
                 'mkinitcpio': '''n=0
 [ ! -f "$FIXTURE/count" ] || n=$(cat "$FIXTURE/count")
@@ -122,12 +152,14 @@ exit 0''',
                        FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)))
             args = ['bash', str(source / ('uninstall-arch.sh' if uninstall else 'install-arch.sh'))]
             if not uninstall:
+                args += (['--experimental-arch'] if experimental else [])
                 args += ['--yes'] + (['--reinstall'] if reinstall else [])
             p = subprocess.run(args, env=env, text=True, capture_output=True, timeout=10)
             after = {name: ((root / name).read_bytes(), (root / name).stat().st_mode)
                      if (root / name).exists() else None for name in MANAGED}
             backups = list((root / 'var/lib/arc-rebar/backups').glob('change.*'))
             logs = {f.name: f.read_text() for b in backups for f in b.glob('*.log')}
+            logs['probes'] = (root / 'probes').read_text() if (root / 'probes').exists() else ''
             calls = int((root / 'count').read_text()) if (root / 'count').exists() else 0
             return p.returncode, p.stdout + p.stderr, before, after, logs, calls, bool(backups)
 
@@ -138,6 +170,17 @@ exit 0''',
         self.assertEqual(before, after, out)
         self.assertTrue(backup)
         return out, logs, calls
+
+    def test_arch_install_requires_opt_in_before_probing_or_mutation(self):
+        for reinstall in (False, True):
+            rc, out, before, after, logs, calls, backup = self.run_fixture(
+                experimental=False, reinstall=reinstall)
+            self.assertEqual(rc, 2, out)
+            self.assertIn('--experimental-arch', out)
+            self.assertEqual(before, after)
+            self.assertEqual(logs['probes'], '')
+            self.assertEqual(calls, 0)
+            self.assertFalse(backup)
 
     def test_success_retains_backup_and_correct_order(self):
         rc, out, before, after, logs, calls, backup = self.run_fixture()

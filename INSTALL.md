@@ -5,7 +5,7 @@ an active `initramfs-tools` backend. Kernel 6.12 or newer recommended. You need
 `sudo`. A distribution version or the presence of `/etc/initramfs-tools` alone
 does not establish compatibility: some systems provide a dracut-backed
 `update-initramfs` command instead.
-Draft Arch Linux / CachyOS (mkinitcpio) support is described under
+Experimental, source-only Arch Linux / CachyOS (mkinitcpio) support is described under
 [Arch Linux / CachyOS](#arch-linux--cachyos-mkinitcpio) below.
 
 **Do this over SSH if you can.** The optional live test turns the local display
@@ -195,19 +195,28 @@ Now do **A3**, **A4**, **A5** above.
 
 ## Arch Linux / CachyOS (mkinitcpio)
 
-The boot script is the same file; only the initramfs plumbing differs.
-`install.sh` detects `mkinitcpio` and hands over to `install-arch.sh`, so the
-flow is still diagnose → (optional) live-test → install → reboot → verify:
+The boot script is the same file; the initramfs plumbing is experimental.
+Use a complete source checkout. `install.sh` detects `mkinitcpio` and requires
+`--experimental-arch` before handing over to `install-arch.sh`. The direct
+`install-arch.sh` entrypoint requires the same flag. Without it, both refuse
+before hardware probing or boot-file changes; `--yes` and `--reinstall` do not
+bypass the opt-in. Debian/Ubuntu installation rejects this Arch-only flag.
+
+Real Arch boot/GPU validation remains open in
+[#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). Software checks
+cannot establish boot ordering or workload health. Keep a restorable system
+backup, a known-good boot image and rescue access before trying the experiment.
+The flow is diagnose → explicitly opt in → install → reboot → verify:
 
 ```
 sudo pacman -S --needed pciutils mkinitcpio
 sudo ./diagnose.sh
-sudo ./install.sh          # on Arch this runs install-arch.sh
+sudo ./install.sh --experimental-arch   # explicitly opt in to the Arch port
 sudo reboot
 sudo ./verify.sh
 ```
 
-`install-arch.sh` does the same safety checks and the same licence/disclaimer
+`install-arch.sh --experimental-arch` does the same safety checks and the same licence/disclaimer
 acceptance, then:
 
 - installs the boot script to `/usr/lib/arc-rebar/arc-rebar-boot`
@@ -222,8 +231,9 @@ acceptance, then:
 
 Two things that are mkinitcpio-specific:
 
-- **`arc-rebar` must stay before `kms`.** That hook is what loads `i915`/`xe`;
-  running after it means the driver has already claimed the card.
+- **`arc-rebar` must stay after `udev` and before `kms`.** This is the supported
+  configuration; physical testing must still establish actual timing relative
+  to driver initialization, including any early graphics loading.
 - **mkinitcpio's bundled busybox has no `tr` applet**, which the boot script uses
   to split the device path. The build hook therefore also copies coreutils' `tr`
   into the image. Without it the script would log
@@ -232,7 +242,9 @@ Two things that are mkinitcpio-specific:
 GRUB on Arch has no `update-grub`; regenerate with
 `sudo grub-mkconfig -o /boot/grub/grub.cfg`. Uninstall with
 `sudo ./uninstall-arch.sh` (removes both hooks, drops `arc-rebar` from `HOOKS`,
-rebuilds the initramfs). See [installer safeguards](#arch-installer-safeguards-pending-hardware-validation) for rollback behavior and validation limits.
+rebuilds the initramfs). Removal does not require the experimental flag.
+Reinstall with `sudo ./install.sh --experimental-arch --reinstall`.
+See [installer safeguards](#arch-installer-safeguards-pending-hardware-validation) for rollback behavior and validation limits.
 
 ---
 
@@ -357,7 +369,7 @@ reinstallation, `norebar` recovery, and removal on disposable Debian/Ubuntu syst
 with the affected Intel Arc hardware, checking BAR allocation, driver binding and
 a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
 Mocked tests do not establish bootability or hardware correctness. This change is
-independent of the pending Arch/mkinitcpio work.
+independent of the experimental Arch/mkinitcpio port.
 
 See [VM installer validation](docs/INSTALLER-VM-TESTS.md) for the completed
 software checks, their limits, and the remaining release gates.
@@ -384,13 +396,15 @@ Reinstallation moves `arc-rebar` before `kms` if needed. Config drop-ins and
 systemd-based initramfs configurations are refused rather than silently editing
 an ineffective setting. Managed symlinks are also refused.
 
-Before merging this Arch port, validate installation, an actual reboot with
-BAR allocation and driver binding, reinstallation, and removal on the
-contributor's CachyOS/A380 setup. Confirm the hook runs at the intended time;
+The port is available as an explicit opt-in experiment. Before removing the
+experimental designation, record installation, warm/cold boot with BAR
+allocation and driver binding, workloads, reinstallation and removal on suitable
+Arch/CachyOS hardware in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
+Confirm the hook runs at the intended time;
 image membership alone does not prove runtime ordering. Preset-specific config
 or output paths, UKIs, early graphics modules and non-GRUB boot paths still
 need dedicated review/testing. The existing image post-check scans conventional
-paths; this draft is not a claim of support for every mkinitcpio layout.
+paths; this experiment does not establish support for every mkinitcpio layout.
 
 Hardware-free regression checks from the repository root:
 

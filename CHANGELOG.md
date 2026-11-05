@@ -4,6 +4,16 @@ The original 2026-09-05 investigation was developed and verified on a Supermicro
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
+## Unreleased
+- Merge the Arch/CachyOS mkinitcpio port as an explicit source-only experiment.
+  Both install entrypoints require `--experimental-arch`, including reinstall;
+  `--yes` does not bypass the opt-in. Refuse before hardware probing or boot-file
+  changes when opt-in is missing. Removal does not require the flag.
+- Preserve @hrimfaxi's original contribution and commit. Track physical Arch
+  boot/GPU validation separately in issue #15; software coverage does not
+  establish kernel boot ordering, hardware stability or workload health.
+- Retain Debian/Ubuntu release assets and the earlier Arch preview unchanged.
+
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported
   Request DevSta bits return WARN (exit 2), with their age and cause unknown.
