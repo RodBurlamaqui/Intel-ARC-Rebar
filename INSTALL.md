@@ -37,15 +37,15 @@ but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
 **From the .deb.** Download it and its checksum file:
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.3_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.4_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.3_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.4_all.deb: OK
 ```
 Then install it:
 ```
-sudo apt install ./arc-rebar_1.0.3_all.deb
+sudo apt install ./arc-rebar_1.0.4_all.deb
 ```
 You should see, at the end:
 ```
@@ -56,9 +56,13 @@ arc-rebar installed. Nothing is enabled yet.
 ```
 Installing the package changes nothing on your system yet.
 
+The older [v1.0.3 release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
+remains available for comparison or rollback. It lacks the installer/purge
+recovery fixes delivered in v1.0.4; keep backups before changing versions.
+
 **From the tarball instead:**
 ```
-tar xzf arc-rebar-1.0.3.tar.gz
+tar xzf arc-rebar-1.0.4.tar.gz
 cd arc-rebar
 ```
 Then everywhere below, replace `sudo arc-rebar <command>` with `sudo ./<command>.sh`.
@@ -263,6 +267,31 @@ Use `sudo arc-rebar install --reinstall` to refresh the boot script.
 sudo apt purge arc-rebar      # removes the tool AND the boot hook (only if the .deb installed it), rebuilds the initramfs
 ```
 (`apt remove` removes only the tool and deliberately leaves the boot hook active.)
+
+Packages built from the current source snapshot package-owned hooks, their origin
+marker, GRUB files and existing conventional initramfs images before purging the
+hook. Purge rebuilds all kernel images and checks that the runtime script is gone.
+A missing tool, failed rebuild, failed archive inspection or stale image returns
+failure and attempts to restore the saved boot files. Source-owned/unknown hooks
+are preserved. Partial package-owned hook installations are also cleaned up.
+
+On purge failure, diagnostics/snapshots remain under
+`/var/lib/arc-rebar/purge-transaction`. Fix the reported storage or tool problem,
+then retry `sudo dpkg --purge arc-rebar`; the retained package maintainer script
+first recovers an interrupted transaction. Use this retry even though the
+package's ordinary commands may already have been removed. If recovery fails,
+**do not reboot** until the boot files have been repaired. A retained purge
+transaction blocks the source installer to prevent it overwriting recovery state.
+
+This is file-level recovery, not an atomic power-loss guarantee. Keep enough space
+for copies of all `/boot/initrd.img-*` files, including existing backups. Managed
+file symlinks/whitespace paths are refused, and concurrent manual boot updates or
+third-party hook side effects outside the snapshot are not covered. A shared lock
+file and original escape-hatch backups remain. See the
+[package lifecycle test record](docs/DEBIAN-PACKAGE-TESTS.md).
+
+These package-purge safeguards are included in v1.0.4. The older v1.0.3
+release remains available unchanged and does not contain them.
 
 **Tarball:**
 ```

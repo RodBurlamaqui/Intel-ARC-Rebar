@@ -1,15 +1,135 @@
 #!/bin/sh
+# Purge runs after package files have gone: keep recovery self-contained here.
 set -e
-if [ "$1" = purge ]; then
-  if [ -e /etc/initramfs-tools/scripts/init-premount/arc-rebar ]; then
-    if [ "$(cat /var/lib/arc-rebar/hook-origin 2>/dev/null)" = deb ]; then
-      rm -f /etc/initramfs-tools/hooks/arc-rebar /etc/initramfs-tools/scripts/init-premount/arc-rebar /var/lib/arc-rebar/hook-origin
-      command -v update-initramfs >/dev/null 2>&1 && update-initramfs -u >/dev/null 2>&1 || true
-      echo "arc-rebar: boot hook removed (it was installed by this package). pci=realloc left in GRUB."
+[ "${1:-}" = purge ] || exit 0
+STATE=/var/lib/arc-rebar
+TX=$STATE/purge-transaction
+HOOK=/etc/initramfs-tools/hooks/arc-rebar
+SCRIPT=/etc/initramfs-tools/scripts/init-premount/arc-rebar
+ORIGIN=$STATE/hook-origin
+[ -d "$STATE" ] || exit 0
+umask 077
+command -v flock >/dev/null || { echo 'arc-rebar: flock missing; purge refused.' >&2; exit 1; }
+command -v grep >/dev/null || { echo 'arc-rebar: grep missing; purge refused.' >&2; exit 1; }
+exec 9>"$STATE/install.lock"
+flock -n 9 || { echo 'arc-rebar: another installer/purge is running.' >&2; exit 1; }
+
+restore_purge() {
+  failed=0
+  # Rebuilds can create backup/temporary images that did not exist beforehand.
+  for path in /boot/initrd.img-*; do
+    [ -e "$path" ] || [ -L "$path" ] || continue
+    if grep -Fxq -- "$path" "$TX/images"; then
+      :
     else
-      echo "arc-rebar: boot hook in /etc/initramfs-tools was NOT installed by this package (installed from source); leaving it in place."
-      echo "           To remove it: run uninstall.sh from your source checkout, or add 'norebar' to the kernel cmdline."
+      match_rc=$?
+      [ "$match_rc" = 1 ] || { failed=1; continue; }
+      if [ ! -L "$path" ] && [ -f "$path" ]; then rm -f -- "$path" || failed=1
+      else failed=1; fi
     fi
+  done
+  while IFS=' ' read -r n path; do
+    if [ -e "$TX/files/$n" ]; then
+      tmp="${path}.arc-rebar-purge-restore"
+      if [ -L "$tmp" ] || { [ -e "$tmp" ] && [ ! -f "$tmp" ]; }; then
+        failed=1
+        continue
+      fi
+      cp -a -- "$TX/files/$n" "$tmp" && mv -f -- "$tmp" "$path" || failed=1
+    else
+      rm -f -- "$path" || failed=1
+    fi
+  done < "$TX/manifest"
+  [ "$failed" = 0 ] || return 1
+  sync || return 1
+  rm -f "$TX/active"
+}
+
+# A retry must recover the old state even if a previous attempt removed ORIGIN.
+if [ -d "$TX" ]; then
+  if [ -f "$TX/active" ]; then
+    restore_purge || { echo "arc-rebar: RECOVERY FAILED; do not reboot. Backups: $TX" >&2; exit 1; }
   fi
-  rmdir /var/lib/arc-rebar 2>/dev/null || true
+  rm -rf -- "$TX"
 fi
+[ ! -L "$ORIGIN" ] || { echo 'arc-rebar: symlink origin marker; purge refused.' >&2; exit 1; }
+if [ "$(cat "$ORIGIN" 2>/dev/null)" != deb ]; then
+  echo 'arc-rebar: no package-owned hook recorded; leaving source/unknown hooks in place.'
+  exit 0
+fi
+[ ! -d "$STATE/install-transaction" ] || {
+  echo 'arc-rebar: retained installation transaction; recover it before purging.' >&2; exit 1;
+}
+command -v update-initramfs >/dev/null || {
+  echo 'arc-rebar: update-initramfs missing; no hooks removed. Restore the tool, then retry dpkg --purge arc-rebar.' >&2; exit 1;
+}
+command -v lsinitramfs >/dev/null || {
+  echo 'arc-rebar: lsinitramfs missing; no hooks removed. Restore the tool, then retry dpkg --purge arc-rebar.' >&2; exit 1;
+}
+for path in "$HOOK" "$SCRIPT" "$ORIGIN" /etc/default/grub /boot/grub/grub.cfg /boot/initrd.img-*; do
+  [ -e "$path" ] || [ -L "$path" ] || continue
+  case "$path" in *[[:space:]]*) echo 'arc-rebar: unsupported whitespace in managed path.' >&2; exit 1;; esac
+  [ ! -L "$path" ] && [ -f "$path" ] || {
+    echo "arc-rebar: unsupported purge destination: $path" >&2; exit 1;
+  }
+done
+
+purge_exit() {
+  rc=$?
+  trap - EXIT
+  trap '' INT TERM HUP
+  if [ -f "$TX/active" ]; then
+    if restore_purge; then
+      echo "arc-rebar: purge failed; previous hooks/images restored. Evidence: $TX" >&2
+      echo 'arc-rebar: fix the error, then retry dpkg --purge arc-rebar.' >&2
+    else
+      echo "arc-rebar: RECOVERY FAILED; do not reboot. Fix storage, then retry dpkg --purge arc-rebar. Backups: $TX" >&2
+    fi
+    [ "$rc" != 0 ] || rc=1
+  fi
+  exit "$rc"
+}
+trap purge_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+mkdir -m 0700 "$TX"
+mkdir "$TX/files"
+: > "$TX/images"
+: > "$TX/targets"
+n=0
+for path in "$HOOK" "$SCRIPT" "$ORIGIN" /etc/default/grub /boot/grub/grub.cfg /boot/initrd.img-*; do
+  case "$path" in /boot/initrd.img-*)
+    [ -e "$path" ] || continue
+    printf '%s\n' "$path" >> "$TX/images"
+    case "$path" in *.bak|*.dpkg-bak|*.new|*.old) ;; *) printf '%s\n' "$path" >> "$TX/targets";; esac;;
+  esac
+  n=$((n+1))
+  printf '%s %s\n' "$n" "$path" >> "$TX/manifest"
+  if [ -e "$path" ]; then cp -a -- "$path" "$TX/files/$n"; fi
+done
+sync
+touch "$TX/active"
+sync
+rm -f -- "$HOOK" "$SCRIPT" "$ORIGIN"
+# Every existing kernel image may contain the hook, not only the running one.
+update-initramfs -u -k all > "$TX/build.log" 2>&1 || { cat "$TX/build.log" >&2; exit 1; }
+# A disabled/no-op updater may return success while leaving the old hook active.
+while IFS= read -r path; do
+  lsinitramfs "$path" > "$TX/contents" 2> "$TX/inspect.log" || {
+    cat "$TX/inspect.log" >&2; exit 1;
+  }
+  if grep -Eq '(^|/)scripts/init-premount/arc-rebar$' "$TX/contents"; then
+    echo "arc-rebar: boot script still present in $path; purge not complete." >&2
+    exit 1
+  else
+    inspect_rc=$?
+    [ "$inspect_rc" = 1 ] || { echo 'arc-rebar: archive content check failed.' >&2; exit 1; }
+  fi
+done < "$TX/targets"
+sync
+rm -f "$TX/active"
+sync
+rm -rf -- "$TX"
+trap - EXIT INT TERM HUP
+echo 'arc-rebar: package-owned boot hooks removed; active initramfs images updated and checked. pci=realloc left in GRUB.'
