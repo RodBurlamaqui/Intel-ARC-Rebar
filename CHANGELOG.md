@@ -1,17 +1,17 @@
 # Changelog
 
-All revisions on 2026-09-05, developed and verified on a Supermicro X9DRH-7TF
+The original 2026-09-05 investigation was developed and verified on a Supermicro X9DRH-7TF
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
-## Unreleased
+## 1.0.4 — 2026-11-05
 - Debian package purge: reject missing rebuild/inspection tools, fail on rebuild
   errors or stale images, and restore prior managed hooks/boot files after
   failure. Retain interrupted-purge recovery for `dpkg --purge` retries, preserve
-  source-owned hooks, and clean partial package-owned installations. Published
-  release assets are unchanged.
-- Surface community hardware reports for A750/A770 and pending A380 Arch
-  validation alongside the original B580 tests. Link report evidence, retain
+  source-owned hooks, and clean partial package-owned installations. The
+  previous v1.0.3 assets remain available unchanged.
+- Surface community hardware reports for A750/A770, Lenovo A380 Debian boots,
+  B580/VFIO and pending A380 Arch validation alongside the original B580 tests. Link report evidence, retain
   known limitations, credit contributors/testers and invite additional model
   reports with a hardware-report template.
 - Debian/Ubuntu installer: restore previous managed boot files after failures and
@@ -19,8 +19,8 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
   Refuse incompatible initramfs backends before probing hardware or changing boot
   files, while retaining compatibility with older initramfs-tools frontends.
 - Document disposable-VM rollback validation and use `dmesg` for boot-script
-  messages that `journalctl -k` can omit. Hardware validation remains pending;
-  no new release is declared.
+  messages that `journalctl -k` can omit. No new physical GPU
+  validation is claimed; the original GPU boot payload is unchanged.
 - GPU firmware updates ruled out by direct test, not assumption: FWCODE
   21.1137 → 21.1182 and OptionROM 23.1051.0.0 → 23.1066.0.0 (LVFS, Sept 2026)
   leave the power-up BAR size field unchanged, the kernel resize still fails

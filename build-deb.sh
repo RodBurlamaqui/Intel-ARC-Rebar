@@ -12,6 +12,9 @@ cp debian/control debian/postinst debian/prerm debian/postrm $B/DEBIAN/; chmod 0
 { echo "Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/"; echo "Upstream-Name: arc-rebar"; echo
   echo "Files: *"; echo "Copyright: 2026 Rod Burlamaqui"; echo "License: arc-rebar-proprietary"; sed 's/^/ /; s/^ $/ ./' LICENSE; } > $B/usr/share/doc/arc-rebar/copyright
 cp README.md INSTALL.md $B/usr/share/doc/arc-rebar/
+# Keep relative README/INSTALL links usable in both installed documentation locations.
+cp -a docs $B/usr/share/arc-rebar/
+cp -a docs $B/usr/share/doc/arc-rebar/
 find $B -type d -exec chmod 0755 {} \; ; find $B/usr -type f -exec chmod 0644 {} \;
 chmod 0755 $B/usr/bin/arc-rebar $B/usr/share/arc-rebar/*.sh $B/usr/share/arc-rebar/diag/bin/*.sh $B/usr/share/arc-rebar/hooks/arc-rebar $B/usr/share/arc-rebar/scripts/init-premount/arc-rebar
 dpkg-deb --build --root-owner-group $B dist/ >/dev/null

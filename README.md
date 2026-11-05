@@ -279,17 +279,22 @@ reports are welcome; unreported combinations remain unverified.
 Full step-by-step with the exact output you should see at every step, and what
 to do if you don't: **[INSTALL.md](INSTALL.md)**. The short form:
 
+**Current Debian/Ubuntu package: 1.0.4**, containing the installer and purge
+recovery fixes. [Version 1.0.3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
+remains downloadable with its original assets and checksums; it lacks those fixes.
+The experimental Arch preview and proposed GPU-verifier changes are separate.
+
 **Debian / Ubuntu, from the `.deb`** — download it from the [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page, or:
 
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.3_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.4_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.3_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.4_all.deb: OK
 ```
 ```
-sudo apt install ./arc-rebar_1.0.3_all.deb    # step 0: installs the tool; ENABLES NOTHING
+sudo apt install ./arc-rebar_1.0.4_all.deb    # step 0: installs the tool; ENABLES NOTHING
 ```
 ```
 sudo arc-rebar diagnose                         # step 1: last line must be "YES: pinned window, all safety checks pass"

@@ -35,15 +35,15 @@ but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
 **From the .deb.** Download it and its checksum file:
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.3_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.4_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.3_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.4_all.deb: OK
 ```
 Then install it:
 ```
-sudo apt install ./arc-rebar_1.0.3_all.deb
+sudo apt install ./arc-rebar_1.0.4_all.deb
 ```
 You should see, at the end:
 ```
@@ -54,9 +54,13 @@ arc-rebar installed. Nothing is enabled yet.
 ```
 Installing the package changes nothing on your system yet.
 
+The older [v1.0.3 release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
+remains available for comparison or rollback. It lacks the installer/purge
+recovery fixes delivered in v1.0.4; keep backups before changing versions.
+
 **From the tarball instead:**
 ```
-tar xzf arc-rebar-1.0.3.tar.gz
+tar xzf arc-rebar-1.0.4.tar.gz
 cd arc-rebar
 ```
 Then everywhere below, replace `sudo arc-rebar <command>` with `sudo ./<command>.sh`.
@@ -241,8 +245,8 @@ third-party hook side effects outside the snapshot are not covered. A shared loc
 file and original escape-hatch backups remain. See the
 [package lifecycle test record](docs/DEBIAN-PACKAGE-TESTS.md).
 
-These package-purge safeguards are a source-tree change; the published v1.0.3
-`.deb` is unchanged and does not contain them.
+These package-purge safeguards are included in v1.0.4. The older v1.0.3
+release remains available unchanged and does not contain them.
 
 **Tarball:**
 ```
