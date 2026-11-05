@@ -8,10 +8,9 @@ SOURCE = pathlib.Path(__file__).resolve().parents[1] / 'verify.sh'
 
 
 class VerifyTests(unittest.TestCase):
-    def run_case(self, statuses=('0000',), seconds=0, counters='0',
-                 later=None, write_fails=False, initial_fail=0, log='', full=False,
+    def run_case(self, statuses=('0000',), initial_fail=0, log='', full=False,
                  bar='0x0000000200000000', bar_end='0x00000003ffffffff',
-                 driver=True, driver_name='i915', log_fails=False, parent=False,
+                 driver=True, driver_name='i915', log_fails=False, broken_driver=False,
                  cap='0003f000', ctl='00000d22', bdf='0000:83:00.0', device=True):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)
@@ -22,18 +21,9 @@ class VerifyTests(unittest.TestCase):
                 (dev / 'class').write_text('0x030000\n')
                 (dev / 'resource').write_text('0 0 0\n0 0 0\n' + bar + ' ' + bar_end + ' 0\n')
                 if driver:
-                    (root / driver_name).mkdir()
+                    if not broken_driver:
+                        (root / driver_name).mkdir()
                     (dev / 'driver').symlink_to(root / driver_name)
-            if parent:
-                bridge = root / '0000:81:00.0'
-                bridge.mkdir()
-                dev.rename(bridge / dev.name)
-                dev.symlink_to(bridge / dev.name)
-                counter = bridge / 'aer_rootport_total_err_cor'
-            else:
-                counter = dev / 'aer_dev_correctable'
-            if counters is not None and device:
-                counter.write_text(('' if parent else 'TOTAL_ERR_COR ') + counters + '\n')
             (root / 'statuses').write_text('\n'.join(statuses) + '\n')
             (root / 'reads').write_text('0')
             (root / 'writes').write_text('')
@@ -57,32 +47,23 @@ setpci(){
       [[ -n $v ]] || v=$(tail -1 "$T/statuses")
       [[ $v != ERROR ]] || return 1
       echo "$v";;
-    CAP_EXP+0xa.w=*) return "$WRITE_FAILS";;
     *) return 91;;
   esac
-}
-sleep(){
-  if [[ -n $LATER ]]; then
-    printf '%s%s\n' "$COUNTER_PREFIX" "$LATER" > "$COUNTER_PATH"
-  fi
 }
 dmesg(){ cat "$T/log"; return "$LOG_FAILS"; }
 vulkaninfo(){ :; }
 fail=$INITIAL_FAIL; inconclusive=0
 if [[ $FULL == 1 ]]; then
-  if (( SECONDS_TEST )); then main --recheck-pcie "$SECONDS_TEST"; else main; fi
+  main
 else
-  check_pcie "$T/$BDF" "$SECONDS_TEST"
+  check_pcie "$T/$BDF"
   check_kernel_log "$(cat "$T/log")"
   result
 fi
 '''
             import os
-            env = dict(os.environ, T=td, SECONDS_TEST=str(seconds),
-                       LATER='' if later is None else later,
-                       WRITE_FAILS=str(int(write_fails)), INITIAL_FAIL=str(initial_fail),
-                       FULL=str(int(full)), LOG_FAILS=str(int(log_fails)), COUNTER_PATH=str(counter),
-                       COUNTER_PREFIX='' if parent else 'TOTAL_ERR_COR ',
+            env = dict(os.environ, T=td, INITIAL_FAIL=str(initial_fail),
+                       FULL=str(int(full)), LOG_FAILS=str(int(log_fails)),
                        CAP=cap, CTL=ctl, BDF=bdf)
             p = subprocess.run(['bash', '-c', code], env=env, text=True, capture_output=True,
                                timeout=10)
@@ -131,109 +112,70 @@ fi
         self.assertIn('no Intel GPU with a ReBAR capability found', out)
         self.assertEqual(writes, '')
 
-    def test_one_shot_mask_excludes_aux_power(self):
-        rc, out, writes = self.run_case(('0019', '0010'), seconds=2, full=True)
-        self.assertEqual(rc, 2, out)  # history never silently upgraded to PASS
-        self.assertIn('no new PCIe evidence', out)
-        self.assertEqual(writes, 'CAP_EXP+0xa.w=0009\n')
-
-    def test_unsupported_request_only_mask(self):
-        self.assertEqual(self.run_case(('0008', '0000'), seconds=1)[2], 'CAP_EXP+0xa.w=0008\n')
-
-    def test_persistent_or_immediate_recurrence(self):
-        rc, out, writes = self.run_case(('0008',), seconds=2)
-        self.assertEqual(rc, 1, out)
-        self.assertEqual(writes.count('\n'), 1)
-
-    def test_delayed_recurrence(self):
-        for recurring in ('0001', '0008', '0002', '0004'):
-            rc, out, writes = self.run_case(('0008', '0000', '0000', recurring), seconds=2)
-            self.assertEqual(rc, 1, out)
-            self.assertIn('persists/recurs', out)
-            self.assertEqual(writes.count('\n'), 1)
-
-    def test_new_error_from_clean_baseline(self):
-        rc, out, writes = self.run_case(('0000', '0000', '0008'), seconds=1)
-        self.assertEqual(rc, 1, out)
-        self.assertEqual(writes, '')
-
     def test_severe_never_cleared(self):
         for status in ('0002', '0004', '000f'):
-            rc, out, writes = self.run_case((status,), seconds=1)
+            rc, out, writes = self.run_case((status,))
             self.assertEqual(rc, 1, out)
             self.assertEqual(writes, '')
 
     def test_unreadable_and_malformed(self):
         for status in ('ERROR', 'ffff', 'FFFF', 'garbage', '0', '00000', '0008 0000'):
-            rc, out, writes = self.run_case((status,), seconds=1)
+            rc, out, writes = self.run_case((status,))
             self.assertEqual(rc, 1, out)
             self.assertEqual(writes, '')
 
-    def test_read_failure_after_clear(self):
-        self.assertEqual(self.run_case(('0008', 'ERROR'), seconds=1)[0], 1)
-
-    def test_clear_failure(self):
-        rc, out, writes = self.run_case(('0008', '0000'), seconds=1, write_fails=True)
-        self.assertEqual(rc, 1, out)
-        self.assertIn('clear failed', out)
-        self.assertEqual(writes.count('\n'), 1)
-
-    def test_counters_detect_kernel_cleared_errors_and_reset(self):
-        for before, after in [('0', '1'), ('4', '0')]:
-            rc, out, _ = self.run_case(seconds=2, counters=before, later=after)
-            self.assertEqual(rc, 1, out)
-            self.assertIn('counters changed', out)
-
-    def test_parent_counter_recurrence(self):
-        rc, out, writes = self.run_case(seconds=2, parent=True, later='1')
-        self.assertEqual(rc, 1, out)
-        self.assertIn('0000:81:00.0/aer_rootport_total_err_cor', out)
-        self.assertEqual(writes, '')
-
-    def test_missing_counters_inconclusive(self):
-        rc, out, _ = self.run_case(seconds=1, counters=None)
-        self.assertEqual(rc, 2, out)
-
-    def test_bad_counters(self):
-        rc, out, writes = self.run_case(('0008',), seconds=1, counters='bad')
+    def test_existing_failure_overrides_latched_warning(self):
+        rc, out, writes = self.run_case(('0008',), initial_fail=1)
         self.assertEqual(rc, 1, out)
         self.assertEqual(writes, '')
 
-    def test_clean_recheck(self):
-        rc, out, writes = self.run_case(seconds=2)
-        self.assertEqual(rc, 0, out)
-        self.assertEqual(writes, '')
-
-    def test_existing_failure_prevents_clear(self):
-        rc, out, writes = self.run_case(('0008',), seconds=1, initial_fail=1)
-        self.assertEqual(rc, 1, out)
-        self.assertEqual(writes, '')
-
-    def test_allocation_or_driver_failure_prevents_clear(self):
-        for kwargs in [dict(bar='0x0000000000000000'), dict(driver=False), dict(bar='0x0000000300000000')]:
-            rc, out, writes = self.run_case(('0008',), seconds=1, full=True, **kwargs)
+    def test_allocation_or_driver_failure_overrides_latched_warning(self):
+        for kwargs in [dict(bar='0x0000000000000000'), dict(driver=False), dict(broken_driver=True), dict(bar='0x0000000300000000')]:
+            rc, out, writes = self.run_case(('0008',), full=True, **kwargs)
             self.assertEqual(rc, 1, out)
             self.assertEqual(writes, '')
 
-    def test_kernel_log_failure_prevents_clear(self):
-        rc, out, writes = self.run_case(('0008',), seconds=1, full=True, log_fails=True)
+    def test_kernel_log_failure_overrides_latched_warning(self):
+        rc, out, writes = self.run_case(('0008',), full=True, log_fails=True)
         self.assertEqual(rc, 1, out)
         self.assertEqual(writes, '')
 
     def test_logged_errors_not_downgraded(self):
         for log in ('AER: Corrected error received\n', 'PCIe Bus Error: severity=Uncorrectable (Fatal)\n', 'DPC: containment event\n'):
-            rc, out, writes = self.run_case(('0008',), seconds=1, log=log, full=True)
+            rc, out, writes = self.run_case(('0008',), log=log, full=True)
             self.assertEqual(rc, 1, out)
             self.assertEqual(writes, '')
 
+    def test_malformed_capability_control_and_resource_fail_read_only(self):
+        for kwargs in [dict(cap='garbage!'), dict(cap='ffffffff'), dict(cap='00000000'),
+                       dict(ctl='garbage!'), dict(ctl='ffffffff'), dict(ctl=''),
+                       dict(bar='invalid'), dict(bar_end='0x0000000000000001'),
+                       dict(bar_end='0x0000000400000000')]:
+            with self.subTest(**kwargs):
+                rc, out, writes = self.run_case(full=True, **kwargs)
+                self.assertEqual(rc, 1, out)
+                self.assertIn('RESULT: FAIL', out)
+                self.assertEqual(writes, '')
+
     def test_arguments(self):
-        for args in [[], ['--help'], ['--recheck-pcie', '0'], ['--recheck-pcie', '-1'],
-                     ['--recheck-pcie', '3601'], ['--recheck-pcie', '09'],
-                     ['--recheck-pcie', '1;echo bad'], ['--bogus']]:
-            if not args:
-                continue  # main without fixtures must never access the test host
-            p = subprocess.run(['bash', str(SOURCE), *args], capture_output=True)
-            self.assertEqual(p.returncode, 0 if args == ['--help'] else 64)
+        import os
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            marker = root / 'accessed'
+            for command in ('setpci', 'dmesg', 'uptime'):
+                stub = root / command
+                stub.write_text('#!/bin/sh\nprintf accessed >> "$ACCESS_MARKER"\nexit 99\n')
+                stub.chmod(0o755)
+            env = dict(os.environ, ACCESS_MARKER=str(marker),
+                       PATH=td + os.pathsep + os.environ['PATH'])
+            for args in [['--help'], ['--recheck-pcie', '0'], ['--recheck-pcie', '-1'],
+                         ['--recheck-pcie', '1'], ['--recheck-pcie', '3601'],
+                         ['--recheck-pcie', '09'], ['--recheck-pcie', '1;echo bad'],
+                         ['--bogus']]:
+                p = subprocess.run(['bash', str(SOURCE), *args], capture_output=True,
+                                   env=env, timeout=10)
+                self.assertEqual(p.returncode, 0 if args == ['--help'] else 64)
+                self.assertFalse(marker.exists(), args)
 
 
 if __name__ == '__main__':

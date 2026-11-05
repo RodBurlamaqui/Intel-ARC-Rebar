@@ -279,22 +279,22 @@ reports are welcome; unreported combinations remain unverified.
 Full step-by-step with the exact output you should see at every step, and what
 to do if you don't: **[INSTALL.md](INSTALL.md)**. The short form:
 
-**Current Debian/Ubuntu package: 1.0.4**, containing the installer and purge
-recovery fixes. [Version 1.0.3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
+**Current Debian/Ubuntu package: 1.0.5**, containing read-only PCIe verification
+and the installer/purge recovery fixes. [Version 1.0.3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
 remains downloadable with its original assets and checksums; it lacks those fixes.
 The experimental Arch preview and proposed GPU-verifier changes are separate.
 
 **Debian / Ubuntu, from the `.deb`** — download it from the [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page, or:
 
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.4_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.5_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.4_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.5_all.deb: OK
 ```
 ```
-sudo apt install ./arc-rebar_1.0.4_all.deb    # step 0: installs the tool; ENABLES NOTHING
+sudo apt install ./arc-rebar_1.0.5_all.deb    # step 0: installs the tool; ENABLES NOTHING
 ```
 ```
 sudo arc-rebar diagnose                         # step 1: last line must be "YES: pinned window, all safety checks pass"
@@ -306,7 +306,7 @@ sudo arc-rebar install                          # step 2: pre-checks, plan, type
 sudo reboot                                     # step 3
 ```
 ```
-sudo arc-rebar verify                           # step 4, after the reboot: expect "RESULT: PASS"
+sudo arc-rebar verify                           # step 4, after reboot: review PASS / WARN / FAIL
 ```
 
 **From source:**
@@ -325,7 +325,7 @@ sudo ./install.sh           # step 2: pre-checks, plan, type ACCEPT, backup, ins
 sudo reboot                 # step 3
 ```
 ```
-sudo ./verify.sh            # step 4, after the reboot: expect "RESULT: PASS"
+sudo ./verify.sh            # step 4, after reboot: review PASS / WARN / FAIL
 ```
 
 **Cautious path** (recommended on a board nobody has tried): prove it live
@@ -490,47 +490,35 @@ implementation only.
 - The kernel's own log line, `was not released (still contains assigned
   resources)`, which was the whole answer once someone read it.
 
-### PCIe status and rechecks
+### PCIe status
 
 `verify` separates BAR allocation/driver binding from PCIe status evidence.
 A bound driver or successful transcode alone does not prove GPU memory/compute
-health. The boot hook is unchanged; verification is read-only by default.
+health. Verification is read-only and never clears status or writes PCI
+configuration registers. The boot hook is unchanged.
 
 | Evidence | Result / exit |
 |---|---|
 | Existing checks pass, endpoint DevSta clean | PASS / 0 (checks only, not a workload certification) |
 | Only correctable / Unsupported Request DevSta bits (0/3) latched | WARN / 2 (age/cause unresolved) |
-| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable DevSta or kernel log | FAIL / 1 |
-| New/persistent DevSta error or changed AER counters during recheck | FAIL / 1 |
+| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable registers or kernel log | FAIL / 1 |
 
-After saving `sudo lspci -Dvv`, `sudo dmesg` and `sudo arc-rebar diagnose`, an
-operator can explicitly request a one-shot GPU endpoint status clear and timed
-observation on the affected host:
+Run `sudo arc-rebar verify` and preserve the output alongside relevant
+`sudo arc-rebar diagnose`, `sudo lspci -Dvv` and kernel-log evidence locally.
+Review and redact machine identifiers, network addresses and unrelated logs
+before sharing an excerpt publicly. A warning is a request to investigate;
+it does not establish that a latched event is harmless, historical or caused
+by ReBAR. Automation must handle exit 2 separately from success and failure.
 
-```bash
-hostname
-sudo arc-rebar verify --recheck-pcie 60
-```
+Endpoint status is a snapshot, not a complete upstream AER audit. Kernel-log
+matching retains a conservative system-wide failure policy and can include
+unrelated devices. Missing boot-verdict messages are reported as warnings;
+a PASS covers only checks with available evidence, not proof of this hook's
+execution or guest GPU workload health.
 
-This writes only **observed DevSta bits 0/3**, using a 16-bit W1C write, once
-per checked GPU. It never clears nonfatal/fatal status, upstream status, AER
-registers, or logs, and never changes error reporting masks. Existing failures
-prevent the clear. Do not automate repeated clears: they destroy evidence.
-The raw DevSta and available endpoint/parent AER counters are printed before
-clearing. Capture this output as part of the diagnostic record.
-
-Run a representative GPU workload in another terminal during observation.
-The verifier reads immediately after the clear, then every second (1–3600
-seconds per GPU), and compares endpoint/ancestor AER counters with the baseline.
-Any change, including reset/disappearance, fails conservatively; root-port
-reports may concern another device in the hierarchy. A clean interval does not
-prove boot-time origin, and a run that started with latched bits **still returns
-WARN**, even if they do not recur. No automatic clean bill of health is issued.
-
-Missing AER counters make rechecks inconclusive. Present counters may still
-miss masked or firmware-owned events; sampling may miss status the kernel
-clears. The default endpoint status check is not a complete upstream AER audit.
-Inspect bridge status separately; this patch deliberately does not reproduce
-the reporter's upstream-register clears. Kernel-log matching retains a
-conservative system-wide failure policy and can include unrelated devices.
-See [the hardware acceptance checklist](docs/VERIFY-PCIE.md) before adoption.
+The optional register-clearing experiment is preserved separately on
+[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck)
+at commit `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is excluded from the
+stable verifier and still lacks physical GPU validation. The stable CLI rejects
+`--recheck-pcie` with exit 64 before reading hardware.
+See [the evidence and validation limits](docs/VERIFY-PCIE.md).

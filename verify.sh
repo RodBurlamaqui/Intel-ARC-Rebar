@@ -16,72 +16,19 @@ read_devsta(){
   [[ $value =~ ^[[:xdigit:]]{4}$ && ${value,,} != ffff ]] || return 1
   printf '%s\n' "$value"
 }
-# Observe endpoint and parent counters: Linux may clear status between polls.
-# Root-port counters cover a shared hierarchy, so changes are not GPU attribution.
-aer_snapshot(){
-  local path file value
-  path=$(readlink -f "$1") || return 1
-  while [[ ${path##*/} =~ ^[[:xdigit:]]{4}:[[:xdigit:]]{2}:[[:xdigit:]]{2}\.[0-7]$ ]]; do
-    for file in "$path"/aer_dev_{correctable,nonfatal,fatal} "$path"/aer_rootport_total_err_{cor,nonfatal,fatal}; do
-      [[ -e $file ]] || continue
-      if [[ $file == */aer_dev_* ]]; then
-        value=$(awk '/^TOTAL_ERR_/ {print $2}' "$file" 2>/dev/null) || return 1
-      else
-        value=$(cat "$file" 2>/dev/null) || return 1
-      fi
-      [[ $value =~ ^[0-9]+$ ]] || return 1
-      printf '%s=%s\n' "$file" "$value"
-    done
-    path=${path%/*}
-  done
-}
+# A snapshot cannot establish when a latched event occurred or its cause.
+# This verifier never clears status or writes PCI configuration registers.
 check_pcie(){
-  local device=$1 seconds=$2 ds mask write_value before after sample
+  local device=$1 ds mask
   local bdf=${device##*/}
   ds=$(read_devsta "$bdf") || { bad "$bdf DevSta unreadable/invalid"; return; }
   ok "$bdf DevSta snapshot: 0x$ds"
   mask=$((16#$ds & 0xf))
   if (( mask & 0x6 )); then
-    bad "$bdf DevSta nonfatal/fatal error evidence: 0x$ds (not cleared)"
-    return
-  fi
-  if (( mask )); then
+    bad "$bdf DevSta nonfatal/fatal error evidence: 0x$ds"
+  elif (( mask )); then
     uncertain "$bdf latched correctable/Unsupported Request status; age and cause unknown"
   fi
-  (( seconds )) || return 0
-  if (( fail )); then
-    uncertain "$bdf recheck skipped because verification already failed; no status cleared"
-    return
-  fi
-  before=$(aer_snapshot "$device") || { bad "$bdf AER counters unreadable/invalid"; return; }
-  if [[ -z $before ]]; then
-    uncertain "$bdf AER counters unavailable; polling cannot detect kernel-cleared events"
-  else
-    printf '  AER baseline (endpoint/parents):\n%s\n' "$before"
-  fi
-  if (( mask )); then
-    # Direct 16-bit W1C write: ONLY observed bits 0/3. Never write back the
-    # whole register or use setpci's read/modify/write mask syntax on W1C.
-    printf -v write_value '%04x' "$((mask & 0x9))"
-    warn "$bdf clearing observed DevSta bits once: 0x$write_value"
-    setpci -s "$bdf" "CAP_EXP+0xa.w=$write_value" || { bad "$bdf DevSta clear failed"; return; }
-  fi
-  echo "  Observing $bdf for $seconds seconds; run a GPU workload in another terminal."
-  for ((sample=0; sample<=seconds; sample++)); do
-    if (( sample )); then sleep 1 || { bad 'observation interrupted'; return; }; fi
-    ds=$(read_devsta "$bdf") || { bad "$bdf DevSta unreadable during recheck"; return; }
-    if (( 16#$ds & 0xf )); then
-      bad "$bdf DevSta persists/recurs during recheck: 0x$ds (not cleared again)"
-      return
-    fi
-    after=$(aer_snapshot "$device") || { bad "$bdf AER counters unreadable during recheck"; return; }
-    if [[ $after != "$before" ]]; then
-      bad "$bdf endpoint/parent AER counters changed (new reports or reset); investigate hierarchy"
-      printf '  AER after:\n%s\n' "$after"
-      return
-    fi
-  done
-  ok "$bdf no new PCIe evidence observed in ${seconds}s; not proof of workload health or boot-time origin"
 }
 check_kernel_log(){
   local log=$1 count
@@ -91,14 +38,11 @@ check_kernel_log(){
 }
 
 main(){
-fail=0; inconclusive=0; recheck=0
+fail=0; inconclusive=0
 case "$#:${1-}" in
   0:) ;;
-  1:--help) echo 'usage: verify.sh [--recheck-pcie SECONDS]'; echo 'Read-only by default. Recheck clears observed GPU DevSta bits 0/3 once, then polls (1-3600s).'; echo 'Exit: 0 PASS, 1 FAIL, 2 WARN/inconclusive, 64 usage.'; return 0;;
-  2:--recheck-pcie)
-    [[ $2 =~ ^[1-9][0-9]{0,3}$ ]] && (( 10#$2 <= 3600 )) || { echo 'SECONDS must be 1-3600' >&2; return 64; }
-    recheck=$2;;
-  *) echo 'usage: verify.sh [--recheck-pcie SECONDS]' >&2; return 64;;
+  1:--help) echo 'usage: verify.sh [--help]'; echo 'Read-only PCIe/BAR checks; no register clearing.'; echo 'Exit: 0 PASS, 1 FAIL, 2 WARN/inconclusive, 64 usage.'; return 0;;
+  *) echo 'usage: verify.sh [--help]' >&2; return 64;;
 esac
 echo "== arc-rebar verify (boot $(uptime -s)) =="
 grep -q 'pci=realloc' /proc/cmdline && ok "pci=realloc active" || bad "pci=realloc not on the kernel cmdline"
@@ -119,14 +63,20 @@ for d in /sys/bus/pci/devices/*; do
   [ "$(cat $d/vendor 2>/dev/null)" = "0x8086" ] || continue
   case "$(cat $d/class 2>/dev/null)" in 0x0300*) ;; *) continue;; esac
   b=${d##*/}; cap=$(setpci -s $b ECAP_REBAR+4.l 2>/dev/null) || continue
-  found=1; ctl=$(setpci -s $b ECAP_REBAR+8.l 2>/dev/null); [ ${#ctl} -eq 8 ] || { bad "$b: ReBAR control register unreadable"; continue; }; cur=$(( (0x$ctl >> 8) & 0x3f ))
-  bits=$(( 0x$cap >> 4 )); max=0; for i in $(seq 0 27); do [ $(( (bits >> i) & 1 )) = 1 ] && max=$i; done
-  set -- $(sed -n 3p $d/resource); sz=$(( ($2 - $1 + 1) >> 20 ))
-  if [ "$1" = "0x0000000000000000" ]; then bad "$b BAR2 is UNASSIGNED"
-  elif [ $cur -eq $max ] && [ $sz -eq $((1 << cur)) ]; then ok "$b BAR2 = ${sz} MiB (size field $cur = card maximum)"
+  found=1
+  [[ $cap =~ ^[[:xdigit:]]{8}$ && ${cap,,} != ffffffff ]] || { bad "$b: ReBAR capability invalid"; continue; }
+  ctl=$(setpci -s "$b" ECAP_REBAR+8.l 2>/dev/null) || { bad "$b: ReBAR control register unreadable"; continue; }
+  [[ $ctl =~ ^[[:xdigit:]]{8}$ && ${ctl,,} != ffffffff ]] || { bad "$b: ReBAR control register invalid"; continue; }
+  cur=$(( (16#$ctl >> 8) & 0x3f ))
+  bits=$(( 16#$cap >> 4 )); (( bits )) || { bad "$b: ReBAR capability has no supported sizes"; continue; }; max=0; for i in $(seq 0 27); do [ $(( (bits >> i) & 1 )) = 1 ] && max=$i; done
+  read -r start end flags < <(sed -n 3p "$d/resource")
+  [[ $start =~ ^0x[[:xdigit:]]{16}$ && $end =~ ^0x[[:xdigit:]]{16}$ ]] && (( end >= start )) || { bad "$b: BAR2 resource unreadable/invalid"; continue; }
+  sz=$(( (end - start + 1) >> 20 ))
+  if (( start == 0 )); then bad "$b BAR2 is UNASSIGNED"
+  elif [ $cur -eq $max ] && [ $((end - start + 1)) -eq $((1 << (cur + 20))) ]; then ok "$b BAR2 = ${sz} MiB (size field $cur = card maximum)"
   else bad "$b BAR2 = ${sz} MiB (size field $cur, card supports $max)"; fi
-  [ -L $d/driver ] && ok "$b driver: $(basename $(readlink -f $d/driver))" || bad "$b has no driver bound"
-  check_pcie "$d" "$recheck"
+  [ -L "$d/driver" ] && [ -d "$d/driver" ] && ok "$b driver: $(basename $(readlink -f $d/driver))" || bad "$b has no driver bound"
+  check_pcie "$d"
 done
 [ $found = 0 ] && bad "no Intel GPU with a ReBAR capability found"
 v=$(dmesg 2>/dev/null | grep 'VISIBLE VRAM' | tail -1 | sed 's/.*VISIBLE VRAM: //'); [ -n "$v" ] && ok "xe last probe VISIBLE VRAM: $v"
