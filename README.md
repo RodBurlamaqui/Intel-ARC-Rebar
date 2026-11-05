@@ -25,8 +25,10 @@ contributing ports. Here is the evidence reported so far:
 |---|---|---|
 | **B580** | Original project hardware tests, reboots and Vulkan/OpenCL workloads on Supermicro X9DRH-7TF, Debian, `xe` | [Recorded tests](docs/TESTS.md); benchmarks below belong to this setup |
 | **A750** | Community reports successful 8 GiB BAR2, persistent boot hook, `i915` and Jellyfin transcoding on Supermicro H11SSL-i / Proxmox | [Report #2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2); latched PCIe status still produces a verifier failure under investigation |
-| **A770 / A750** | Community reports success in an E5-2697 v2 LLM-server setup | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3); the script currently handles only the first qualifying GPU |
-| **A380** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the proposed Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [draft #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation pending |
+| **A770 / A750** | Reporter describes appropriate BAR sizes with a locally modified loop on Asus Z9PA-D8, Debian SID / `xe` | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6649456377); unmodified diagnostics pending; upstream script still handles only the first qualifying GPU |
+| **A380 — Debian / Lenovo** | Community reports an 8 GiB BAR, boot persistence and normal `i915` use on Lenovo ThinkCentre M900 / OpenMediaVault | [Report #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10); verifier fails on DevSta `0x0008`; [PR #5](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/5) has a matching software test; physical cause and hardware acceptance remain pending |
+| **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
+| **A380 — Arch preview** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the proposed Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [draft #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation pending |
 
 **Testing another model? Your report is welcome.** Additional Arc models may
 qualify when the PCIe topology, ReBAR capability and MMIO checks pass. A model
@@ -37,8 +39,9 @@ or read the [compatibility evidence and reporting guide](docs/COMPATIBILITY.md).
 
 Community reports describe particular setups; they do not establish universal
 support. Stars show interest in the project; compatibility comes from documented
-hardware results. Arch support remains in draft, and multi-GPU operation is an
-open limitation.
+hardware results. An [experimental Arch/CachyOS source preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/arch-preview-2026.11.05.1)
+is available for opt-in testing; its main-merge PR remains open. Multi-GPU
+operation is an open limitation.
 
 ![Intel Arc B580 Limited Edition, exploded view](docs/img/intel-arc-b580-press.jpg)
 
@@ -276,17 +279,22 @@ reports are welcome; unreported combinations remain unverified.
 Full step-by-step with the exact output you should see at every step, and what
 to do if you don't: **[INSTALL.md](INSTALL.md)**. The short form:
 
+**Current Debian/Ubuntu package: 1.0.4**, containing the installer and purge
+recovery fixes. [Version 1.0.3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
+remains downloadable with its original assets and checksums; it lacks those fixes.
+The experimental Arch preview and proposed GPU-verifier changes are separate.
+
 **Debian / Ubuntu, from the `.deb`** — download it from the [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page, or:
 
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.3_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.4_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.3_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.4_all.deb: OK
 ```
 ```
-sudo apt install ./arc-rebar_1.0.3_all.deb    # step 0: installs the tool; ENABLES NOTHING
+sudo apt install ./arc-rebar_1.0.4_all.deb    # step 0: installs the tool; ENABLES NOTHING
 ```
 ```
 sudo arc-rebar diagnose                         # step 1: last line must be "YES: pinned window, all safety checks pass"
@@ -473,6 +481,10 @@ implementation only.
   [#2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2).
 - @ThatGuy-Bob — A770/A750 results and the multi-GPU limitation report in
   [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+- @jacl3 — the A380/Lenovo ThinkCentre M900 boot and verifier report in
+  [#10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10).
+- @CelluloidRacer2 — the B580/Dell R720 VFIO, workload and limitation report in
+  [#11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
