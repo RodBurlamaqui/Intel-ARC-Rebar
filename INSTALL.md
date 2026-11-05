@@ -360,6 +360,11 @@ python3 -m unittest discover -s tests -v
 bash -n install-arch.sh uninstall-arch.sh arch-transaction.sh
 ```
 
+Real moduleless mkinitcpio builds, inert-hook execution and rebuild/recovery tests
+also passed in an isolated userspace filesystem. See the
+[Arch userspace test record](docs/ARCH-USERSPACE-TESTS.md) for exact scope and
+remaining boot/hardware validation; those tests do not replace a real Arch boot.
+
 Configuration/preset reference:
 https://man.archlinux.org/man/mkinitcpio.conf.5.en and
 https://man.archlinux.org/man/mkinitcpio.8.en

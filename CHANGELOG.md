@@ -5,6 +5,10 @@ All revisions on 2026-09-05, developed and verified on a Supermicro X9DRH-7TF
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
 ## Unreleased
+- Surface community hardware reports for A750/A770 and pending A380 Arch
+  validation alongside the original B580 tests. Link report evidence, retain
+  known limitations, credit contributors/testers and invite additional model
+  reports with a hardware-report template.
 - Debian/Ubuntu installer: restore previous managed boot files after failures and
   support interrupted-run recovery with `--recover`, including reinstalls.
   Refuse incompatible initramfs backends before probing hardware or changing boot
