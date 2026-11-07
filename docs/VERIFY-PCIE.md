@@ -3,10 +3,18 @@
 ## Community evidence
 
 - [Issue #2, A750 / H11SSL-i / i915 / Proxmox](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2):
-  the reporter describes an assigned 8 GiB BAR, working Jellyfin transcoding,
-  GPU DevSta `0008` and upstream DevSta `0019` / CESta `00002000`.
-  Manual status clearing reportedly stopped recurrence; the same pattern with
-  `norebar` leaves attribution to this workaround unproven.
+  the original report describes an assigned 8 GiB BAR, working Jellyfin
+  transcoding, GPU DevSta `0008` and upstream DevSta `0019` / CESta `00002000`.
+  The [2026-11-07 follow-up](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2#issuecomment-6707332319)
+  confirms a direct v1.0.3 → v1.0.5 package upgrade, 8 GiB BAR after reboot,
+  default read-only WARN and successful Jellyfin AV1 transcoding while the
+  endpoint status remains latched. No AER log reports or GPU hangs/resets were
+  observed in that run. The raw `0028` and verifier `0008` snapshots differ by
+  Transactions Pending (bit 5); neither establishes the physical cause or age
+  of the Unsupported Request latch.
+  The original report also observed the same status with `norebar`; manual
+  clearing stopped the observed recurrence. Those observations leave the
+  latch's origin and harmlessness unproven.
 - [Issue #10, A380 / ThinkCentre M900 / i915 / OpenMediaVault](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10):
   the reporter describes a successful boot, normal GPU use, an 8 GiB assigned
   BAR, `PLAN: done` and DevSta `0008`. This is accepted community hardware
@@ -21,7 +29,9 @@ The verifier classification fix is shipped in v1.0.5 through PR #5. Issue #2
 is closed for that software correction; closure does not establish the physical
 cause or harmlessness of the reported PCIe status. The 14 verifier regression
 methods also pass against the checksum-verified published v1.0.5 package with
-PCI access intercepted. Reporter confirmation on that release is still welcome.
+PCI access intercepted. The A750 reporter has now confirmed the released WARN
+behavior and successful reboot/workload on the reported setup. Physical
+confirmation from the A380 reporter remains welcome.
 
 These reports were not independently reproduced on a physical GPU. Neither a
 successful workload nor a latched bit alone establishes the event's cause.
