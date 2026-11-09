@@ -500,7 +500,7 @@ Software License Agreement in [LICENSE](LICENSE):
   to others, and any incorporation of this code into another product, driver,
   firmware, kernel or package, requires a separate written commercial licence
   (LICENSE §3.1, §9). Enquiries welcome, including from GPU and platform vendors —
-  contact in LICENSE §9.4.
+  email [burlam1nx@outlook.com](mailto:burlam1nx@outlook.com) (LICENSE §9.4).
 - **Modification** — no derivative works, ports or modified distributions without
   prior written approval. Bug reports and proposed changes are welcome.
 - **Resale** — no sale, sublicensing or distribution for payment without approval.
