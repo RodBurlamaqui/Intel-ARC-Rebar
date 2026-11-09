@@ -21,8 +21,9 @@ tell you whether you have the problem and prove the fix worked.
 
 | Release | Use | Download | Notes and checksums |
 |---|---|---|---|
-| **v1.0.5 — stable** | Current Debian/Ubuntu package; default first-GPU behavior | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
-| **Two-A310 preview 1 — experimental** (`1.0.6~dual-a3101`) | DUAL GPU | [Download experimental `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-a310-preview-2026.11.09.1/arc-rebar_1.0.6.dual-a3101_all.deb) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1) · [Required preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/63364dcca2a98a32a8ee5b6efe88bed747e2e13d/docs/DUAL-A310-PREVIEW.md) |
+| **v1.0.5 — stable** | Single GPU Support — Debian/Ubuntu | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
+| **Two-A310 preview 1 — experimental** (`1.0.6~dual-a3101`) | Dual GPU Support — Experimental Debian/Ubuntu | [Download experimental `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-a310-preview-2026.11.09.1/arc-rebar_1.0.6.dual-a3101_all.deb) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1) · [Required preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/63364dcca2a98a32a8ee5b6efe88bed747e2e13d/docs/DUAL-A310-PREVIEW.md) |
+| **Arch/CachyOS — current source** | Single GPU Support — Experimental Arch/CachyOS (source only) | [Download current source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/archive/refs/heads/main.tar.gz) | Requires `--experimental-arch`; [install guide](INSTALL.md#arch-linux--cachyos-mkinitcpio) · [Hardware validation pending (#15)](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
 | **v1.0.4 — previous** | Installer/purge recovery fixes; predates the v1.0.5 verifier correction | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.4/arc-rebar_1.0.4_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.4) |
 | **v1.0.3 — original release** | Historical package; lacks the newer installer/purge and verifier fixes | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.3/arc-rebar_1.0.3_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3) |
 
@@ -32,8 +33,10 @@ for that. Dual mode requires an explicit boot opt-in and refuses other GPU
 models/counts. Report test results in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 
 [Browse all releases and source archives](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases),
-including the historical Arch source preview. Current Arch/CachyOS instructions
-are in [Install](#6-install); Debian packages do not include the Arch installer.
+including the historical Arch source preview. Arch/CachyOS is a separate
+experimental source port; the **v1.0.5 `.deb` and source release do not include
+the Arch installer**. Use the current source and its
+[Arch/CachyOS install guide](INSTALL.md#arch-linux--cachyos-mkinitcpio).
 
 ### Community hardware reports
 
