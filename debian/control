@@ -1,11 +1,11 @@
 Package: arc-rebar
-Version: 1.0.5
+Version: 1.0.6~dual-a3101
 Section: admin
 Priority: optional
 Architecture: all
 Depends: pciutils, initramfs-tools
 Suggests: vulkan-tools, mesa-opencl-icd, ocl-icd-libopencl1, gcc, make
-Maintainer: Rod Burlamaqui <RodBurlamaqui@users.noreply.github.com>
+Maintainer: Rod Burlamaqui <325167247+RodBurlamaqui@users.noreply.github.com>
 Homepage: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 Description: Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
  Enables the full VRAM aperture of Intel Arc (Battlemage / Alchemist) discrete

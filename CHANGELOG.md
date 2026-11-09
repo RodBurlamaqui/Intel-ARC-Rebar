@@ -4,6 +4,18 @@ The original 2026-09-05 investigation was developed and verified on a Supermicro
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
+## 1.0.6~dual-a3101 preview — 2026-11-09
+- Add opt-in, boot-only `rebar.dual=1` for exactly two non-console Intel A310s
+  (8086:56a6) on separate root ports, using VFIO or not yet driver-bound.
+  Preflight both cards, budget shared MMIO space, recheck after each rescan,
+  stop on failure/topology changes, and verify both assigned 4 GiB BARs.
+- Refuse other models/counts, host graphics bindings and conflicting overrides.
+  Block `live-test` in dual mode. Without opt-in, retain default first-card logic.
+- Publish a separate experimental Debian package and boot/recovery guide. No
+  physical dual-GPU result yet; keep stable v1.0.5 and issue #3 open.
+- Credit @optiz0r's first-card A310 success and supplied diagnostics. Thanks also
+  to @ThatGuy-Bob for the original multi-GPU report and offer to test.
+
 ## Unreleased
 - Merge the Arch/CachyOS mkinitcpio port as an explicit source-only experiment.
   Both install entrypoints require `--experimental-arch`, including reinstall;

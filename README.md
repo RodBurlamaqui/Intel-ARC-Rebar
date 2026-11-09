@@ -15,6 +15,12 @@ modifying firmware, the kernel, or Intel's drivers**. It runs from the initramfs
 at every boot, before the GPU driver loads, and it includes the diagnostics that
 tell you whether you have the problem and prove the fix worked.
 
+> **Experimental two-A310 preview:** this branch adds boot-only `rebar.dual=1`
+> for exactly two non-console A310s on separate root ports, unbound or using VFIO.
+> Physical dual-card validation is pending. See the
+> [test and recovery guide](docs/DUAL-A310-PREVIEW.md). v1.0.5 remains stable;
+> default single-card behavior is unchanged.
+
 ### Community hardware reports
 
 Developed and benchmarked on the **B580**, with community testing expanding
