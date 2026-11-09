@@ -31,6 +31,15 @@ contributing ports. Here is the evidence reported so far:
 | **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
 | **A380 — Arch experimental** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the experimental Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
 
+**Two A310s? An experimental `.deb` is available:**
+[download the two-A310 preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1).
+It requires an explicit boot opt-in and exactly two non-console A310s on separate
+root ports, unbound or using VFIO. **Physical two-card validation is pending.**
+Start with the [read-only preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/63364dcca2a98a32a8ee5b6efe88bed747e2e13d/docs/DUAL-A310-PREVIEW.md),
+and report results in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+Stable **v1.0.5** remains the normal download; other GPU models/counts are refused
+by this preview. Thanks to @optiz0r for the A310 diagnostics and first-card result.
+
 **Testing another model? Your report is welcome.** Additional Arc models may
 qualify when the PCIe topology, ReBAR capability and MMIO checks pass. A model
 name alone does not establish compatibility. Read the prerequisites and run
