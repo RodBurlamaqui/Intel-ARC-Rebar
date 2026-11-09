@@ -37,9 +37,17 @@ payload manually without `ARC_REBAR_DRYRUN=1`, especially while guests use VFIO.
 
 Download the `.deb` and `SHA256SUMS` from the
 [dual-A310 prerelease](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1).
-Use a fresh directory. Extracting the package does not run package scripts:
+Use a fresh directory. GitHub changes `~` to `.` in uploaded asset names;
+these download commands save the original Debian-version filenames expected by
+`SHA256SUMS` and the commands below. If downloading through the browser instead,
+rename `arc-rebar_1.0.6.dual-a3101_all.deb` to
+`arc-rebar_1.0.6~dual-a3101_all.deb` first.
+Extracting the package does not run package scripts:
 
 ```bash
+release=https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-a310-preview-2026.11.09.1
+curl -fL "$release/arc-rebar_1.0.6.dual-a3101_all.deb" -o 'arc-rebar_1.0.6~dual-a3101_all.deb'
+curl -fL "$release/SHA256SUMS" -o SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS
 dpkg-deb -x arc-rebar_1.0.6~dual-a3101_all.deb ./preview
 sudo env ARC_REBAR_DRYRUN=1 ARC_REBAR_EXPERIMENTAL_DUAL=1 \
