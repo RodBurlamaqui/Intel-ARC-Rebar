@@ -488,6 +488,10 @@ implementation only.
   in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
 - @TheKusja1 — the detailed A750/i915 boot, workload and PCIe-status report in
   [#2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2).
+- @optiz0r — hardware-testing contributor: A310 first-card 4 GiB BAR and guest
+  access confirmation, detailed Proxmox/VFIO diagnostics and separate-root
+  topology in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363).
+  Experimental two-card validation remains pending.
 - @ThatGuy-Bob — A770/A750 results and the multi-GPU limitation report in
   [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - @jacl3 — the A380/Lenovo ThinkCentre M900 boot and verifier report in
