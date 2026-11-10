@@ -343,6 +343,10 @@ itself.
 | **VT-d / IOMMU** (Intel), **AMD-Vi / IOMMU** (AMD) | **Enabled only for VM passthrough** | Needed for Proxmox/VFIO passthrough. arc-rebar itself doesn't use it. | Proxmox / VFIO |
 | **SR-IOV** | **Only if you use SR-IOV virtual functions** | arc-rebar doesn't use it. SR-IOV with Arc Pro cards is still being investigated in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3). | SR-IOV users |
 | **64-bit MMIO size / base**, if your BIOS has such an option | **Larger** | If arc-rebar steps the BAR size down (`note: MMIO window is ...`) or refuses with `mmio-window-too-small`, a larger 64-bit MMIO area can fit the full BAR. | Only if you hit those messages |
+| **CSM / Legacy boot** | **Disabled (UEFI boot)** if you use the BIOS's own Resizable BAR | Intel lists CSM off and UEFI boot as a requirement for firmware Resizable BAR ([Intel](https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html)). arc-rebar itself does not check boot mode. | Firmware ReBAR users |
+| **PCIe link speed**: "PCIE1 Link Speed", "PCIe Link Speed", per-slot speed | **Auto** normally | The Arc card's own link is PCIe 4.0 capable (16 GT/s on the A750 in [#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28)); on older platforms it simply runs at the platform's speed. Every server in our reports so far links the card at Gen3 (8 GT/s), which works. See *PCIe errors* below. | Troubleshooting only |
+| **ASPM**: "Native ASPM", "PCI Express root port ASPM", "L1 Substates" | **Enabled** for low idle power; **Disabled** while troubleshooting link errors | Intel recommends Native ASPM and root-port ASPM L1 for Arc idle power; it has no effect on ReBAR ([Intel](https://www.intel.com/content/www/us/en/support/articles/000092564/graphics.html)). | Optional |
+| **Slot bifurcation**: "x16 / x8x8 / x4x4x4x4" | **Auto / x16** for the GPU's slot | Splitting the slot is not needed. arc-rebar requires the GPU to be alone on its root port and refuses otherwise (`skip shared-root-port`). | Only if you changed it |
 
 **Secure Boot note:** verified on Ubuntu's `7.0.0-43-generic` kernel, which is
 built with `CONFIG_LOCK_DOWN_IN_SECURE_BOOT=y`. Other distributions may do the
@@ -358,6 +362,39 @@ effect.
 
 **If Above 4G Decoding is missing or greyed out:** some boards only offer it
 when booting in UEFI mode. Check your manual.
+
+**Watch out for the integrated-graphics "Aperture Size":** on ASRock Intel
+700-series boards, Above 4G Decoding "is disabled automatically when Aperture
+Size is set to 2048MB" ([ASRock BIOS guide](https://download.asrock.com/Manual/Software/Intel%20B760/Software_BIOS%20Setup%20Guide_English.pdf),
+Chipset Configuration). Leave Aperture Size at its default.
+
+**Where to find these settings.** On Intel desktop boards most of them sit in
+one menu, often called **System Agent (SA) Configuration** or **Chipset
+Configuration**. Names vary by model and BIOS version:
+
+| Vendor | Above 4G | Resizable BAR | Primary display | GPU slot link speed | ASPM | Source |
+|---|---|---|---|---|---|---|
+| **ASRock** (Intel 700-series) | Advanced > Chipset Configuration > "Above 4G Decoding" | "C.A.M (Clever Access Memory)" | "Primary Graphics Adapter" [Auto] [Onboard] [PCIE1] | "PCIE1 Link Speed" [Auto] [Gen1]...[Gen5] | "PCIE ASPM Support", "PCH PCIE ASPM Support", "DMI ASPM Support" | [Official BIOS guide](https://download.asrock.com/Manual/Software/Intel%20B760/Software_BIOS%20Setup%20Guide_English.pdf) |
+| **MSI** (Z790) | "Above 4G memory/Crypto Currency mining" | "Re-Size BAR Support" | Not confirmed | "PCI_E1 Max Link Speed" | Not confirmed | Manual excerpts (MEG Z790 series); check your manual |
+| **ASUS** (Z790) | Under "System Agent (SA) Configuration" | "Re-Size BAR Support" | Not confirmed | "PCIE Link Speed" / PEG link speed | "PEG - ASPM" | Manual excerpts (ROG Z790 series); check your manual |
+| **Dell PowerEdge** (13th/14th gen) | "Memory Mapped I/O above 4GB" | No option reported on T430, R720, R740 | "Embedded Video" | Not confirmed | Not confirmed | Community reports (#11, #28, #3) |
+| **Intel's generic names** | "Above 4G Decoding" | "Re-Size BAR Support" | Not covered | Not covered | "Native ASPM", "PCI Express root port ASPM", "L1 Substates" | [Intel](https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html), [Intel ASPM](https://www.intel.com/content/www/us/en/support/articles/000092564/graphics.html) |
+
+**PCIe errors (any setting above can be involved):** some boards and slots,
+especially with risers, long traces or two GPUs, produce PCIe errors at their
+highest link speed. Signs: `verify` reports `FAIL` on PCIe error reports or
+DevSta, the kernel log shows `AER:` / `PCIe Bus Error:` lines, or a server's
+management log (iDRAC, iLO, IPMI SEL) shows a "bus fatal error". A common
+troubleshooting step, from community experience rather than Intel guidance, is
+to set that slot's **PCIe link speed** one generation lower (for example Gen3)
+and to disable **ASPM** while testing. Change one setting at a time.
+
+**Servers can reset without any Linux log.** Many servers handle PCIe errors in
+firmware ("firmware-first"). A fatal error can make the firmware reset the
+whole machine before Linux writes anything, so check the management log
+(iDRAC / iLO / IPMI SEL) for the slot and bus it names. That log, not the
+Linux log, was the key evidence in
+[#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28).
 
 **Kernel command line (not BIOS, but related):** `pci=realloc` is required. Do
 not add `pci=nocrs`: with it, the kernel ignores the BIOS address windows and
