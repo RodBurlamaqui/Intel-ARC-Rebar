@@ -348,10 +348,12 @@ itself.
 built with `CONFIG_LOCK_DOWN_IN_SECURE_BOOT=y`. Other distributions may do the
 same. To check any system, run `cat /sys/kernel/security/lockdown`: if the
 selected value (in brackets) is `[integrity]` or `[confidentiality]`, arc-rebar
-cannot resize the BAR. `diagnose` does not check this yet. **Known issue:** in
-this case the current boot script still logs `PLAN: done` with the *old* size
-(for example `bar2=256M`), because `setpci` does not report the refused write.
-`sudo arc-rebar verify` shows the real BAR size. A fix is planned.
+cannot resize the BAR. **In v1.0.5 and earlier**, the boot script then still
+logs `PLAN: done` with the *old* size (for example `bar2=256M`), because
+`setpci` does not report the refused write; `sudo arc-rebar verify` shows the
+real BAR size. Newer versions refuse up front with `skip reason=kernel-lockdown`
+(which `diagnose` also reports), or `skip reason=rebar-write-not-applied` if the
+write did not take effect.
 
 **If Above 4G Decoding is missing or greyed out:** some boards only offer it
 when booting in UEFI mode. Check your manual.
@@ -378,7 +380,8 @@ Decoding is on.
 |---|---|---|
 | `skip reason=no-mmio-window-above-4g` | No address space above 4 GB | **Above 4G Decoding** in BIOS. Also remove `pci=nocrs` from the kernel command line if it's there |
 | `skip reason=mmio-window-too-small` or `note: MMIO window is ..., stepping target down` | The 64-bit MMIO area is too small for the full BAR | A **64-bit MMIO size** option in BIOS, if available, or a smaller `rebar.size` (see [INSTALL.md](INSTALL.md)) |
-| `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Kernel lockdown blocked the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| v1.0.5 and earlier: `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Same as above: the write was refused but not reported | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
 | `skip reason=no-pci-realloc` | `pci=realloc` is missing | The kernel command line, not BIOS |
 
 ## 5. Where it applies — and where it refuses
