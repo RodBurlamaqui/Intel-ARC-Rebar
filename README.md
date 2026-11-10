@@ -39,9 +39,27 @@ small donation can help me keep working on it.
 
 **[Support arc-rebar on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)**
 
+**Want to support every month?** On the Buy Me a Coffee page, choose
+**"Make this monthly"** and pick any amount; even $5 a month makes a real
+difference and helps plan testing ahead.
+
 Contributions help fund more Intel Arc GPUs and test systems, hardware
 validation on additional platforms, bug investigations, community support,
 releases, and documentation.
+
+**Donate hardware.** We don't have every GPU and platform people run arc-rebar
+on, and testing depends on community hardware. We gratefully accept **graphics
+cards** (any Intel Arc model, Alchemist or Battlemage), **complete systems,
+motherboards** (especially boards without a Resizable BAR option, servers and
+dual-GPU setups) and **other hardware** that helps us test. To offer something,
+[open a hardware donation issue](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/new?template=hardware-donation.md)
+describing the hardware only. **Please don't post your name, address or other
+personal details in the issue**; we'll follow up to arrange the details
+privately.
+
+**Supporters.** Thank you to everyone who supports arc-rebar with donations or
+hardware. Supporters who'd like to be listed will be credited here, with their
+permission.
 
 Can't donate? Sharing the project, contributing detailed hardware reports,
 and helping others troubleshoot are valuable too. Thank you to everyone who
