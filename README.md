@@ -501,6 +501,9 @@ Software License Agreement in [LICENSE](LICENSE):
   firmware, kernel or package, requires a separate written commercial licence
   (LICENSE §3.1, §9). Enquiries welcome, including from GPU and platform vendors —
   email [burlam1nx@outlook.com](mailto:burlam1nx@outlook.com) (LICENSE §9.4).
+- **Previews follow the same terms.** Experimental, beta, alpha and other
+  pre-release versions do not exempt Commercial Use from the written licence
+  requirement; free Personal Use remains governed by LICENSE §2.1.
 - **Modification** — no derivative works, ports or modified distributions without
   prior written approval. Bug reports and proposed changes are welcome.
 - **Resale** — no sale, sublicensing or distribution for payment without approval.
