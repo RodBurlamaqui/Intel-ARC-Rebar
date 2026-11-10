@@ -2,9 +2,8 @@
 
 <a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Support arc-rebar on Buy Me a Coffee" width="217" height="60"></a>
 
-**If arc-rebar helped bring your Intel Arc GPU back to life, or helped you in any way -
-
-please help keep the project moving.** Your contribution supports testing hardware, compatibility work, and ongoing maintenance.
+**If arc-rebar helped bring your Intel Arc GPU back to life, or helped you in any way —**<br>
+**please help keep the project moving.** Your contribution supports testing hardware, compatibility work, and ongoing maintenance.
 
 Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enterprise use requires separate licensing** — see [LICENSE](LICENSE) §9.
 
