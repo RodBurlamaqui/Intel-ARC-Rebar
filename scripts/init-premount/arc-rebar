@@ -10,11 +10,9 @@
 # GPU BAR are allocated fresh together. Must run before the xe driver binds.
 #
 # Every exit is via plan(), which logs "arc-rebar: PLAN: <verdict>" and exits 0.
-# In experimental dual mode, per-card exits are isolated in subshells.
 # Boot is never failed. Verdicts: act | done | none | skip | rolled-back | FAILED
 #
 # Kernel cmdline knobs:  norebar                   disable entirely (escape hatch)
-#                        rebar.dual=1             EXPERIMENTAL: exactly two A310s
 #                        rebar.dev=DDDD:BB:DD.F    pick the GPU explicitly
 #                        rebar.size=N              size field (2^(N+20) bytes),
 #                                                  capped to what fits
@@ -38,19 +36,9 @@ case " $CMDLINE " in *" pci=realloc"*) ;; *)
   [ -n "$ARC_REBAR_ASSUME_REALLOC" ] || plan "skip reason=no-pci-realloc (add pci=realloc to the kernel cmdline)";;
 esac
 
-# A separate opt-in dispatcher runs the existing checks in isolated subshells.
-# A per-card plan exits that subshell, so an already-sized first card cannot
-# hide the second card. Default selection and explicit rebar.dev stay unchanged.
-DUAL=
-case " $CMDLINE " in *" rebar.dual=1 "*) DUAL=1;; esac
-[ "$ARC_REBAR_EXPERIMENTAL_DUAL" = 1 ] && DUAL=1
-
-single_gpu() {
 # --- 1. GPU: explicit rebar.dev=, else first Intel VGA device with a ReBAR capability
-GPU=${1:-}
-if [ -z "$GPU" ]; then
+GPU=""
 for w in $CMDLINE; do case "$w" in rebar.dev=*) GPU=${w#rebar.dev=};; esac; done
-fi
 case "$GPU" in ''|[0-9a-f][0-9a-f][0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f].[0-7]) ;; *) log "ignoring malformed rebar.dev=$GPU"; GPU="";; esac
 if [ -z "$GPU" ]; then
   for d in $D/*; do
@@ -61,15 +49,6 @@ if [ -z "$GPU" ]; then
   done
 fi
 [ -n "$GPU" ] && [ -e "$D/$GPU" ] || plan "none reason=no-intel-gpu-with-rebar"
-
-if [ -n "$DUAL" ]; then
-  [ "$(cat "$D/$GPU/device" 2>/dev/null)" = 0x56a6 ] || plan "skip reason=dual-requires-a310 gpu=$GPU"
-  [ "$(cat "$D/$GPU/boot_vga" 2>/dev/null)" = 0 ] || plan "skip reason=dual-requires-non-console-gpu gpu=$GPU"
-  if [ -L "$D/$GPU/driver" ]; then
-    [ "$(basename "$(readlink -f "$D/$GPU/driver")")" = vfio-pci ] ||
-      plan "skip reason=dual-requires-vfio-or-unbound-gpu gpu=$GPU"
-  fi
-fi
 
 # --- 2. topology: expect  root-port / switch-upstream / switch-downstream / GPU
 p=$(readlink -f "$D/$GPU"); rel=${p#/sys/devices/pci*/}; RP=${rel%%/*}
@@ -119,29 +98,6 @@ done
 [ $fit -lt $tgt ] && log "note: MMIO window is $(( win >> 20 ))M, stepping target down from $tgt to $fit"
 tgt=$fit
 
-if [ -n "$DUAL" ]; then
-  [ "$tgt" -eq 12 ] && [ "$tgtmax" -eq 12 ] &&
-    [ $(( (bits >> 12) & 1 )) -eq 1 ] && [ $(( 0x$ctl & 7 )) -eq 2 ] ||
-    plan "skip reason=dual-requires-supported-4g-bar2 gpu=$GPU"
-  case "$cur" in 8|12) ;; *) plan "skip reason=dual-unexpected-current-size gpu=$GPU current=$cur";; esac
-  set -- $(sed -n 3p "$D/$GPU/resource" 2>/dev/null)
-  [ "$#" -eq 3 ] || plan "skip reason=dual-invalid-resource gpu=$GPU"
-  for value in "$1" "$2"; do
-    hex=${value#0x}
-    case "$value:$hex" in 0x*:*) ;; *) plan "skip reason=dual-invalid-resource gpu=$GPU";; esac
-    case "$hex" in ''|*[!0-9a-fA-F]*) plan "skip reason=dual-invalid-resource gpu=$GPU";; esac
-    [ "${#hex}" -le 15 ] || { [ "${#hex}" -eq 16 ] && [ "${hex%???????????????}" = 0 ]; } ||
-      plan "skip reason=dual-invalid-resource gpu=$GPU"
-  done
-  [ $(( $1 )) -gt 0 ] && [ $(( $1 % (1 << (cur + 20)) )) -eq 0 ] &&
-    [ $(( $2 - $1 + 1 )) -eq $(( 1 << (cur + 20) )) ] ||
-    plan "skip reason=dual-current-bar2-unassigned-or-wrong-size gpu=$GPU"
-  if [ -n "$DUAL_CHECK_ONLY" ]; then
-    echo "DUAL-CHECK $GPU $RP $US $RB $cur $tgt $wstart $win"
-    exit 0
-  fi
-fi
-
 log "gpu=$GPU rootport=$RP switch=$US cap=0x$cap ctl=0x$ctl size_field current=$cur target=$tgt mmio_window=$(( win >> 20 ))M"
 [ "$cur" -ge "$tgt" ] && plan "none reason=already-at-target current=$cur"
 [ -n "$DRY" ] && plan "act gpu=$GPU rootport=$RP from=$cur to=$tgt (dry run, nothing changed)"
@@ -152,11 +108,7 @@ for d in $D/*; do
   [ -L "$d/driver" ] || continue
   drv=$(basename "$(readlink -f "$d/driver")")
   [ "$drv" = pcieport ] && continue
-  if echo "${d##*/}" > "$d/driver/unbind" 2>/dev/null; then
-    log "unbound $drv from ${d##*/}"
-  elif [ -n "$DUAL" ]; then
-    plan "skip reason=dual-unbind-failed device=${d##*/}"
-  fi
+  echo "${d##*/}" > "$d/driver/unbind" 2>/dev/null && log "unbound $drv from ${d##*/}"
 done
 sleep 1
 
@@ -164,25 +116,13 @@ sleep 1
 new=$(printf '%08x' $(( (0x$ctl & 0xffffc0ff) | (tgt << 8) )))
 setpci -s "$GPU" ECAP_REBAR+8.l="$new" || plan "skip reason=setpci-write-failed"
 log "wrote ECAP_REBAR ctl=0x$new; removing $RP and rescanning"
-if [ -n "$DUAL" ]; then
-  echo 1 > "$D/$RP/remove" 2>/dev/null || plan "FAILED gpu=$GPU reason=root-port-remove-failed; reboot with norebar"
-  sleep 2
-  echo 1 > /sys/bus/pci/rescan || plan "FAILED gpu=$GPU reason=pci-rescan-failed; reboot with norebar"
-  sleep 3
-else
-  echo 1 > "$D/$RP/remove" 2>/dev/null; sleep 2
-  echo 1 > /sys/bus/pci/rescan;          sleep 3
-fi
+echo 1 > "$D/$RP/remove" 2>/dev/null; sleep 2
+echo 1 > /sys/bus/pci/rescan;          sleep 3
 
 # --- 8. verify; roll back to the original size if BAR2 did not get assigned
 bar2() { [ -r "$D/$GPU/resource" ] && sed -n 3p "$D/$GPU/resource"; }
 set -- $(bar2)
-if [ -n "$1" ] && [ "$1" != "0x0000000000000000" ]; then
-  if [ -z "$DUAL" ] || { [ $(( $2 - $1 + 1 )) -eq $(( 1 << (tgt + 20) )) ] &&
-    [ "$(setpci -s "$GPU" ECAP_REBAR+8.l 2>/dev/null)" = "$new" ]; }; then
-    plan "done gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M"
-  fi
-fi
+[ -n "$1" ] && [ "$1" != "0x0000000000000000" ] && plan "done gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M"
 log "WARNING: BAR2 unassigned after rescan (gpu present: $([ -e "$D/$GPU" ] && echo yes || echo no)); rolling back to size field $cur"
 if [ -e "$D/$GPU" ]; then
   setpci -s "$GPU" ECAP_REBAR+8.l="$ctl" 2>/dev/null
@@ -192,116 +132,3 @@ echo 1 > /sys/bus/pci/rescan; sleep 3
 set -- $(bar2)
 [ -n "$1" ] && [ "$1" != "0x0000000000000000" ] && plan "rolled-back gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M (MMIO too tight; see README)"
 plan "FAILED gpu=$GPU BAR2 still unassigned after rollback; GPU may be unusable this boot. Reboot with norebar."
-
-}
-
-# Only VGA endpoints with Intel's A310 device ID are accepted in this preview.
-# Count all Intel ReBAR VGA endpoints first: a third card or another Arc model
-# must not silently fall back to the original first-card operation.
-dual_candidates() {
-  for d in $D/*; do
-    [ "$(cat "$d/vendor" 2>/dev/null)" = 0x8086 ] || continue
-    case "$(cat "$d/class" 2>/dev/null)" in 0x0300*) ;; *) continue;; esac
-    if [ "$(cat "$d/device" 2>/dev/null)" != 0x56a6 ]; then
-      setpci -s "${d##*/}" ECAP_REBAR+4.l >/dev/null 2>&1 || continue
-    fi
-    echo "${d##*/}"
-  done
-}
-
-dual_refuse() {
-  [ -n "$DUAL_STARTED" ] || plan "skip $*"
-  plan "FAILED $*; dual sequence stopped; reboot with norebar"
-}
-
-dual_probe() {
-  check1=$(DUAL_CHECK_ONLY=1 DRY=1 single_gpu "$gpu1")
-  check2=$(DUAL_CHECK_ONLY=1 DRY=1 single_gpu "$gpu2")
-  case "$check1" in "DUAL-CHECK $gpu1 "*) ;; *) log "$check1"; dual_refuse "reason=dual-first-preflight-failed";; esac
-  case "$check2" in "DUAL-CHECK $gpu2 "*) ;; *) log "$check2"; dual_refuse "reason=dual-second-preflight-failed";; esac
-  set -- $check1; rp1=$3
-  set -- $check2; rp2=$3
-  [ "$rp1" != "$rp2" ] || dual_refuse "reason=dual-shared-root-port"
-  [ "$(dual_candidates)" = "$candidates" ] &&
-    [ "$(readlink -f "$D/$gpu1")" = "$path1" ] &&
-    [ "$(readlink -f "$D/$gpu2")" = "$path2" ] ||
-    dual_refuse "reason=dual-topology-changed"
-
-  set -- $(sed -n 3p "$D/$gpu1/resource"); a1=$1; z1=$2
-  set -- $(sed -n 3p "$D/$gpu2/resource"); a2=$1; z2=$2
-  [ $(( a1 )) -gt $(( z2 )) ] || [ $(( a2 )) -gt $(( z1 )) ] ||
-    dual_refuse "reason=dual-overlapping-bars"
-
-  # A deliberately conservative allocation proof: ignore every hole below the
-  # highest occupied address in each selected host window. Reserve aligned
-  # 4 GiB + 64 MiB for each card still needing expansion. Already-sized cards
-  # are counted by their assigned resources. This can reject layouts that
-  # could work, but does not double-count free space in a shared host window.
-  previous_bus=; previous_start=; previous_cursor=0
-  for record in "$check1" "$check2"; do
-    set -- $record
-    [ "$6" -ne 12 ] || continue
-    bus=$5; start=$8; end=$(( $8 + $9 - 1 )); cursor=$start
-    while IFS= read -r line; do
-      case "$line" in " "*) ;; *) continue;; esac
-      range=${line%% :*}; range=${range##* }
-      case "$range" in ''|*[!0-9a-fA-F-]*|*-*-*) dual_refuse "reason=dual-malformed-iomem";; esac
-      case "$range" in *-*) ;; *) dual_refuse "reason=dual-malformed-iomem";; esac
-      a=$(( 0x${range%-*} )); z=$(( 0x${range#*-} ))
-      if [ "$a" -le "$end" ] && [ "$z" -ge "$start" ]; then
-        [ "$z" -lt "$end" ] || dual_refuse "reason=dual-no-contiguous-mmio-tail bus=$bus"
-        [ "$cursor" -gt "$z" ] || cursor=$(( z + 1 ))
-      fi
-    done < "$IOMEM"
-    if [ "$bus" = "$previous_bus" ] && [ "$start" = "$previous_start" ]; then
-      [ "$cursor" -ge "$previous_cursor" ] || cursor=$previous_cursor
-    fi
-    size=$(( 4 << 30 )); cursor=$(( ((cursor + size - 1) / size) * size + size + (64 << 20) ))
-    [ "$cursor" -le $(( end + 1 )) ] || dual_refuse "reason=dual-insufficient-contiguous-mmio bus=$bus"
-    previous_bus=$bus; previous_start=$start; previous_cursor=$cursor
-  done
-}
-
-if [ -z "$DUAL" ]; then
-  single_gpu
-else
-  # An environment opt-in is only for read-only preflight; boot requires the
-  # kernel token. This prevents a diagnostic environment from enabling writes.
-  case " $CMDLINE " in *" rebar.dual=1 "*) ;; *)
-    [ -n "$DRY" ] || plan "skip reason=dual-requires-boot-opt-in";; esac
-  for w in $CMDLINE; do
-    case "$w" in rebar.dev=*|rebar.size=*) plan "skip reason=dual-conflicting-override";; esac
-  done
-  candidates=$(dual_candidates)
-  set -- $candidates
-  [ "$#" -eq 2 ] || plan "skip reason=dual-requires-exactly-two-intel-rebar-gpus count=$#"
-  gpu1=$1; gpu2=$2
-  path1=$(readlink -f "$D/$gpu1"); path2=$(readlink -f "$D/$gpu2")
-  dual_probe
-  if [ -n "$DRY" ]; then
-    log "$check1"; log "$check2"
-    set -- $check1; current1=$6
-    set -- $check2; current2=$6
-    [ "$current1" -ne 12 ] || [ "$current2" -ne 12 ] ||
-      plan "none experimental-dual reason=both-already-at-target gpus=$gpu1,$gpu2"
-    plan "act experimental-dual gpus=$gpu1,$gpu2 (dry run, nothing changed)"
-  fi
-  DUAL_STARTED=1
-  for selected in "$gpu1" "$gpu2"; do
-    # Re-read both cards and the resource map after every removal/rescan.
-    dual_probe
-    result=$(single_gpu "$selected")
-    log "$result"
-    case "$result" in
-      *"PLAN: done gpu=$selected "*|*"PLAN: none reason=already-at-target "*) ;;
-      *) plan "FAILED reason=dual-stopped gpu=$selected; check per-card verdicts; reboot with norebar";;
-    esac
-  done
-  dual_probe
-  # Verify both BARs after the last rescan, not just after each card's own turn.
-  for record in "$check1" "$check2"; do
-    set -- $record
-    [ "$6" -eq 12 ] || plan "FAILED reason=dual-final-size gpu=$2; reboot with norebar"
-  done
-  plan "done experimental-dual gpus=$gpu1,$gpu2 bar2_each=4096M"
-fi

@@ -1,10 +1,4 @@
 #!/bin/bash
-# The dual-A310 preview is boot-only: never detach passthrough GPUs from live VMs.
-case " $(cat /proc/cmdline 2>/dev/null) " in *" rebar.dual=1 "*)
-  echo 'Experimental dual-A310 mode is boot-only; use the documented reboot test.'; exit 2;; esac
-[ "${ARC_REBAR_EXPERIMENTAL_DUAL:-}" != 1 ] || {
-  echo 'Experimental dual-A310 mode is boot-only; use the documented reboot test.'; exit 2;
-}
 # Prove the fix on your hardware without rebooting. Stops the display manager
 # (SSH survives), runs the boot script for real, restarts the display manager.
 # If the machine hangs at the rescan: power cycle; nothing persistent changed.

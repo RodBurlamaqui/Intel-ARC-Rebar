@@ -76,7 +76,7 @@ class ArchInstallerTests(unittest.TestCase):
 
     def run_fixture(self, mode='ok', reinstall=False, uninstall=False,
                     missing=False, cmdline=True, grubfail=False, hookfail=False,
-                    hooks=None, override=False, experimental=True, dual=False, live=False, dual_kernel=False):
+                    hooks=None, override=False, experimental=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / 'source'
@@ -93,16 +93,13 @@ class ArchInstallerTests(unittest.TestCase):
                 shutil.copyfile(REPO / name, path)
             boot = source / 'scripts/init-premount/arc-rebar'
             boot.parent.mkdir(parents=True)
-            boot.write_text('#!/bin/sh\nprintf dryrun >> "$FIXTURE/probes"\n'
-                            'if [ "$ARC_REBAR_EXPERIMENTAL_DUAL" = 1 ]; then\n'
-                            ' echo "arc-rebar: PLAN: act experimental-dual gpus=mock1,mock2"\n'
-                            'else echo "arc-rebar: PLAN: act gpu=mock"; fi\n')
+            boot.write_text('#!/bin/sh\nprintf dryrun >> "$FIXTURE/probes"\necho "arc-rebar: PLAN: act gpu=mock"\n')
             for name, content in {
                 'etc/mkinitcpio.conf': 'MODULES=()\nHOOKS=(base udev kms filesystems)   \n',
                 'etc/default/grub': "GRUB_CMDLINE_LINUX_DEFAULT='quiet'\n",
                 'boot/grub/grub.cfg': 'original grub menu\n',
                 'boot/initramfs-linux.img': 'original image\n',
-                'proc/cmdline': ('pci=realloc rebar.dual=1\n' if dual_kernel else 'pci=realloc\n') if cmdline else 'quiet\n',
+                'proc/cmdline': 'pci=realloc\n' if cmdline else 'quiet\n',
             }.items():
                 p = root / name
                 p.parent.mkdir(parents=True, exist_ok=True)
@@ -152,12 +149,11 @@ exit 0''',
                 p.write_text('#!/bin/bash\n' + body + '\n')
                 p.chmod(0o755)
             env = dict(os.environ, PATH=str(binpath) + ':' + os.environ['PATH'],
-                       FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)),
-                       ARC_REBAR_EXPERIMENTAL_DUAL="1" if dual else "")
+                       FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)))
             args = ['bash', str(source / ('uninstall-arch.sh' if uninstall else 'install-arch.sh'))]
             if not uninstall:
                 args += (['--experimental-arch'] if experimental else [])
-                args += ['--yes'] + (['--reinstall'] if reinstall else []) + (['--live-test'] if live else [])
+                args += ['--yes'] + (['--reinstall'] if reinstall else [])
             p = subprocess.run(args, env=env, text=True, capture_output=True, timeout=10)
             after = {name: ((root / name).read_bytes(), (root / name).stat().st_mode)
                      if (root / name).exists() else None for name in MANAGED}
@@ -174,25 +170,6 @@ exit 0''',
         self.assertEqual(before, after, out)
         self.assertTrue(backup)
         return out, logs, calls
-
-    def test_arch_dual_preflight_environment_reaches_payload_and_installs(self):
-        rc, out, before, after, logs, calls, backup = self.run_fixture(dual=True)
-        self.assertEqual(rc, 0, out)
-        self.assertIn('PLAN: act experimental-dual gpus=mock1,mock2', out)
-        self.assertIn('all post-checks passed', out)
-        self.assertNotEqual(before, after)
-
-    def test_arch_dual_live_test_refuses_before_probing_or_changes(self):
-        for dual, kernel in [(True, False), (False, True)]:
-            with self.subTest(environment=dual, kernel=kernel):
-                rc, out, before, after, logs, calls, backup = self.run_fixture(
-                    dual=dual, dual_kernel=kernel, live=True)
-                self.assertEqual(rc, 2, out)
-                self.assertIn('boot-only', out)
-                self.assertEqual(before, after)
-                self.assertEqual(logs['probes'], '')
-                self.assertEqual(calls, 0)
-                self.assertFalse(backup)
 
     def test_arch_install_requires_opt_in_before_probing_or_mutation(self):
         for reinstall in (False, True):
