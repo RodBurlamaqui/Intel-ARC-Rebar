@@ -486,18 +486,61 @@ about 8 seconds on the test machine. Check any time with:
 ```
 sudo arc-rebar verify
 ```
+Example output for a single B580 (your addresses and sizes will differ):
+
 ```
+== arc-rebar verify (boot 2026-11-10 09:00:00) ==
   [ok]   pci=realloc active
   [ok]   hook installed
+  [ok]   no PCIe error reports in available kernel log
   [ok]   boot verdict: done gpu=0000:86:00.0 bar2=16384M
   [ok]   0000:86:00.0 BAR2 = 16384 MiB (size field 14 = card maximum)
   [ok]   0000:86:00.0 driver: xe
-  [ok]   0000:86:00.0 DevSta: no correctable/fatal/unsupported-request errors
+  [ok]   0000:86:00.0 DevSta snapshot: 0x0000
   [ok]   xe last probe VISIBLE VRAM: 0x0000381000000000, 0x0000000400000000
-  [ok]   no AER error reports
-  [ok]   vulkan: memoryHeaps: count = 2 ... 11.93 GiB
+  [ok]   no PCIe error reports in available kernel log
+  [warn] Driver binding/BAR allocation do not establish GPU workload health.
+
 RESULT: PASS
 ```
+
+The `[warn]` line about workload health always appears; it is a reminder, not
+a problem. If `vulkaninfo` is installed, a `vulkan: memoryHeaps ...` line
+follows it. See [PCIe status](#pcie-status) below for what `WARN` and `FAIL`
+mean.
+
+### PCIe status
+
+`verify` separates BAR allocation/driver binding from PCIe status evidence.
+A bound driver or successful transcode alone does not prove GPU memory/compute
+health. Verification is read-only and never clears status or writes PCI
+configuration registers.
+
+| Evidence | Result / exit |
+|---|---|
+| Existing checks pass, endpoint DevSta clean | PASS / 0 (checks only, not a workload certification) |
+| Only correctable / Unsupported Request DevSta bits (0/3) latched | WARN / 2 (age/cause unresolved) |
+| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable registers or kernel log | FAIL / 1 |
+
+Run `sudo arc-rebar verify` and preserve the output alongside relevant
+`sudo arc-rebar diagnose`, `sudo lspci -Dvv` and kernel-log evidence locally.
+Review and redact machine identifiers, network addresses and unrelated logs
+before sharing an excerpt publicly. A warning is a request to investigate;
+it does not establish that a latched event is harmless, historical or caused
+by ReBAR. Automation must handle exit 2 separately from success and failure.
+
+Endpoint status is a snapshot, not a complete upstream AER audit. Kernel-log
+matching retains a conservative system-wide failure policy and can include
+unrelated devices. Missing boot-verdict messages are reported as warnings;
+a PASS covers only checks with available evidence, not proof of this hook's
+execution or guest GPU workload health.
+
+The optional register-clearing experiment is preserved separately on
+[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck)
+at commit `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is excluded from the
+stable verifier and still lacks physical GPU validation. The stable CLI rejects
+`--recheck-pcie` with exit 64 before reading hardware.
+See [the evidence and validation limits](docs/VERIFY-PCIE.md).
 
 ## 8. Diagnostics
 
@@ -636,36 +679,3 @@ implementation only.
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
   resources)`, which was the whole answer once someone read it.
-
-### PCIe status
-
-`verify` separates BAR allocation/driver binding from PCIe status evidence.
-A bound driver or successful transcode alone does not prove GPU memory/compute
-health. Verification is read-only and never clears status or writes PCI
-configuration registers. The boot hook is unchanged.
-
-| Evidence | Result / exit |
-|---|---|
-| Existing checks pass, endpoint DevSta clean | PASS / 0 (checks only, not a workload certification) |
-| Only correctable / Unsupported Request DevSta bits (0/3) latched | WARN / 2 (age/cause unresolved) |
-| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable registers or kernel log | FAIL / 1 |
-
-Run `sudo arc-rebar verify` and preserve the output alongside relevant
-`sudo arc-rebar diagnose`, `sudo lspci -Dvv` and kernel-log evidence locally.
-Review and redact machine identifiers, network addresses and unrelated logs
-before sharing an excerpt publicly. A warning is a request to investigate;
-it does not establish that a latched event is harmless, historical or caused
-by ReBAR. Automation must handle exit 2 separately from success and failure.
-
-Endpoint status is a snapshot, not a complete upstream AER audit. Kernel-log
-matching retains a conservative system-wide failure policy and can include
-unrelated devices. Missing boot-verdict messages are reported as warnings;
-a PASS covers only checks with available evidence, not proof of this hook's
-execution or guest GPU workload health.
-
-The optional register-clearing experiment is preserved separately on
-[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck)
-at commit `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is excluded from the
-stable verifier and still lacks physical GPU validation. The stable CLI rejects
-`--recheck-pcie` with exit 64 before reading hardware.
-See [the evidence and validation limits](docs/VERIFY-PCIE.md).
