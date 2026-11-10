@@ -13,6 +13,15 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
   boot/GPU validation separately in issue #15; software coverage does not
   establish kernel boot ordering, hardware stability or workload health.
 - Retain Debian/Ubuntu release assets and the earlier Arch preview unchanged.
+- Fix a false `PLAN: done` when the kernel refuses the ReBAR write (for example
+  Ubuntu kernels in lockdown under Secure Boot). `setpci` exits 0 on a refused
+  write, so the boot hook reported `done` at the original size. The hook now
+  skips with `kernel-lockdown` when lockdown is visible before any change, and
+  reports `done` only if the control register reads back the written value and
+  BAR2 has the target size. Otherwise it reports `rebar-write-not-applied` or
+  rolls back. Covered by 6 new mocked tests. The register read-back after the
+  rescan matches the check the dual-A310 preview passed on community hardware;
+  other models are not hardware-confirmed.
 
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported
