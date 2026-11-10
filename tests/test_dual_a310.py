@@ -72,6 +72,10 @@ case "$1:$2:$3" in
   -s:*:ECAP_REBAR+8.l=*)
     printf '%s %s\\n' "$2" "$3" >> "$WRITE_LOG"
     [ "$2" != "$FAIL_GPU" ] || exit 97
+    # Real setpci on a lockdown-refused write: warns and exits 0, no change.
+    if [ "$2" = "$REFUSE_GPU" ]; then
+      echo "pcilib: sysfs_write: write failed: Operation not permitted" >&2; exit 0
+    fi
     echo "${3#*=}" > "$DEVICE_ROOT/$2/rebar-ctl";;
   -s:*:ECAP_REBAR+4.l) cat "$DEVICE_ROOT/$2/rebar-cap";;
   -s:*:ECAP_REBAR+8.l) cat "$DEVICE_ROOT/$2/rebar-ctl";;
@@ -331,6 +335,71 @@ if os.environ.get('CHANGE_TOPOLOGY'):
         self.assertIn('PLAN: rolled-back', out)
         self.assertIn('FAILED reason=dual-stopped', out)
         self.assertNotIn(self.second['gpu'], self.write_log.read_text())
+
+    # --- kernel lockdown and refused writes (setpci exits 0 on a refused write)
+
+    def set_lockdown(self, text):
+        path = self.sys / 'kernel/security/lockdown'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text + '\n')
+
+    def test_lockdown_refuses_before_any_write(self):
+        self.set_lockdown('none [integrity] confidentiality')
+        self.enable_mock_writes()
+        self.rejected('skip reason=kernel-lockdown', real=True)
+
+    def test_lockdown_preflight_reports_refusal(self):
+        self.set_lockdown('[confidentiality]')
+        self.rejected('skip reason=kernel-lockdown',
+                      cmdline='pci=realloc', extra_env={'ARC_REBAR_EXPERIMENTAL_DUAL': '1'})
+
+    def test_refused_first_write_is_not_reported_as_done(self):
+        self.enable_mock_writes()
+        out = self.run_dual(real=True, extra_env={'REFUSE_GPU': self.first['gpu']})
+        self.assertIn('PLAN: skip reason=rebar-write-not-applied gpu=0000:03:00.0 bar2=256M', out)
+        self.assertIn('FAILED reason=dual-stopped', out)
+        self.assertNotIn('PLAN: done', out)
+        self.assertNotIn(self.second['gpu'], self.write_log.read_text())
+
+    def test_refused_second_write_is_partial_failure_not_success(self):
+        self.enable_mock_writes()
+        out = self.run_dual(real=True, extra_env={'REFUSE_GPU': self.second['gpu']})
+        self.assertIn('PLAN: done gpu=0000:03:00.0 bar2=4096M', out)
+        self.assertIn('PLAN: skip reason=rebar-write-not-applied gpu=0000:07:00.0 bar2=256M', out)
+        self.assertIn('FAILED reason=dual-stopped', out)
+        self.assertNotIn('PLAN: done experimental-dual', out)
+
+    # --- log lines must carry a single "arc-rebar: " prefix, once each
+
+    def kmsg_appending(self):
+        # The fixture redirects /dev/kmsg to a regular file with '>', which
+        # keeps only the last line. Append instead so every logged line counts.
+        kmsg = str(self.root / 'dev/kmsg')
+        self.script.write_text(self.script.read_text().replace('> ' + kmsg, '>> ' + kmsg))
+        (self.root / 'dev/kmsg').write_text('')
+        return self.root / 'dev/kmsg'
+
+    def test_boot_logs_each_line_once_with_single_prefix(self):
+        kmsg = self.kmsg_appending()
+        self.enable_mock_writes()
+        out = self.run_dual(real=True)
+        self.assertIn('PLAN: done experimental-dual', out)
+        logged = kmsg.read_text()
+        self.assertNotIn('arc-rebar: arc-rebar:', out)
+        self.assertNotIn('arc-rebar: arc-rebar:', logged)
+        for gpu in ('0000:03:00.0', '0000:07:00.0'):
+            line = f'arc-rebar: PLAN: done gpu={gpu} bar2=4096M'
+            self.assertEqual(logged.count(line), 1, logged)
+            self.assertEqual(out.count(line), 1, out)
+
+    def test_preflight_refusal_has_single_prefix(self):
+        kmsg = self.kmsg_appending()
+        (self.devices / self.first['gpu'] / 'device').write_text('0xe20b\n')
+        out = self.run_dual(real=True)
+        self.assertIn('arc-rebar: PLAN: skip reason=dual-requires-a310 gpu=0000:03:00.0', out)
+        self.assertIn('arc-rebar: PLAN: skip reason=dual-first-preflight-failed', out)
+        self.assertNotIn('arc-rebar: arc-rebar:', out)
+        self.assertNotIn('arc-rebar: arc-rebar:', kmsg.read_text())
 
     def test_topology_change_after_rescan_stops_before_second(self):
         self.enable_mock_writes()

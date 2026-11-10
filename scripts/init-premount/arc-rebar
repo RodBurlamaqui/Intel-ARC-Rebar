@@ -27,6 +27,9 @@ case "$1" in prereqs) prereqs; exit 0;; esac
 
 log()  { echo "arc-rebar: $*"; [ -n "$DRY" ] || echo "arc-rebar: $*" > /dev/kmsg 2>/dev/null; }
 plan() { log "PLAN: $*"; exit 0; }
+# Re-log lines captured from a dry-run subshell (which logged to stdout only)
+# without adding a second "arc-rebar: " prefix.
+relay() { printf '%s\n' "$1" | while IFS= read -r l; do [ -n "$l" ] && log "${l#arc-rebar: }"; done; }
 D=/sys/bus/pci/devices
 IOMEM=${ARC_REBAR_IOMEM:-/proc/iomem}
 CMDLINE=$(cat /proc/cmdline 2>/dev/null)
@@ -36,6 +39,13 @@ case " $CMDLINE " in *" norebar "*) plan "skip reason=norebar";; esac
 command -v setpci >/dev/null 2>&1 || plan "skip reason=no-setpci"
 case " $CMDLINE " in *" pci=realloc"*) ;; *)
   [ -n "$ARC_REBAR_ASSUME_REALLOC" ] || plan "skip reason=no-pci-realloc (add pci=realloc to the kernel cmdline)";;
+esac
+# Kernel lockdown (e.g. Ubuntu with Secure Boot) refuses PCI config writes, and
+# setpci still exits 0. securityfs may not be mounted this early; step 8 also
+# checks that the write took effect.
+case "$(cat /sys/kernel/security/lockdown 2>/dev/null)" in
+  *"[integrity]"*|*"[confidentiality]"*)
+    plan "skip reason=kernel-lockdown (PCI config writes are blocked; Secure Boot on?)";;
 esac
 
 # A separate opt-in dispatcher runs the existing checks in isolated subshells.
@@ -178,10 +188,14 @@ fi
 bar2() { [ -r "$D/$GPU/resource" ] && sed -n 3p "$D/$GPU/resource"; }
 set -- $(bar2)
 if [ -n "$1" ] && [ "$1" != "0x0000000000000000" ]; then
-  if [ -z "$DUAL" ] || { [ $(( $2 - $1 + 1 )) -eq $(( 1 << (tgt + 20) )) ] &&
-    [ "$(setpci -s "$GPU" ECAP_REBAR+8.l 2>/dev/null)" = "$new" ]; }; then
-    plan "done gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M"
-  fi
+  got=$(( $2 - $1 + 1 ))
+  # setpci exits 0 even when the kernel refuses the write (lockdown), so only
+  # report done if the register holds our value and the BAR has the new size.
+  # Applies to single and dual mode alike.
+  [ "$(setpci -s "$GPU" ECAP_REBAR+8.l 2>/dev/null)" = "$new" ] ||
+    plan "skip reason=rebar-write-not-applied gpu=$GPU bar2=$(( got >> 20 ))M (kernel lockdown? Secure Boot on?)"
+  [ "$got" -eq $(( 1 << (tgt + 20) )) ] && plan "done gpu=$GPU bar2=$(( got >> 20 ))M"
+  log "WARNING: BAR2 is $(( got >> 20 ))M after rescan, expected $(( 1 << tgt ))M"
 fi
 log "WARNING: BAR2 unassigned after rescan (gpu present: $([ -e "$D/$GPU" ] && echo yes || echo no)); rolling back to size field $cur"
 if [ -e "$D/$GPU" ]; then
@@ -217,8 +231,8 @@ dual_refuse() {
 dual_probe() {
   check1=$(DUAL_CHECK_ONLY=1 DRY=1 single_gpu "$gpu1")
   check2=$(DUAL_CHECK_ONLY=1 DRY=1 single_gpu "$gpu2")
-  case "$check1" in "DUAL-CHECK $gpu1 "*) ;; *) log "$check1"; dual_refuse "reason=dual-first-preflight-failed";; esac
-  case "$check2" in "DUAL-CHECK $gpu2 "*) ;; *) log "$check2"; dual_refuse "reason=dual-second-preflight-failed";; esac
+  case "$check1" in "DUAL-CHECK $gpu1 "*) ;; *) relay "$check1"; dual_refuse "reason=dual-first-preflight-failed";; esac
+  case "$check2" in "DUAL-CHECK $gpu2 "*) ;; *) relay "$check2"; dual_refuse "reason=dual-second-preflight-failed";; esac
   set -- $check1; rp1=$3
   set -- $check2; rp2=$3
   [ "$rp1" != "$rp2" ] || dual_refuse "reason=dual-shared-root-port"
@@ -291,7 +305,9 @@ else
     # Re-read both cards and the resource map after every removal/rescan.
     dual_probe
     result=$(single_gpu "$selected")
-    log "$result"
+    # The per-card run already logged each line to the kernel log; echo the
+    # captured lines once to stdout instead of logging them a second time.
+    printf '%s\n' "$result"
     case "$result" in
       *"PLAN: done gpu=$selected "*|*"PLAN: none reason=already-at-target "*) ;;
       *) plan "FAILED reason=dual-stopped gpu=$selected; check per-card verdicts; reboot with norebar";;

@@ -229,6 +229,27 @@ esac
                 self.assertIn(expected, out)
                 self.assert_no_mutations(before)
 
+    def test_pci_nocrs_style_iomem_refuses(self):
+        # With pci=nocrs the kernel ignores the ACPI host-bridge windows and never
+        # inserts "PCI Bus DDDD:BB" entries; device BARs sit at the top level.
+        # Realistic layout: RAM, reserved ranges and a large BAR above 4G.
+        (self.root / 'proc/iomem').write_text(
+            '00000000-00000fff : Reserved\n'
+            '00001000-0009ffff : System RAM\n'
+            '00100000-7fffffff : System RAM\n'
+            '  01000000-01ffffff : Kernel code\n'
+            'c0000000-cfffffff : PCI ECAM 0000 [bus 00-ff]\n'
+            'fed00000-fed003ff : HPET 0\n'
+            '100000000-87fffffff : System RAM\n'
+            '381000000000-3813ffffffff : 0000:03:00.0\n'
+            '381400000000-3814007fffff : 0000:01:00.0\n')
+        before = self.mutation_snapshot()
+        rc, out = self.run_case(cmdline='pci=realloc pci=nocrs')
+        self.assertEqual(rc, 0, out)
+        self.assertIn('skip reason=no-mmio-window-above-4g', out)
+        self.assertNotIn('PLAN: act', out)
+        self.assert_no_mutations(before)
+
     def test_b580_steps_down_to_fit_window(self):
         (self.root / 'proc/iomem').write_text(
             '200000000-403ffffff : PCI Bus 0000:00\n')

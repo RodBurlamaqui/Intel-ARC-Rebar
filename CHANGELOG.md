@@ -4,6 +4,18 @@ The original 2026-09-05 investigation was developed and verified on a Supermicro
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
+## Unreleased (experimental branch)
+- Port the stable fix for a false `PLAN: done` when the kernel refuses the ReBAR
+  write (kernel lockdown, e.g. Ubuntu with Secure Boot): `setpci` exits 0 on a
+  refused write. Skip with `kernel-lockdown` before any change when lockdown is
+  visible, and report a card `done` only if its control register reads back the
+  written value and BAR2 has the target size; otherwise `rebar-write-not-applied`
+  stops the dual sequence. Applies to single and dual mode.
+- Fix the doubled `arc-rebar: arc-rebar:` prefix in dual mode: per-card lines
+  were logged twice to the kernel log. Each line is now logged once.
+- Add 13 mocked tests (125 total). The published v1.0.6 Experimental downloads
+  are unchanged; a rebuilt preview is needed to ship these fixes.
+
 ## v1.0.6 Experimental — Arch dual-GPU source preview — 2026-11-09
 - Provide a separate Arch/CachyOS source preview using the same guarded two-A310
   payload as the Debian/Ubuntu preview, with mkinitcpio integration, explicit
