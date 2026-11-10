@@ -344,7 +344,7 @@ itself.
 | **SR-IOV** | **Only if you use SR-IOV virtual functions** | arc-rebar doesn't use it. SR-IOV with Arc Pro cards is still being investigated in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3). | SR-IOV users |
 | **64-bit MMIO size / base**, if your BIOS has such an option | **Larger** | If arc-rebar steps the BAR size down (`note: MMIO window is ...`) or refuses with `mmio-window-too-small`, a larger 64-bit MMIO area can fit the full BAR. | Only if you hit those messages |
 | **CSM / Legacy boot** | **Disabled (UEFI boot)** if you use the BIOS's own Resizable BAR | Intel lists CSM off and UEFI boot as a requirement for firmware Resizable BAR ([Intel](https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html)). arc-rebar itself does not check boot mode. | Firmware ReBAR users |
-| **PCIe link speed**: "PCIE1 Link Speed", "PCIe Link Speed", per-slot speed | **Auto** normally | The Arc card's own link is PCIe 4.0 capable (16 GT/s on the A750 in [#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28)); on older platforms it simply runs at the platform's speed. Every server in our reports so far links the card at Gen3 (8 GT/s), which works. See *PCIe errors* below. | Troubleshooting only |
+| **PCIe link speed**: "PCIE1 Link Speed", "PCIe Link Speed", per-slot speed | **Set it explicitly** to the generation your platform supports (e.g. **Gen3** on Gen3 servers, **Gen4** on Gen4 boards), **not Auto** | Maintainer experience: Auto has caused link problems, and ASRock notes its Auto mode "is optimizing for overclocking" ([ASRock BIOS guide](https://download.asrock.com/Manual/Software/Intel%20B760/Software_BIOS%20Setup%20Guide_English.pdf)). The Arc card's own link is PCIe 4.0 capable (16 GT/s on the A750 in [#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28)); every server in our reports so far links it at Gen3 (8 GT/s), which works. If errors persist, go one generation lower. | **Everyone** with the option |
 | **ASPM**: "Native ASPM", "PCI Express root port ASPM", "L1 Substates" | **Enabled** for low idle power; **Disabled** while troubleshooting link errors | Intel recommends Native ASPM and root-port ASPM L1 for Arc idle power; it has no effect on ReBAR ([Intel](https://www.intel.com/content/www/us/en/support/articles/000092564/graphics.html)). | Optional |
 | **Slot bifurcation**: "x16 / x8x8 / x4x4x4x4" | **Auto / x16** for the GPU's slot | Splitting the slot is not needed. arc-rebar requires the GPU to be alone on its root port and refuses otherwise (`skip shared-root-port`). | Only if you changed it |
 
@@ -385,8 +385,9 @@ especially with risers, long traces or two GPUs, produce PCIe errors at their
 highest link speed. Signs: `verify` reports `FAIL` on PCIe error reports or
 DevSta, the kernel log shows `AER:` / `PCIe Bus Error:` lines, or a server's
 management log (iDRAC, iLO, IPMI SEL) shows a "bus fatal error". A common
-troubleshooting step, from community experience rather than Intel guidance, is
-to set that slot's **PCIe link speed** one generation lower (for example Gen3)
+troubleshooting step, from community and maintainer experience rather than
+Intel guidance, is to set that slot's **PCIe link speed** explicitly instead of
+Auto, then one generation lower if errors continue (for example Gen4 to Gen3),
 and to disable **ASPM** while testing. Change one setting at a time.
 
 **Servers can reset without any Linux log.** Many servers handle PCIe errors in
