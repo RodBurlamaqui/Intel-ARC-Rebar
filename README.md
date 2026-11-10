@@ -499,6 +499,39 @@ sudo arc-rebar verify
 RESULT: PASS
 ```
 
+### PCIe status
+
+`verify` separates BAR allocation/driver binding from PCIe status evidence.
+A bound driver or successful transcode alone does not prove GPU memory/compute
+health. Verification is read-only and never clears status or writes PCI
+configuration registers.
+
+| Evidence | Result / exit |
+|---|---|
+| Existing checks pass, endpoint DevSta clean | PASS / 0 (checks only, not a workload certification) |
+| Only correctable / Unsupported Request DevSta bits (0/3) latched | WARN / 2 (age/cause unresolved) |
+| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable registers or kernel log | FAIL / 1 |
+
+Run `sudo arc-rebar verify` and preserve the output alongside relevant
+`sudo arc-rebar diagnose`, `sudo lspci -Dvv` and kernel-log evidence locally.
+Review and redact machine identifiers, network addresses and unrelated logs
+before sharing an excerpt publicly. A warning is a request to investigate;
+it does not establish that a latched event is harmless, historical or caused
+by ReBAR. Automation must handle exit 2 separately from success and failure.
+
+Endpoint status is a snapshot, not a complete upstream AER audit. Kernel-log
+matching retains a conservative system-wide failure policy and can include
+unrelated devices. Missing boot-verdict messages are reported as warnings;
+a PASS covers only checks with available evidence, not proof of this hook's
+execution or guest GPU workload health.
+
+The optional register-clearing experiment is preserved separately on
+[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck)
+at commit `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is excluded from the
+stable verifier and still lacks physical GPU validation. The stable CLI rejects
+`--recheck-pcie` with exit 64 before reading hardware.
+See [the evidence and validation limits](docs/VERIFY-PCIE.md).
+
 ## 8. Diagnostics
 
 `diag/` is the read-only half of this app: it tells you what is going on before
@@ -636,36 +669,3 @@ implementation only.
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
   resources)`, which was the whole answer once someone read it.
-
-### PCIe status
-
-`verify` separates BAR allocation/driver binding from PCIe status evidence.
-A bound driver or successful transcode alone does not prove GPU memory/compute
-health. Verification is read-only and never clears status or writes PCI
-configuration registers. The boot hook is unchanged.
-
-| Evidence | Result / exit |
-|---|---|
-| Existing checks pass, endpoint DevSta clean | PASS / 0 (checks only, not a workload certification) |
-| Only correctable / Unsupported Request DevSta bits (0/3) latched | WARN / 2 (age/cause unresolved) |
-| Nonfatal/fatal DevSta bits (1/2), PCIe log reports, failed allocation/driver checks, invalid/unreadable registers or kernel log | FAIL / 1 |
-
-Run `sudo arc-rebar verify` and preserve the output alongside relevant
-`sudo arc-rebar diagnose`, `sudo lspci -Dvv` and kernel-log evidence locally.
-Review and redact machine identifiers, network addresses and unrelated logs
-before sharing an excerpt publicly. A warning is a request to investigate;
-it does not establish that a latched event is harmless, historical or caused
-by ReBAR. Automation must handle exit 2 separately from success and failure.
-
-Endpoint status is a snapshot, not a complete upstream AER audit. Kernel-log
-matching retains a conservative system-wide failure policy and can include
-unrelated devices. Missing boot-verdict messages are reported as warnings;
-a PASS covers only checks with available evidence, not proof of this hook's
-execution or guest GPU workload health.
-
-The optional register-clearing experiment is preserved separately on
-[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck)
-at commit `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is excluded from the
-stable verifier and still lacks physical GPU validation. The stable CLI rejects
-`--recheck-pcie` with exit 64 before reading hardware.
-See [the evidence and validation limits](docs/VERIFY-PCIE.md).
