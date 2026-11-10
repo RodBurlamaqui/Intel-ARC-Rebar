@@ -336,13 +336,17 @@ itself.
 
 | Setting (common names) | Set to | Why | Needed for |
 |---|---|---|---|
-| **Above 4G Decoding**: "Memory Mapped I/O above 4GB" (Dell), "64-bit MMIO", "MMIO above 4G" | **Enabled** | Gives the BIOS address space above 4 GB for a large BAR. Without it arc-rebar refuses: `skip reason=no-mmio-window-above-4g`. | **Everyone** |
+| **Above 4G Decoding**: "Memory Mapped I/O above 4GB" (Dell), "64-bit MMIO", "Above 4G memory" (MSI) | **Enabled** | Gives the BIOS address space above 4 GB for a large BAR. Without it arc-rebar refuses: `skip reason=no-mmio-window-above-4g`. | **Everyone** |
 | **Resizable BAR / Re-Size BAR Support** | **Enabled, if your BIOS has it** | If the BIOS already resizes the BAR, the card boots at its maximum and arc-rebar does nothing (`none reason=already-at-target`). You probably don't need arc-rebar at all. | Boards that have it |
 | **Secure Boot** | **Disabled on Ubuntu** (see note) | Ubuntu's kernel turns on *lockdown* when Secure Boot is on, and lockdown blocks the PCI register write arc-rebar depends on. The BAR then stays at its original size. | Ubuntu; check other distros |
-| **Primary / boot display**: "Embedded Video", "onboard graphics" | **Onboard video**, if the board has it | Required for the dual-GPU preview, which refuses a GPU that drives the console. On servers it also keeps a console if the Arc card has a problem. | Dual-GPU preview; recommended on servers |
+| **Primary / boot display**: "Primary Graphics Adapter" (ASRock), "onboard graphics" | **Onboard video**, if the board has it | Required for the dual-GPU preview, which refuses a GPU that drives the console. On servers it also keeps a console if the Arc card has a problem. | Dual-GPU preview; recommended on servers |
 | **VT-d / IOMMU** (Intel), **AMD-Vi / IOMMU** (AMD) | **Enabled only for VM passthrough** | Needed for Proxmox/VFIO passthrough. arc-rebar itself doesn't use it. | Proxmox / VFIO |
 | **SR-IOV** | **Only if you use SR-IOV virtual functions** | arc-rebar doesn't use it. SR-IOV with Arc Pro cards is still being investigated in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3). | SR-IOV users |
 | **64-bit MMIO size / base**, if your BIOS has such an option | **Larger** | If arc-rebar steps the BAR size down (`note: MMIO window is ...`) or refuses with `mmio-window-too-small`, a larger 64-bit MMIO area can fit the full BAR. | Only if you hit those messages |
+| **CSM / Legacy boot** | **Disabled (UEFI boot)** if you use the BIOS's own Resizable BAR | Intel lists CSM off and UEFI boot as a requirement for firmware Resizable BAR ([Intel](https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html)). arc-rebar itself does not check boot mode. | Firmware ReBAR users |
+| **PCIe link speed**: "PCIE1 Link Speed", "PCIe Link Speed", per-slot speed | **Set it explicitly** to the generation your platform supports (e.g. **Gen3** on Gen3 servers, **Gen4** on Gen4 boards), **not Auto** | Maintainer experience: Auto has caused link problems, and ASRock notes its Auto mode "is optimizing for overclocking" ([ASRock BIOS guide](https://download.asrock.com/Manual/Software/Intel%20B760/Software_BIOS%20Setup%20Guide_English.pdf)). The Arc card's own link is PCIe 4.0 capable (16 GT/s on the A750 in [#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28)); every server in our reports with link data so far runs it at Gen3 (8 GT/s). If errors persist, go one generation lower. | **Everyone** with the option |
+| **ASPM**: "Native ASPM", "PCI Express root port ASPM", "L1 Substates" | **Enabled** for low idle power; **Disabled** while troubleshooting link errors | Intel recommends Native ASPM and root-port ASPM L1 for Arc idle power ([Intel](https://www.intel.com/content/www/us/en/support/articles/000092564/graphics.html)). arc-rebar doesn't use it. | Optional |
+| **Slot bifurcation**: "x16 / x8x8 / x4x4x4x4" | **Auto / x16** for the GPU's slot | Splitting the slot is not needed. arc-rebar requires the GPU to be alone on its root port and refuses otherwise (`skip shared-root-port`). | Only if you changed it |
 
 **Secure Boot note:** verified on Ubuntu's `7.0.0-43-generic` kernel, which is
 built with `CONFIG_LOCK_DOWN_IN_SECURE_BOOT=y`. Other distributions may do the
@@ -351,12 +355,48 @@ selected value (in brackets) is `[integrity]` or `[confidentiality]`, arc-rebar
 cannot resize the BAR. **In v1.0.5 and earlier**, the boot script then still
 logs `PLAN: done` with the *old* size (for example `bar2=256M`), because
 `setpci` does not report the refused write; `sudo arc-rebar verify` shows the
-real BAR size. Newer versions refuse up front with `skip reason=kernel-lockdown`
-(which `diagnose` also reports), or `skip reason=rebar-write-not-applied` if the
-write did not take effect.
+real BAR size. The fix is on `main` and will ship in the next release: it
+refuses up front with `skip reason=kernel-lockdown` (which `diagnose` also
+reports), or `skip reason=rebar-write-not-applied` if the write did not take
+effect.
 
 **If Above 4G Decoding is missing or greyed out:** some boards only offer it
 when booting in UEFI mode. Check your manual.
+
+**Watch out for the integrated-graphics "Aperture Size":** on ASRock Intel
+700-series boards, Above 4G Decoding "is disabled automatically when Aperture
+Size is set to 2048MB" ([ASRock BIOS guide](https://download.asrock.com/Manual/Software/Intel%20B760/Software_BIOS%20Setup%20Guide_English.pdf),
+Chipset Configuration). Don't set Aperture Size to 2048MB.
+
+**Where to find these settings.** Names and menus vary by vendor, model and
+BIOS version. On ASRock Intel boards most of them are under **Advanced >
+Chipset Configuration**; ASUS Intel boards have a **System Agent (SA)
+Configuration** menu. What we could confirm:
+
+| Vendor | Above 4G | Resizable BAR | Primary display | GPU slot link speed | ASPM | Source |
+|---|---|---|---|---|---|---|
+| **ASRock** (Intel 700-series) | Advanced > Chipset Configuration > "Above 4G Decoding" | "C.A.M (Clever Access Memory)" | "Primary Graphics Adapter" [Auto] [Onboard] [PCIE1] | "PCIE1 Link Speed" [Auto] [Gen1]...[Gen5] | "PCIE ASPM Support", "PCH PCIE ASPM Support", "DMI ASPM Support" | [Official BIOS guide](https://download.asrock.com/Manual/Software/Intel%20B760/Software_BIOS%20Setup%20Guide_English.pdf) |
+| **MSI** (Z790) | "Above 4G memory" | "Re-Size BAR Support" | Not confirmed | A per-slot "Max Link Speed" option (Gen1 to Gen5) | Not confirmed | Manual excerpts (MEG Z790 series); check your manual |
+| **ASUS** (Z790) | Not confirmed | Not confirmed | Not confirmed | Not confirmed | "PEG - ASPM" | Manual excerpts (ROG Z790 series: a "System Agent (SA) Configuration" menu exists); check your manual |
+| **Dell PowerEdge** (R720, T430, R740) | "Memory Mapped I/O above 4GB" | No option reported on any of the three | Not confirmed | Not confirmed | Not confirmed | Community reports (#11, #28, #3) |
+| **Intel's generic names** | "Above 4G Decoding" | "Re-Size BAR Support" | Not covered | Not covered | "Native ASPM", "PCI Express root port ASPM", "L1 Substates" | [Intel](https://www.intel.com/content/www/us/en/support/articles/000090831/graphics.html), [Intel ASPM](https://www.intel.com/content/www/us/en/support/articles/000092564/graphics.html) |
+
+**PCIe errors (any setting above can be involved):** in community and
+maintainer experience, some boards and slots, especially with risers, long
+traces or two GPUs, produce PCIe errors at their highest link speed. Signs: `verify` reports `FAIL` on PCIe error reports or
+DevSta, the kernel log shows `AER:` / `PCIe Bus Error:` lines, or a server's
+management log (iDRAC, iLO, IPMI SEL) shows a "bus fatal error". A common
+troubleshooting step, from community and maintainer experience rather than
+Intel guidance, is to set that slot's **PCIe link speed** explicitly instead of
+Auto, then one generation lower if errors continue (for example Gen4 to Gen3),
+and to disable **ASPM** while testing. Change one setting at a time.
+
+**Servers can reset without any Linux log.** Many servers handle PCIe errors in
+firmware ("firmware-first"). A fatal error can make the firmware reset the
+whole machine before Linux writes anything, so check the management log
+(iDRAC / iLO / IPMI SEL) for the slot and bus it names. That log, not the
+Linux log, was the key evidence in
+[#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28).
 
 **Kernel command line (not BIOS, but related):** `pci=realloc` is required. Do
 not add `pci=nocrs`: with it, the kernel ignores the BIOS address windows and
@@ -380,7 +420,7 @@ Decoding is on.
 |---|---|---|
 | `skip reason=no-mmio-window-above-4g` | No address space above 4 GB | **Above 4G Decoding** in BIOS. Also remove `pci=nocrs` from the kernel command line if it's there |
 | `skip reason=mmio-window-too-small` or `note: MMIO window is ..., stepping target down` | The 64-bit MMIO area is too small for the full BAR | A **64-bit MMIO size** option in BIOS, if available, or a smaller `rebar.size` (see [INSTALL.md](INSTALL.md)) |
-| `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` (after v1.0.5) | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
 | v1.0.5 and earlier: `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Same as above: the write was refused but not reported | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
 | `skip reason=no-pci-realloc` | `pci=realloc` is missing | The kernel command line, not BIOS |
 
@@ -401,9 +441,9 @@ Decoding is on.
 | Window fits a smaller BAR than the card's maximum | **acts with the smaller size**, logs the step-down |
 | BAR2 unassigned after the rescan | **rolls back** to the original size; `rolled-back` |
 | `norebar` on the kernel command line | `skip norebar` |
-| Kernel lockdown active (often Secure Boot), seen in `/sys/kernel/security/lockdown` | `skip kernel-lockdown`, before any change |
-| The ReBAR write did not take effect (register unchanged after the rescan), e.g. lockdown not yet visible at boot | `skip rebar-write-not-applied`; BAR stays at its original size |
-| Register changed but BAR2 came back at the wrong size | **rolls back** to the original size; `rolled-back` |
+| Kernel lockdown active (often Secure Boot), seen in `/sys/kernel/security/lockdown` | `skip kernel-lockdown`, before any change (after v1.0.5) |
+| The ReBAR write did not take effect (register unchanged after the rescan), e.g. lockdown not yet visible at boot | `skip rebar-write-not-applied`; BAR stays at its original size (after v1.0.5) |
+| Register changed but BAR2 came back at the wrong size | **rolls back** to the original size; `rolled-back` (after v1.0.5) |
 
 Maintainer hardware validation covers the B580 setup above. Community Alchemist
 reports and their limits are listed in [Community hardware reports](#community-hardware-reports).
