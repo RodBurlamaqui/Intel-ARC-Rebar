@@ -1,6 +1,8 @@
 # arc-rebar — Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
 
-**[Support arc-rebar development](https://buymeacoffee.com/rodburlamaqui)** — Help fund testing hardware, compatibility work, and continued maintenance.
+<a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Support arc-rebar on Buy Me a Coffee" width="217" height="60"></a>
+
+**If arc-rebar helped bring your Intel Arc GPU back to life, please help keep the project moving.** Your contribution supports testing hardware, compatibility work, and ongoing maintenance.
 
 Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enterprise use requires separate licensing** — see [LICENSE](LICENSE) §9.
 
@@ -19,28 +21,33 @@ tell you whether you have the problem and prove the fix worked.
 
 ### Help keep arc-rebar moving
 
-I started arc-rebar to solve a real problem with Intel Arc GPUs on systems without
-firmware ReBAR support. Since then, it has grown well beyond a one-time fix.
-Each hardware report, new GPU model, Linux port, and release brings more
-investigation, testing, fixes, and documentation. What began as a hardware fix
-is becoming a full-time commitment.
+I've heard from users who thought their Intel Arc cards were stuck with serious
+limitations or weren't worth keeping. Some have described arc-rebar as having
+**saved their card or brought it back to life**. Getting real use out of
+hardware that might otherwise sit idle is why I started this project.
 
-I want to keep improving this project and helping the people who use it, but
-reliable development takes time and access to hardware I don't always have.
-**Community support helps make that work sustainable.** Contributions help me:
+What began as a fix for my own system has grown into something much bigger.
+Every new GPU, motherboard, Linux platform, and community report means more
+investigation, testing, fixes, and support. **It's becoming a full-time job**,
+and I want to keep this project moving without cutting corners on safety or
+compatibility testing.
 
-- Get access to more Intel Arc GPUs and test systems for real hardware validation.
-- Investigate compatibility problems, review reports, and improve safety.
-- Maintain releases, installers, diagnostics, and documentation.
+If arc-rebar saved you from replacing a card, helped your system work again, or
+simply made your hardware more useful, **please consider giving back**. Even a
+small donation can help me keep working on it.
 
-If arc-rebar has helped you, or you'd like to see support expand to more
-hardware, I'd appreciate your help. **[Support the project on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)** — contributions are welcome.
+**[Support arc-rebar on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)**
 
-If you can't donate, detailed hardware test results, clear bug reports, and
-sharing the project are valuable ways to help. Thanks to everyone who has
-contributed testing, feedback, and time so far.
+Contributions help fund more Intel Arc GPUs and test systems, hardware
+validation on additional platforms, bug investigations, community support,
+releases, and documentation.
 
-*Contributions support development; they do not change the project's licensing terms.*
+Can't donate? Sharing the project, contributing detailed hardware reports,
+and helping others troubleshoot are valuable too. Thank you to everyone who
+has tested, reported issues, and helped this project grow.
+
+*Donations support ongoing development; they do not change the project's
+licensing terms or guarantee support for a particular hardware configuration.*
 
 ### Downloads
 
