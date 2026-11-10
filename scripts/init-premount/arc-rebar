@@ -35,6 +35,13 @@ command -v setpci >/dev/null 2>&1 || plan "skip reason=no-setpci"
 case " $CMDLINE " in *" pci=realloc"*) ;; *)
   [ -n "$ARC_REBAR_ASSUME_REALLOC" ] || plan "skip reason=no-pci-realloc (add pci=realloc to the kernel cmdline)";;
 esac
+# Kernel lockdown (e.g. Ubuntu with Secure Boot) refuses PCI config writes, and
+# setpci still exits 0. securityfs may not be mounted this early; step 8 also
+# checks that the write took effect.
+case "$(cat /sys/kernel/security/lockdown 2>/dev/null)" in
+  *"[integrity]"*|*"[confidentiality]"*)
+    plan "skip reason=kernel-lockdown (PCI config writes are blocked; Secure Boot on?)";;
+esac
 
 # --- 1. GPU: explicit rebar.dev=, else first Intel VGA device with a ReBAR capability
 GPU=""
@@ -122,7 +129,15 @@ echo 1 > /sys/bus/pci/rescan;          sleep 3
 # --- 8. verify; roll back to the original size if BAR2 did not get assigned
 bar2() { [ -r "$D/$GPU/resource" ] && sed -n 3p "$D/$GPU/resource"; }
 set -- $(bar2)
-[ -n "$1" ] && [ "$1" != "0x0000000000000000" ] && plan "done gpu=$GPU bar2=$(( ($2 - $1 + 1) >> 20 ))M"
+if [ -n "$1" ] && [ "$1" != "0x0000000000000000" ]; then
+  got=$(( $2 - $1 + 1 ))
+  # setpci exits 0 even when the kernel refuses the write (lockdown), so only
+  # report done if the register holds our value and the BAR has the new size.
+  [ "$(setpci -s "$GPU" ECAP_REBAR+8.l 2>/dev/null)" = "$new" ] ||
+    plan "skip reason=rebar-write-not-applied gpu=$GPU bar2=$(( got >> 20 ))M (kernel lockdown? Secure Boot on?)"
+  [ "$got" -eq $(( 1 << (tgt + 20) )) ] && plan "done gpu=$GPU bar2=$(( got >> 20 ))M"
+  log "WARNING: BAR2 is $(( got >> 20 ))M after rescan, expected $(( 1 << tgt ))M"
+fi
 log "WARNING: BAR2 unassigned after rescan (gpu present: $([ -e "$D/$GPU" ] && echo yes || echo no)); rolling back to size field $cur"
 if [ -e "$D/$GPU" ]; then
   setpci -s "$GPU" ECAP_REBAR+8.l="$ctl" 2>/dev/null

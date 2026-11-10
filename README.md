@@ -342,6 +342,9 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 | Window fits a smaller BAR than the card's maximum | **acts with the smaller size**, logs the step-down |
 | BAR2 unassigned after the rescan | **rolls back** to the original size; `rolled-back` |
 | `norebar` on the kernel command line | `skip norebar` |
+| Kernel lockdown active (often Secure Boot), seen in `/sys/kernel/security/lockdown` | `skip kernel-lockdown`, before any change |
+| The ReBAR write did not take effect (register unchanged after the rescan), e.g. lockdown not yet visible at boot | `skip rebar-write-not-applied`; BAR stays at its original size |
+| Register changed but BAR2 came back at the wrong size | **rolls back** to the original size; `rolled-back` |
 
 Maintainer hardware validation covers the B580 setup above. Community Alchemist
 reports and their limits are listed in [Community hardware reports](#community-hardware-reports).
