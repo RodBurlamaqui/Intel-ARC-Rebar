@@ -1,5 +1,7 @@
 # arc-rebar — Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
 
+**[Support arc-rebar development](https://buymeacoffee.com/rodburlamaqui)** — Help fund testing hardware, compatibility work, and continued maintenance.
+
 Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enterprise use requires separate licensing** — see [LICENSE](LICENSE) §9.
 
 > **USE AT YOUR OWN RISK. NO WARRANTY.** Provided "as is". The author accepts no
@@ -14,6 +16,31 @@ full VRAM on motherboards whose BIOS has no Resizable BAR option — **without
 modifying firmware, the kernel, or Intel's drivers**. It runs from the initramfs
 at every boot, before the GPU driver loads, and it includes the diagnostics that
 tell you whether you have the problem and prove the fix worked.
+
+### Help keep arc-rebar moving
+
+I started arc-rebar to solve a real problem with Intel Arc GPUs on systems without
+firmware ReBAR support. Since then, it has grown well beyond a one-time fix.
+Each hardware report, new GPU model, Linux port, and release brings more
+investigation, testing, fixes, and documentation. What began as a hardware fix
+is becoming a full-time commitment.
+
+I want to keep improving this project and helping the people who use it, but
+reliable development takes time and access to hardware I don't always have.
+**Community support helps make that work sustainable.** Contributions help me:
+
+- Get access to more Intel Arc GPUs and test systems for real hardware validation.
+- Investigate compatibility problems, review reports, and improve safety.
+- Maintain releases, installers, diagnostics, and documentation.
+
+If arc-rebar has helped you, or you'd like to see support expand to more
+hardware, I'd appreciate your help. **[Support the project on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)** — contributions are welcome.
+
+If you can't donate, detailed hardware test results, clear bug reports, and
+sharing the project are valuable ways to help. Thanks to everyone who has
+contributed testing, feedback, and time so far.
+
+*Contributions support development; they do not change the project's licensing terms.*
 
 ### Downloads
 
