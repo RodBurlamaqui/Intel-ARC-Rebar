@@ -325,6 +325,65 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
   only `setpci`; porting it is a Modification under the licence — ask first.
   mkinitcpio is already ported: see [INSTALL.md](INSTALL.md#arch-linux--cachyos-mkinitcpio).
 
+### Recommended BIOS settings
+
+Every board names these settings differently, and not every board has all of
+them. The names below are the ones our community reports used. Check your
+board's manual for the exact wording. arc-rebar never changes BIOS settings
+itself.
+
+**The settings**
+
+| Setting (common names) | Set to | Why | Needed for |
+|---|---|---|---|
+| **Above 4G Decoding**: "Memory Mapped I/O above 4GB" (Dell), "64-bit MMIO", "MMIO above 4G" | **Enabled** | Gives the BIOS address space above 4 GB for a large BAR. Without it arc-rebar refuses: `skip reason=no-mmio-window-above-4g`. | **Everyone** |
+| **Resizable BAR / Re-Size BAR Support** | **Enabled, if your BIOS has it** | If the BIOS already resizes the BAR, the card boots at its maximum and arc-rebar does nothing (`none reason=already-at-target`). You probably don't need arc-rebar at all. | Boards that have it |
+| **Secure Boot** | **Disabled on Ubuntu** (see note) | Ubuntu's kernel turns on *lockdown* when Secure Boot is on, and lockdown blocks the PCI register write arc-rebar depends on. The BAR then stays at its original size. | Ubuntu; check other distros |
+| **Primary / boot display**: "Embedded Video", "onboard graphics" | **Onboard video**, if the board has it | Required for the dual-GPU preview, which refuses a GPU that drives the console. On servers it also keeps a console if the Arc card has a problem. | Dual-GPU preview; recommended on servers |
+| **VT-d / IOMMU** (Intel), **AMD-Vi / IOMMU** (AMD) | **Enabled only for VM passthrough** | Needed for Proxmox/VFIO passthrough. arc-rebar itself doesn't use it. | Proxmox / VFIO |
+| **SR-IOV** | **Only if you use SR-IOV virtual functions** | arc-rebar doesn't use it. SR-IOV with Arc Pro cards is still being investigated in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3). | SR-IOV users |
+| **64-bit MMIO size / base**, if your BIOS has such an option | **Larger** | If arc-rebar steps the BAR size down (`note: MMIO window is ...`) or refuses with `mmio-window-too-small`, a larger 64-bit MMIO area can fit the full BAR. | Only if you hit those messages |
+
+**Secure Boot note:** verified on Ubuntu's `7.0.0-43-generic` kernel, which is
+built with `CONFIG_LOCK_DOWN_IN_SECURE_BOOT=y`. Other distributions may do the
+same. To check any system, run `cat /sys/kernel/security/lockdown`: if the
+selected value (in brackets) is `[integrity]` or `[confidentiality]`, arc-rebar
+cannot resize the BAR. **In v1.0.5 and earlier**, the boot script then still
+logs `PLAN: done` with the *old* size (for example `bar2=256M`), because
+`setpci` does not report the refused write; `sudo arc-rebar verify` shows the
+real BAR size. Newer versions refuse up front with `skip reason=kernel-lockdown`
+(which `diagnose` also reports), or `skip reason=rebar-write-not-applied` if the
+write did not take effect.
+
+**If Above 4G Decoding is missing or greyed out:** some boards only offer it
+when booting in UEFI mode. Check your manual.
+
+**Kernel command line (not BIOS, but related):** `pci=realloc` is required. Do
+not add `pci=nocrs`: with it, the kernel ignores the BIOS address windows and
+arc-rebar refuses with `skip reason=no-mmio-window-above-4g`, even when Above 4G
+Decoding is on.
+
+**By setup**
+
+| Your setup | What to set | Community examples |
+|---|---|---|
+| One Arc card, **BIOS has a Resizable BAR option** | Above 4G Decoding **on**, Resizable BAR **on** | arc-rebar is likely not needed |
+| One Arc card, **no Resizable BAR option** (most older desktops, workstations and servers) | Above 4G Decoding **on**. On Ubuntu, Secure Boot **off**. Then install arc-rebar | Supermicro X9DRH-7TF (maintainer), Lenovo ThinkCentre M900 ([#10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10)) |
+| Server with onboard video, Arc used for compute or transcoding | As above, plus primary display on **onboard video** | Fujitsu RX2540 M2 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
+| **Proxmox / VFIO passthrough** to a VM | As above, plus **VT-d / IOMMU on**. Install arc-rebar on the **Proxmox host**, not in the VM | Dell PowerEdge R720 ([#11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11)), Fujitsu RX2540 M2 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
+| **Two GPUs** (v1.0.6 Experimental, two A310s only) | As above, plus primary display on **onboard video**. Neither Arc card may drive the console, and each card needs its own root port | Fujitsu RX2540 M2, 2x A310 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
+| **SR-IOV** (e.g. Arc Pro B50) | No recommendation yet | Under investigation in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3) |
+
+**If the boot log says...**
+
+| Boot log message | Most likely cause | What to check |
+|---|---|---|
+| `skip reason=no-mmio-window-above-4g` | No address space above 4 GB | **Above 4G Decoding** in BIOS. Also remove `pci=nocrs` from the kernel command line if it's there |
+| `skip reason=mmio-window-too-small` or `note: MMIO window is ..., stepping target down` | The 64-bit MMIO area is too small for the full BAR | A **64-bit MMIO size** option in BIOS, if available, or a smaller `rebar.size` (see [INSTALL.md](INSTALL.md)) |
+| `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| v1.0.5 and earlier: `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Same as above: the write was refused but not reported | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| `skip reason=no-pci-realloc` | `pci=realloc` is missing | The kernel command line, not BIOS |
+
 ## 5. Where it applies — and where it refuses
 
 `diagnose` runs the boot script's own checks in dry-run mode and reports what it
