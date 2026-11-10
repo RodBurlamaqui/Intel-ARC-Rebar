@@ -40,8 +40,8 @@ small donation can help me keep working on it.
 **[Support arc-rebar on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)**
 
 **Want to support every month?** On the Buy Me a Coffee page, choose
-**"Make this monthly"** and pick any amount; even $5 a month makes a real
-difference and helps plan testing ahead.
+**"Make this monthly"**. We suggest **$5 a month**; it makes a real difference
+and helps plan testing ahead. Any amount is welcome.
 
 Contributions help fund more Intel Arc GPUs and test systems, hardware
 validation on additional platforms, bug investigations, community support,
