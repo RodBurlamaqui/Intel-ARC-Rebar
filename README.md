@@ -486,18 +486,28 @@ about 8 seconds on the test machine. Check any time with:
 ```
 sudo arc-rebar verify
 ```
+Example output for a single B580 (your addresses and sizes will differ):
+
 ```
+== arc-rebar verify (boot 2026-11-10 09:00:00) ==
   [ok]   pci=realloc active
   [ok]   hook installed
+  [ok]   no PCIe error reports in available kernel log
   [ok]   boot verdict: done gpu=0000:86:00.0 bar2=16384M
   [ok]   0000:86:00.0 BAR2 = 16384 MiB (size field 14 = card maximum)
   [ok]   0000:86:00.0 driver: xe
-  [ok]   0000:86:00.0 DevSta: no correctable/fatal/unsupported-request errors
+  [ok]   0000:86:00.0 DevSta snapshot: 0x0000
   [ok]   xe last probe VISIBLE VRAM: 0x0000381000000000, 0x0000000400000000
-  [ok]   no AER error reports
-  [ok]   vulkan: memoryHeaps: count = 2 ... 11.93 GiB
+  [ok]   no PCIe error reports in available kernel log
+  [warn] Driver binding/BAR allocation do not establish GPU workload health.
+
 RESULT: PASS
 ```
+
+The `[warn]` line about workload health always appears; it is a reminder, not
+a problem. If `vulkaninfo` is installed, a `vulkan: memoryHeaps ...` line
+follows it. See [PCIe status](#pcie-status) below for what `WARN` and `FAIL`
+mean.
 
 ### PCIe status
 
