@@ -11,14 +11,6 @@ for a in "$@"; do case "$a" in
 [ -n "$EXPERIMENTAL_ARCH" ] || {
   echo 'Arch/CachyOS support is experimental; rerun with --experimental-arch to opt in. No boot files changed.'; exit 2;
 }
-# Dual mode is tested only at boot, before guests acquire the VFIO devices.
-ARCH_DUAL=
-[ "${ARC_REBAR_EXPERIMENTAL_DUAL:-}" != 1 ] || ARCH_DUAL=1
-case " $(cat /proc/cmdline 2>/dev/null) " in *" rebar.dual=1 "*) ARCH_DUAL=1;; esac
-if [ -n "$LIVE" ] && [ -n "$ARCH_DUAL" ]; then
-  echo 'Experimental dual-GPU mode is boot-only; --live-test is refused. No boot files changed.'
-  exit 2
-fi
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
 BOOT_DST=/usr/lib/arc-rebar/arc-rebar-boot

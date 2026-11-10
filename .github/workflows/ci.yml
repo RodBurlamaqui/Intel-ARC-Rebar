@@ -40,13 +40,6 @@ jobs:
               elif first.startswith(b"#!") and (b"/sh" in first or b"env sh" in first):
                   subprocess.run(["dash", "-n", name], check=True)
           PY
-      - name: Ensure BusyBox for Arch runtime-hook tests
-        shell: bash
-        run: |
-          if ! command -v busybox >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install --no-install-recommends -y busybox
-          fi
       - name: Run mocked regression tests
         shell: bash
         run: |
