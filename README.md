@@ -53,14 +53,19 @@ validation on additional platforms, bug investigations, community support,
 releases, and documentation.
 
 **Donate hardware.** We don't have every GPU and platform people run arc-rebar
-on, and testing depends on community hardware. We gratefully accept **graphics
-cards** (any Intel Arc model, Alchemist or Battlemage), **complete systems,
-motherboards** (especially boards without a Resizable BAR option, servers and
-dual-GPU setups) and **other hardware** that helps us test. To offer something,
+on, and testing depends on community hardware. **What helps most:**
+
+- **Graphics cards:** any Intel Arc model, Alchemist or Battlemage.
+- **Motherboards:** especially boards without a Resizable BAR option, server
+  boards and boards that can take two GPUs.
+
+Complete systems and other test hardware are welcome too. We consider every
+offer, but storage space is limited, so **please don't ship anything until we've
+confirmed**. To offer something,
 [open a hardware donation issue](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/new?template=hardware-donation.md)
 describing the hardware only. **Please don't post your name, address or other
-personal details in the issue**; we'll follow up to arrange the details
-privately.
+personal details in the issue.** To arrange shipping and other details
+privately, email **burlam1nx@outlook.com** with your issue number.
 
 **Supporters.** Thank you to everyone who supports arc-rebar with donations or
 hardware. Supporters who'd like to be listed will be credited here, with their
