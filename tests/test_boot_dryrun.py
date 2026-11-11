@@ -243,12 +243,21 @@ esac
             '100000000-87fffffff : System RAM\n'
             '381000000000-3813ffffffff : 0000:03:00.0\n'
             '381400000000-3814007fffff : 0000:01:00.0\n')
-        before = self.mutation_snapshot()
-        rc, out = self.run_case(cmdline='pci=realloc pci=nocrs')
-        self.assertEqual(rc, 0, out)
-        self.assertIn('skip reason=no-mmio-window-above-4g', out)
-        self.assertNotIn('PLAN: act', out)
-        self.assert_no_mutations(before)
+        nocrs_hint = 'remove pci=nocrs from the kernel cmdline'
+        bios_hint = 'enable Above 4G Decoding in BIOS'
+        for cmdline, hint, other in [
+                ('pci=realloc pci=nocrs', nocrs_hint, bios_hint),
+                ('pci=realloc,nocrs', nocrs_hint, bios_hint),
+                ('pci=realloc', bios_hint, nocrs_hint)]:
+            with self.subTest(cmdline=cmdline):
+                before = self.mutation_snapshot()
+                rc, out = self.run_case(cmdline=cmdline)
+                self.assertEqual(rc, 0, out)
+                self.assertIn('skip reason=no-mmio-window-above-4g', out)
+                self.assertIn(hint, out)
+                self.assertNotIn(other, out)
+                self.assertNotIn('PLAN: act', out)
+                self.assert_no_mutations(before)
 
     def test_b580_steps_down_to_fit_window(self):
         (self.root / 'proc/iomem').write_text(
