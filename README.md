@@ -99,15 +99,22 @@ working on them takes ongoing testing and fixes.
 | Release | Use | Download | Notes and checksums |
 |---|---|---|---|
 | **v1.0.5 — stable** | Single GPU Support — Debian/Ubuntu | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
-| **v1.0.6 Experimental** | Dual GPU Support — Experimental Debian/Ubuntu | [Download experimental `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-a310-preview-2026.11.09.1/arc-rebar_1.0.6.dual-a3101_all.deb) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1) · [Required preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/63364dcca2a98a32a8ee5b6efe88bed747e2e13d/docs/DUAL-A310-PREVIEW.md) |
-| **v1.0.6 Experimental** | Dual GPU Support — Experimental Arch/CachyOS | [Download experimental source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-gpu-arch-preview-2026.11.09.1/arc-rebar-dual-gpu-arch-preview-2026.11.09.1.tar.gz) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-gpu-arch-preview-2026.11.09.1) · [Required Arch preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/experimental/dual-a310/docs/DUAL-GPU-ARCH-PREVIEW.md) |
+| **v1.0.6 Experimental** | Dual GPU Support — **two Intel Arc A310s only** — Experimental Debian/Ubuntu | [Download experimental `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-a310-preview-2026.11.09.1/arc-rebar_1.0.6.dual-a3101_all.deb) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1) · [Required preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/63364dcca2a98a32a8ee5b6efe88bed747e2e13d/docs/DUAL-A310-PREVIEW.md) |
+| **v1.0.6 Experimental** | Dual GPU Support — **two Intel Arc A310s only** — Experimental Arch/CachyOS | [Download experimental source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-gpu-arch-preview-2026.11.09.1/arc-rebar-dual-gpu-arch-preview-2026.11.09.1.tar.gz) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-gpu-arch-preview-2026.11.09.1) · [Required Arch preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/experimental/dual-a310/docs/DUAL-GPU-ARCH-PREVIEW.md) |
 | **Arch/CachyOS — current source** | Single GPU Support — Experimental Arch/CachyOS (source only) | [Download current source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/archive/refs/heads/main.tar.gz) | Requires `--experimental-arch`; [install guide](INSTALL.md#arch-linux--cachyos-mkinitcpio) · [Hardware validation pending (#15)](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
 | **v1.0.4 — previous** | Installer/purge recovery fixes; predates the v1.0.5 verifier correction | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.4/arc-rebar_1.0.4_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.4) |
 | **v1.0.3 — original release** | Historical package; lacks the newer installer/purge and verifier fixes | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.3/arc-rebar_1.0.3_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3) |
 
-Both dual-GPU previews require an explicit boot opt-in and currently accept
-exactly two non-console A310s on separate root ports, unbound or using VFIO.
-**Physical two-card validation is pending on both platforms.** Follow the linked
+**The dual-GPU previews work only with two Intel Arc A310 cards.** Any other model
+or mix (B580, B50, A750, A770, A380 and others) is refused, so other dual-card
+setups should stay on stable v1.0.5 for now. Dual support for more cards,
+including Battlemage (B-series), is being worked on.
+
+Both dual-GPU previews require an explicit boot opt-in and accept exactly two
+non-console A310s on separate root ports, unbound or using VFIO. The Debian
+preview has one community two-card confirmation (@optiz0r, Fujitsu RX2540 M2,
+Proxmox/VFIO, [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908));
+the Arch preview has no physical two-card validation yet. Follow the linked
 preflight/test/recovery guide; the Debian preview's download commands also handle
 GitHub's filename normalization for checksum verification. Report results in
 [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
@@ -128,7 +135,7 @@ contributing ports. Here is the evidence reported so far:
 |---|---|---|
 | **B580** | Original project hardware tests, reboots and Vulkan/OpenCL workloads on Supermicro X9DRH-7TF, Debian, `xe` | [Recorded tests](docs/TESTS.md); benchmarks below belong to this setup |
 | **A750** | @TheKusja1 confirms a direct v1.0.3 → v1.0.5 package upgrade, 8 GiB BAR2 after reboot, `i915`, read-only WARN and successful Jellyfin AV1 hardware transcoding on Supermicro H11SSL-i / Proxmox | [Report #2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2) and [v1.0.5 hardware follow-up](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2#issuecomment-6707332319); no AER reports or GPU hangs/resets observed in that run; the latch's physical age/cause remain unknown |
-| **A310 4 GB — Proxmox / VFIO** | @optiz0r reports the first card resized from 256 MiB to 4 GiB on Fujitsu RX2540 M2; its full BAR is usable in the guest VM | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363) and [diagnostics](https://gist.github.com/optiz0r/7cd12c10d971fc3fcc8549abe4eb9731); boot log confirms the first-card resize; the second card remains at 256 MiB, so dual-GPU operation is not yet verified |
+| **A310 4 GB — Proxmox / VFIO** | @optiz0r reports the first card resized from 256 MiB to 4 GiB on Fujitsu RX2540 M2 with v1.0.5, its full BAR usable in the guest VM; with the v1.0.6 Experimental two-A310 preview, both cards at 4 GiB on `vfio-pci` and a LocalAI model spanning both | [v1.0.5 report](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363), [diagnostics](https://gist.github.com/optiz0r/7cd12c10d971fc3fcc8549abe4eb9731) and [two-card result](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908); one setup; verify returned WARN for latched DevSta `0x0008` on both cards (age and cause unknown) |
 | **A770 / A750** | Reporter describes appropriate BAR sizes with a locally modified loop on Asus Z9PA-D8, Debian SID / `xe` | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6649456377); unmodified diagnostics pending; upstream script still handles only the first qualifying GPU |
 | **A380 — Debian / Lenovo** | Community reports an 8 GiB BAR, boot persistence and normal `i915` use on Lenovo ThinkCentre M900 / OpenMediaVault | [Report #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10); legacy verifier failed on DevSta `0x0008`; v1.0.5 has a matching software test returning unresolved WARN; physical cause and hardware acceptance remain pending |
 | **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
@@ -137,11 +144,12 @@ contributing ports. Here is the evidence reported so far:
 **Two A310s? An experimental `.deb` is available:**
 [download the two-A310 preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1).
 It requires an explicit boot opt-in and exactly two non-console A310s on separate
-root ports, unbound or using VFIO. **Physical two-card validation is pending.**
+root ports, unbound or using VFIO. **Other models are refused.** One community
+two-card confirmation so far (@optiz0r, [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)).
 Start with the [read-only preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/63364dcca2a98a32a8ee5b6efe88bed747e2e13d/docs/DUAL-A310-PREVIEW.md),
 and report results in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 Stable **v1.0.5** remains the normal download; other GPU models/counts are refused
-by this preview. Thanks to @optiz0r for the A310 diagnostics and first-card result.
+by this preview. Thanks to @optiz0r for the A310 diagnostics and the first-card and two-card results.
 
 **Testing another model? Your report is welcome.** Additional Arc models may
 qualify when the PCIe topology, ReBAR capability and MMIO checks pass. A model
