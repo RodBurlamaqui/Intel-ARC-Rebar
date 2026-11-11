@@ -89,6 +89,8 @@ licensing terms or guarantee support for a particular hardware configuration.*
 
 **Debian / Ubuntu: choose stable v1.0.5 for normal use.**
 
+**Please consider [donating](https://buymeacoffee.com/rodburlamaqui) to keep this project alive.**
+
 | Release | Use | Download | Notes and checksums |
 |---|---|---|---|
 | **v1.0.5 — stable** | Single GPU Support — Debian/Ubuntu | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
