@@ -93,7 +93,17 @@ while IFS= read -r line; do
   [ $s -ge $(( 0x100000000 )) ] || continue
   sz=$(( e - s + 1 )); [ $sz -gt $win ] && { win=$sz; wstart=$s; }
 done < "$IOMEM"
-[ $win -gt 0 ] || plan "skip reason=no-mmio-window-above-4g bus=$RB (enable Above 4G Decoding in BIOS)"
+if [ $win -le 0 ]; then
+  # pci=nocrs makes the kernel ignore the BIOS host-bridge windows, so none are
+  # listed even when Above 4G Decoding is on: point at the real cause.
+  # pci= options may be combined with commas (e.g. pci=realloc,nocrs).
+  for w in $CMDLINE; do
+    case "$w" in pci=*) case ",${w#pci=}," in *,nocrs,*)
+      plan "skip reason=no-mmio-window-above-4g bus=$RB (pci=nocrs hides the BIOS address windows; remove pci=nocrs from the kernel cmdline)";;
+    esac;; esac
+  done
+  plan "skip reason=no-mmio-window-above-4g bus=$RB (enable Above 4G Decoding in BIOS)"
+fi
 fit=$tgt
 while [ $fit -ge 9 ]; do
   size=$(( 1 << (fit + 20) )); need=$(( size + (64 << 20) ))

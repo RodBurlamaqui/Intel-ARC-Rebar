@@ -22,6 +22,9 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
   rolls back. Covered by 6 new mocked tests. The register read-back after the
   rescan matches the check the dual-A310 preview passed on community hardware;
   other models are not hardware-confirmed.
+- When `pci=nocrs` is on the kernel command line, the `no-mmio-window-above-4g`
+  refusal now says to remove `pci=nocrs` instead of pointing to Above 4G Decoding
+  (also for the combined `pci=...,nocrs` form). The refusal reason is unchanged.
 
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported
