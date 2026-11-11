@@ -1,7 +1,7 @@
 # arc-rebar — Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
 
 <p align="center">
-<img src="docs/img/banner-saving1gpu.png" alt="Saving 1 Intel GPU card at a time" width="520">
+<img src="docs/img/banner-saving1gpu.jpg" alt="Saving 1 Intel GPU card at a time" width="520">
 </p>
 <p align="center"><sub><em>arc-rebar is an independent community project, not affiliated with or endorsed by Intel.</em></sub></p>
 
