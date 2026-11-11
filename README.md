@@ -743,14 +743,21 @@ implementation only.
   [#2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2).
 - @optiz0r — hardware-testing contributor: A310 first-card 4 GiB BAR and guest
   access confirmation, detailed Proxmox/VFIO diagnostics and separate-root
-  topology in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363).
-  Experimental two-card validation remains pending.
+  topology in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363),
+  and the first two-A310 result with the v1.0.6 Experimental preview: both cards
+  at 4 GiB and a model spanning both ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)).
 - @ThatGuy-Bob — A770/A750 results and the multi-GPU limitation report in
   [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - @jacl3 — the A380/Lenovo ThinkCentre M900 boot and verifier report in
   [#10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10).
 - @CelluloidRacer2 — the B580/Dell R720 VFIO, workload and limitation report in
   [#11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11).
+- @meshuggah27 — the A750/Dell PowerEdge T430 Proxmox/VFIO report with iDRAC,
+  slot-map and PCIe diagnostics in [#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28).
+- @desiwko — Arc Pro B50 pair on a Dell PowerEdge R740 (Proxmox, SR-IOV):
+  diagnostics and dual-preview preflight in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+- @LukeImYourFasia — dual B580 on a Dell Precision 5820: diagnostics,
+  dual-preview preflight and suspend/resume testing in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
