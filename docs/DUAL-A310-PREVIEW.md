@@ -1,7 +1,7 @@
 # Experimental two-A310 Debian preview
 
-Version: **1.0.6~dual-a3101**. Hardware acceptance is **pending** in
-[issue #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+Version: **1.0.6~dual-a3101**. One community two-card confirmation so far
+([issue #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)); other systems are untested.
 This is a separate prerelease; v1.0.5 remains the stable download.
 
 ## Scope and evidence
@@ -9,7 +9,10 @@ This is a separate prerelease; v1.0.5 remains the stable download.
 Thank you to @optiz0r for the Fujitsu RX2540 M2 / Proxmox report and diagnostics.
 They show the first A310 resized from 256 MiB to 4 GiB and usable through VFIO
 in the guest. The second remains at 256 MiB. This preview addresses the
-first-card-only selection, but has **not been tested on physical GPUs**.
+first-card-only selection. With it, @optiz0r reports both A310s at 4 GiB on
+`vfio-pci` and a LocalAI model spanning both cards ([two-card result](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)).
+That is one setup; `verify` returned WARN for latched DevSta `0x0008` on both
+cards, with age and cause unknown.
 
 The opt-in accepts exactly **two Intel Arc A310 endpoints (8086:56a6)**, each
 advertising a maximum 4 GiB BAR2, on distinct root ports. Each root must contain
@@ -141,4 +144,4 @@ Do not reboot following a failed installer recovery; restore from the saved
 boot files/known-working entry first. Keep backups until stable boot and GPU use
 are confirmed. Software tests use only fake PCI trees; they do not establish
 hardware safety, VFIO guest behavior or success on other systems. Issue #3 stays
-open pending confirmation, and broader model/count support needs separate work.
+open for other setups, and broader model/count support needs separate work.
