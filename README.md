@@ -1,6 +1,7 @@
 # arc-rebar — Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
 
 <a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Support arc-rebar on Buy Me a Coffee" width="217" height="60"></a>
+<a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="https://img.shields.io/badge/Become%20a%20monthly%20supporter-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Become a monthly supporter on Buy Me a Coffee" height="60"></a>
 
 **If arc-rebar helped bring your Intel Arc GPU back to life, or helped you in any way —**<br>
 **please help keep the project moving.** Your contribution supports testing hardware, compatibility work, and ongoing maintenance.
@@ -39,9 +40,31 @@ small donation can help me keep working on it.
 
 **[Support arc-rebar on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)**
 
+<a href="https://buymeacoffee.com/rodburlamaqui"><img src="docs/img/buymeacoffee-qr.png" alt="QR code linking to buymeacoffee.com/rodburlamaqui" width="160" height="160"></a><br>
+*Scan to support from your phone.*
+
+**Want to support every month?**
+**[Become a monthly supporter](https://buymeacoffee.com/rodburlamaqui/membership)**:
+memberships start at **$5 a month**. Monthly support makes a real difference
+and helps plan testing ahead.
+
 Contributions help fund more Intel Arc GPUs and test systems, hardware
 validation on additional platforms, bug investigations, community support,
 releases, and documentation.
+
+**Donate hardware.** We don't have every GPU and platform people run arc-rebar
+on, and testing depends on community hardware. We gratefully accept **graphics
+cards** (any Intel Arc model, Alchemist or Battlemage), **complete systems,
+motherboards** (especially boards without a Resizable BAR option, servers and
+dual-GPU setups) and **other hardware** that helps us test. To offer something,
+[open a hardware donation issue](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/new?template=hardware-donation.md)
+describing the hardware only. **Please don't post your name, address or other
+personal details in the issue**; we'll follow up to arrange the details
+privately.
+
+**Supporters.** Thank you to everyone who supports arc-rebar with donations or
+hardware. Supporters who'd like to be listed will be credited here, with their
+permission.
 
 Can't donate? Sharing the project, contributing detailed hardware reports,
 and helping others troubleshoot are valuable too. Thank you to everyone who
