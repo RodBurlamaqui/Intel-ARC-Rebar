@@ -6,8 +6,8 @@
 <p align="center"><sub><em>arc-rebar is an independent community project, not affiliated with or endorsed by Intel.</em></sub></p>
 
 <p align="center">
-<a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Support arc-rebar on Buy Me a Coffee" width="217" height="60"></a>
-<a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="docs/img/bmc-monthly-supporter.svg" alt="Become a monthly supporter on Buy Me a Coffee" height="60"></a>
+<a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Support arc-rebar on Buy Me a Coffee" width="163" height="45"></a>
+<a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="docs/img/bmc-monthly-supporter.svg" alt="Become a monthly supporter on Buy Me a Coffee" height="45"></a>
 </p>
 
 **If arc-rebar helped bring your Intel Arc GPU back to life, or helped you in any way —**<br>
