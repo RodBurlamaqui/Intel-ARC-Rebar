@@ -59,7 +59,9 @@ on, and testing depends on community hardware. **What helps most:**
 - **Motherboards:** especially boards without a Resizable BAR option, server
   boards and boards that can take two GPUs.
 
-Complete systems and other test hardware are welcome too. To offer something,
+Complete systems and other test hardware are welcome too. We consider every
+offer, but storage space is limited, so **please don't ship anything until we've
+confirmed**. To offer something,
 [open a hardware donation issue](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/new?template=hardware-donation.md)
 describing the hardware only. **Please don't post your name, address or other
 personal details in the issue.** To arrange shipping and other details
