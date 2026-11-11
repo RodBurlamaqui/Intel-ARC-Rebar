@@ -765,6 +765,8 @@ implementation only.
   diagnostics and dual-preview preflight in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - @LukeImYourFasia — dual B580 on a Dell Precision 5820: diagnostics,
   dual-preview preflight and suspend/resume testing in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+- @propstat-dev — the reproducible-build report and fix design (`SOURCE_DATE_EPOCH`)
+  in [#47](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/47).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the
   stalled quirk that confirmed the mechanism.
 - The kernel's own log line, `was not released (still contains assigned
