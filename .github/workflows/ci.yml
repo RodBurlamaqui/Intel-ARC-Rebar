@@ -59,3 +59,14 @@ jobs:
       - name: Build Debian package (do not install)
         shell: bash
         run: bash build-deb.sh
+      - name: Check the package builds reproducibly
+        shell: bash
+        run: |
+          V=$(grep -m1 '^Version:' debian/control | awk '{print $2}')
+          h1=$(sha256sum "dist/arc-rebar_${V}_all.deb" | cut -d' ' -f1)
+          # Give every file a new mtime; the package must not change.
+          find . -path ./.git -prune -o -type f -exec touch {} +
+          bash build-deb.sh >/dev/null
+          h2=$(sha256sum "dist/arc-rebar_${V}_all.deb" | cut -d' ' -f1)
+          echo "build 1: $h1"; echo "build 2: $h2"
+          [ "$h1" = "$h2" ] || { echo "package is not reproducible"; exit 1; }

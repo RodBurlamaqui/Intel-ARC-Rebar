@@ -17,8 +17,18 @@ cp -a docs $B/usr/share/arc-rebar/
 cp -a docs $B/usr/share/doc/arc-rebar/
 find $B -type d -exec chmod 0755 {} \; ; find $B/usr -type f -exec chmod 0644 {} \;
 chmod 0755 $B/usr/bin/arc-rebar $B/usr/share/arc-rebar/*.sh $B/usr/share/arc-rebar/diag/bin/*.sh $B/usr/share/arc-rebar/hooks/arc-rebar $B/usr/share/arc-rebar/scripts/init-premount/arc-rebar
+# Reproducible build: dpkg-deb clamps file mtimes and archive dates to SOURCE_DATE_EPOCH.
+# Default it to the last commit time in a git checkout; a caller-provided value wins.
+# Left unset outside git (e.g. the release tarball): dpkg-deb rejects an empty value.
+if [ -z "${SOURCE_DATE_EPOCH:-}" ] && git -C "$S" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  SOURCE_DATE_EPOCH=$(git -C "$S" log -1 --format=%ct); export SOURCE_DATE_EPOCH
+fi
+# dpkg-deb only clamps files newer than SOURCE_DATE_EPOCH; set every file to it so
+# working copies with older mtimes build the same package as a fresh checkout.
+[ -n "${SOURCE_DATE_EPOCH:-}" ] && find $B -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 dpkg-deb --build --root-owner-group $B dist/ >/dev/null
 echo "built: dist/arc-rebar_${V}_all.deb"; dpkg-deb -I dist/arc-rebar_${V}_all.deb | grep -E '^ (Package|Version|Depends|Maintainer):'
+echo "reproducibility: SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-unset}; $(dpkg-deb --version | head -1)"
 echo; echo "to also refresh the tarball and checksums:"
 echo "  (cd .. && tar czf $(basename $S)/dist/arc-rebar-${V}.tar.gz --exclude=.git --exclude=dist --exclude=build $(basename $S))"
 echo "  (cd dist && sha256sum arc-rebar_${V}_all.deb arc-rebar-${V}.tar.gz > SHA256SUMS)"

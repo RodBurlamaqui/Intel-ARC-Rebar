@@ -25,6 +25,12 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 - When `pci=nocrs` is on the kernel command line, the `no-mmio-window-above-4g`
   refusal now says to remove `pci=nocrs` instead of pointing to Above 4G Decoding
   (also for the combined `pci=...,nocrs` form). The refusal reason is unchanged.
+- Make the Debian package build reproducible: `build-deb.sh` sets
+  `SOURCE_DATE_EPOCH` to the last commit time in a git checkout (a caller value
+  wins; unset outside git) and gives every packaged file that timestamp, so the
+  same commit builds a byte-identical `.deb` from any working copy. CI rebuilds
+  after touching every file and fails if the hash changes. Already-published
+  releases keep their original hashes. Reported by @propstat-dev (#47).
 
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported
