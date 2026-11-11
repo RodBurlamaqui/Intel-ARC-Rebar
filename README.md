@@ -40,6 +40,9 @@ small donation can help me keep working on it.
 
 **[Support arc-rebar on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)**
 
+<a href="https://buymeacoffee.com/rodburlamaqui"><img src="docs/img/buymeacoffee-qr.png" alt="QR code linking to buymeacoffee.com/rodburlamaqui" width="160" height="160"></a><br>
+*Scan to support from your phone.*
+
 **Want to support every month?**
 **[Become a monthly supporter](https://buymeacoffee.com/rodburlamaqui/membership)**:
 memberships start at **$5 a month**. Monthly support makes a real difference
