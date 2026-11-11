@@ -8,6 +8,8 @@ Thank you for offering hardware! Donated hardware is used to test and validate
 arc-rebar on more GPUs and platforms. **Graphics cards** (any Intel Arc model) and
 **motherboards** (especially boards without a Resizable BAR option, server boards
 and dual-GPU boards) help most; complete systems and other hardware are welcome too.
+We consider every offer, but storage space is limited, so please don't ship
+anything until we've confirmed.
 
 **Please describe the hardware only.** Do not post your name, address, phone
 number, email or any other personal details in this issue; it is public.
