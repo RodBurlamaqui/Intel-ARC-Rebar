@@ -59,8 +59,8 @@ motherboards** (especially boards without a Resizable BAR option, servers and
 dual-GPU setups) and **other hardware** that helps us test. To offer something,
 [open a hardware donation issue](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/new?template=hardware-donation.md)
 describing the hardware only. **Please don't post your name, address or other
-personal details in the issue**; we'll follow up to arrange the details
-privately.
+personal details in the issue.** To arrange shipping and other details
+privately, email **burlam1nx@outlook.com** with your issue number.
 
 **Supporters.** Thank you to everyone who supports arc-rebar with donations or
 hardware. Supporters who'd like to be listed will be credited here, with their
