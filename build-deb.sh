@@ -17,6 +17,12 @@ cp -a docs $B/usr/share/arc-rebar/
 cp -a docs $B/usr/share/doc/arc-rebar/
 find $B -type d -exec chmod 0755 {} \; ; find $B/usr -type f -exec chmod 0644 {} \;
 chmod 0755 $B/usr/bin/arc-rebar $B/usr/share/arc-rebar/*.sh $B/usr/share/arc-rebar/diag/bin/*.sh $B/usr/share/arc-rebar/hooks/arc-rebar $B/usr/share/arc-rebar/scripts/init-premount/arc-rebar
+# Reproducible builds: pin all package timestamps to the last commit so anyone
+# can rebuild a tag and get a byte-identical .deb (same dpkg/zstd versions).
+# Outside a git checkout (e.g. the release tarball) and with no value given,
+# leave it unset: dpkg-deb rejects an empty SOURCE_DATE_EPOCH.
+[ -n "${SOURCE_DATE_EPOCH:-}" ] || SOURCE_DATE_EPOCH=$(git -C "$S" log -1 --format=%ct 2>/dev/null) || true
+if [ -n "$SOURCE_DATE_EPOCH" ]; then export SOURCE_DATE_EPOCH; else unset SOURCE_DATE_EPOCH; fi
 dpkg-deb --build --root-owner-group $B dist/ >/dev/null
 echo "built: dist/arc-rebar_${V}_all.deb"; dpkg-deb -I dist/arc-rebar_${V}_all.deb | grep -E '^ (Package|Version|Depends|Maintainer):'
 echo; echo "to also refresh the tarball and checksums:"
