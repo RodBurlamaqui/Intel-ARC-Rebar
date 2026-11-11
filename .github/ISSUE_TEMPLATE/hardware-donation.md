@@ -8,8 +8,10 @@ Thank you for offering hardware! Donated hardware is used to test and validate
 arc-rebar on more GPUs and platforms.
 
 **Please describe the hardware only.** Do not post your name, address, phone
-number, email or any other personal details in this issue; it is public. We will
-follow up to arrange shipping and other details privately.
+number, email or any other personal details in this issue; it is public.
+
+**To arrange shipping and other details privately**, email
+**burlam1nx@outlook.com** and include this issue's number.
 
 ## What you're offering
 
