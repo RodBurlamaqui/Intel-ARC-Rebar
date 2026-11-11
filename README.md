@@ -89,7 +89,9 @@ licensing terms or guarantee support for a particular hardware configuration.*
 
 **Debian / Ubuntu: choose stable v1.0.5 for normal use.**
 
-**Find arc-rebar useful? Please consider a [donation](https://buymeacoffee.com/rodburlamaqui), one-time or monthly, to help keep it alive.**
+**If arc-rebar worked for you or helped in any way, please consider a [donation](https://buymeacoffee.com/rodburlamaqui), one-time or monthly.**
+New Linux kernels, distributions and GPU drivers keep changing, and keeping arc-rebar
+working on them takes ongoing testing and fixes.
 
 <a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="One-time donation on Buy Me a Coffee" width="116" height="32"></a>
 <a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="docs/img/bmc-monthly-supporter.svg" alt="Monthly support on Buy Me a Coffee" height="32"></a>
