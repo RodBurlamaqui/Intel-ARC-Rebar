@@ -91,6 +91,9 @@ licensing terms or guarantee support for a particular hardware configuration.*
 
 **Please consider [donating](https://buymeacoffee.com/rodburlamaqui) to keep this project alive.**
 
+<a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="One-time donation on Buy Me a Coffee" width="116" height="32"></a>
+<a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="docs/img/bmc-monthly-supporter.svg" alt="Monthly support on Buy Me a Coffee" height="32"></a>
+
 | Release | Use | Download | Notes and checksums |
 |---|---|---|---|
 | **v1.0.5 — stable** | Single GPU Support — Debian/Ubuntu | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
