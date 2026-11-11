@@ -454,7 +454,7 @@ Decoding is on.
 
 | Boot log message | Most likely cause | What to check |
 |---|---|---|
-| `skip reason=no-mmio-window-above-4g` | No address space above 4 GB | **Above 4G Decoding** in BIOS. Also remove `pci=nocrs` from the kernel command line if it's there |
+| `skip reason=no-mmio-window-above-4g` | No address space above 4 GB, or `pci=nocrs` hides it | **Above 4G Decoding** in BIOS, or remove `pci=nocrs` from the kernel command line. After v1.0.5 the message says which |
 | `skip reason=mmio-window-too-small` or `note: MMIO window is ..., stepping target down` | The 64-bit MMIO area is too small for the full BAR | A **64-bit MMIO size** option in BIOS, if available, or a smaller `rebar.size` (see [INSTALL.md](INSTALL.md)) |
 | `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` (after v1.0.5) | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
 | v1.0.5 and earlier: `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Same as above: the write was refused but not reported | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
@@ -472,7 +472,7 @@ Decoding is on.
 | No Intel GPU with a ReBAR capability (AMD, NVIDIA, Intel iGPU) | `none` — no-op |
 | GPU behind an external switch, riser, or Thunderbolt | `skip unexpected-topology` |
 | Other devices share the GPU's root port | `skip shared-root-port` |
-| No MMIO window above 4 GB (Above 4G Decoding off) | `skip no-mmio-window-above-4g` |
+| No MMIO window above 4 GB (Above 4G Decoding off, or `pci=nocrs` on the kernel command line) | `skip no-mmio-window-above-4g`; after v1.0.5 the hint names `pci=nocrs` when that is the cause |
 | Window above 4 GB too small for even 512 MB | `skip mmio-window-too-small` |
 | Window fits a smaller BAR than the card's maximum | **acts with the smaller size**, logs the step-down |
 | BAR2 unassigned after the rescan | **rolls back** to the original size; `rolled-back` |
