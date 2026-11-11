@@ -1,6 +1,7 @@
 # arc-rebar — Resizable BAR for Intel Arc GPUs on firmware without ReBAR support
 
 <a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Support arc-rebar on Buy Me a Coffee" width="217" height="60"></a>
+<a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="https://img.shields.io/badge/Become%20a%20monthly%20supporter-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Become a monthly supporter on Buy Me a Coffee" height="60"></a>
 
 **If arc-rebar helped bring your Intel Arc GPU back to life, or helped you in any way —**<br>
 **please help keep the project moving.** Your contribution supports testing hardware, compatibility work, and ongoing maintenance.
@@ -39,9 +40,10 @@ small donation can help me keep working on it.
 
 **[Support arc-rebar on Buy Me a Coffee](https://buymeacoffee.com/rodburlamaqui)**
 
-**Want to support every month?** On the Buy Me a Coffee page, choose
-**"Make this monthly"**. We suggest **$5 a month**; it makes a real difference
-and helps plan testing ahead. Any amount is welcome.
+**Want to support every month?**
+**[Become a monthly supporter](https://buymeacoffee.com/rodburlamaqui/membership)**:
+memberships start at **$5 a month**. Monthly support makes a real difference
+and helps plan testing ahead.
 
 Contributions help fund more Intel Arc GPUs and test systems, hardware
 validation on additional platforms, bug investigations, community support,
