@@ -14,7 +14,7 @@ case "$cmd" in
      echo "arc-rebar $v"
      echo "Copyright (c) 2026 Rod Burlamaqui. All rights reserved. Free for personal use; see $D/LICENSE."
      echo "Official source (the only one): $OFFICIAL"
-     echo "Check your copy: arc-rebar integrity   |   report imitations: see $D/../doc/arc-rebar/SECURITY.md"
+     echo "Check your copy: arc-rebar integrity   |   report imitations: see /usr/share/doc/arc-rebar/SECURITY.md"
      exit 0;;
   integrity)
      # Read-only. Compares installed files with the package's own checksum list,

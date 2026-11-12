@@ -1,0 +1,9 @@
+# Keep the GitHub Actions used by CI and the release workflow up to date
+# (security fixes). Updates arrive as pull requests for review; nothing merges itself.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
