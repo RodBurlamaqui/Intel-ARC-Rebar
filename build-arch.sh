@@ -20,8 +20,10 @@ B=$S/build/arch; rm -rf "$B"; mkdir -p "$B" dist
 git archive --format=tar --prefix="arc-rebar-$V/" HEAD | gzip -n > "$B/arc-rebar-$V.tar.gz"
 SUM=$(sha256sum "$B/arc-rebar-$V.tar.gz" | cut -d' ' -f1)
 sed -e "s/@VERSION@/$V/" -e "s/@SHA256@/$SUM/" packaging/arch/PKGBUILD.in > "$B/PKGBUILD"
-DEPS=; [ -f /etc/arch-release ] || DEPS=--nodeps
-(cd "$B" && PKGDEST="$B" SRCDEST="$B" BUILDDIR="$B/work" makepkg --force --clean $DEPS --noconfirm >/dev/null)
+# Off Arch, skip pacman's dependency/database checks (they need a real Arch system).
+DEPS=; EXTRA=; [ -f /etc/arch-release ] || { DEPS=--nodeps; EXTRA=PACMAN=true; }
+(cd "$B" && env $EXTRA PACKAGER='Rod Burlamaqui <burlam1nx@outlook.com>' PKGEXT='.pkg.tar.zst' PKGDEST="$B" SRCDEST="$B" BUILDDIR="$B/work" \
+   makepkg --force --clean $DEPS --noconfirm >/dev/null)
 PKG=$(ls "$B"/arc-rebar-"$V"-1-any.pkg.tar.* | head -1)
 cp "$PKG" "$B/PKGBUILD" "$B/arc-rebar-$V.tar.gz" dist/
 echo "built: dist/$(basename "$PKG")"
