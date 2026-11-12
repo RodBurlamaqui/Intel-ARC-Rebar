@@ -3,7 +3,7 @@ Version: 1.0.5
 Section: admin
 Priority: optional
 Architecture: all
-Depends: pciutils, initramfs-tools
+Depends: pciutils, initramfs-tools, gpgv
 Suggests: vulkan-tools, mesa-opencl-icd, ocl-icd-libopencl1, gcc, make
 Maintainer: Rod Burlamaqui <RodBurlamaqui@users.noreply.github.com>
 Homepage: https://github.com/RodBurlamaqui/Intel-ARC-Rebar

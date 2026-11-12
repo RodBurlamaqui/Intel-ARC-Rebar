@@ -16,7 +16,7 @@ pkgdesc='Resizable BAR for Intel Arc GPUs on firmware without ReBAR support (exp
 arch=('any')
 url='https://github.com/RodBurlamaqui/Intel-ARC-Rebar'
 license=('LicenseRef-arc-rebar')
-depends=('bash' 'pciutils' 'mkinitcpio' 'coreutils')
+depends=('bash' 'pciutils' 'mkinitcpio' 'coreutils' 'gnupg')
 optdepends=('vulkan-tools: vulkan-heaps diagnostic'
             'gcc: build the ocl_test diagnostic')
 source=("arc-rebar-${pkgver}.tar.gz")
