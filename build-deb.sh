@@ -15,12 +15,15 @@ mkdir -p $B/usr/share/arc-rebar/diag; cp -a diag/bin diag/src diag/Makefile diag
 cp debian/control debian/postinst debian/prerm debian/postrm $B/DEBIAN/; chmod 0755 $B/DEBIAN/postinst $B/DEBIAN/prerm $B/DEBIAN/postrm
 { echo "Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/"; echo "Upstream-Name: arc-rebar"; echo
   echo "Files: *"; echo "Copyright: 2026 Rod Burlamaqui"; echo "License: arc-rebar-proprietary"; sed 's/^/ /; s/^ $/ ./' LICENSE; } > $B/usr/share/doc/arc-rebar/copyright
-cp README.md INSTALL.md $B/usr/share/doc/arc-rebar/
+cp README.md INSTALL.md SECURITY.md $B/usr/share/doc/arc-rebar/
+echo "$V" > $B/usr/share/arc-rebar/VERSION
 # Keep relative README/INSTALL links usable in both installed documentation locations.
 cp -a docs $B/usr/share/arc-rebar/
 cp -a docs $B/usr/share/doc/arc-rebar/
 find $B -type d -exec chmod 0755 {} \; ; find $B/usr -type f -exec chmod 0644 {} \;
 chmod 0755 $B/usr/bin/arc-rebar $B/usr/share/arc-rebar/*.sh $B/usr/share/arc-rebar/diag/bin/*.sh $B/usr/share/arc-rebar/hooks/arc-rebar $B/usr/share/arc-rebar/scripts/init-premount/arc-rebar
+# File checksums for `dpkg --verify arc-rebar` / `arc-rebar integrity` (sorted: reproducible).
+(cd $B && find usr -type f -print0 | LC_ALL=C sort -z | xargs -0 md5sum > DEBIAN/md5sums); chmod 0644 $B/DEBIAN/md5sums
 # Reproducible build: dpkg-deb clamps file mtimes and archive dates to SOURCE_DATE_EPOCH.
 # Default it to the last commit time in a git checkout; a caller-provided value wins.
 # Left unset outside git (e.g. the release tarball): dpkg-deb rejects an empty value.

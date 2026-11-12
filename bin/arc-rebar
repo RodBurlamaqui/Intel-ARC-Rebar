@@ -6,18 +6,48 @@
 # arc-rebar command dispatcher (installed to /usr/bin by the .deb)
 D=/usr/share/arc-rebar
 case "$ARC_REBAR_HOME" in /*) [ -d "$ARC_REBAR_HOME" ] && D=$ARC_REBAR_HOME;; esac
+OFFICIAL=https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 cmd=$1; [ $# -gt 0 ] && shift
 case "$cmd" in
+  version|--version|-V)
+     v=$(cat "$D/VERSION" 2>/dev/null || dpkg-query -W -f '${Version}' arc-rebar 2>/dev/null || echo unknown)
+     echo "arc-rebar $v"
+     echo "Copyright (c) 2026 Rod Burlamaqui. All rights reserved. Free for personal use; see $D/LICENSE."
+     echo "Official source (the only one): $OFFICIAL"
+     echo "Check your copy: arc-rebar integrity   |   report imitations: see $D/../doc/arc-rebar/SECURITY.md"
+     exit 0;;
+  integrity)
+     # Read-only. Compares installed files with the package's own checksum list,
+     # and the active boot hook with the packaged copy.
+     rc=0
+     if dpkg-query -W -f '${Status}' arc-rebar 2>/dev/null | grep -q 'install ok installed'; then
+       out=$(dpkg --verify arc-rebar 2>&1)
+       if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
+       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
+     else
+       echo "  [info] not installed from the .deb; package checksums not available"
+     fi
+     for pair in "hooks/arc-rebar:/etc/initramfs-tools/hooks/arc-rebar" \
+                 "scripts/init-premount/arc-rebar:/etc/initramfs-tools/scripts/init-premount/arc-rebar"; do
+       src=$D/${pair%%:*}; dst=${pair#*:}
+       [ -e "$dst" ] || continue
+       if cmp -s "$src" "$dst"; then echo "  [ok]   $dst matches this release"
+       else echo "  [FAIL] $dst differs from this release (modified, or from another version)"; rc=1; fi
+     done
+     [ $rc -eq 0 ] && echo "RESULT: genuine, unmodified files" || echo "RESULT: MODIFIED - reinstall from $OFFICIAL/releases"
+     exit $rc;;
   diagnose|prepare|live-test|install|verify|uninstall) exec "$D/$cmd.sh" "$@" ;;
   diag) t=$1; [ $# -gt 0 ] && shift; case "$t" in bar-pin-check|pcie-link-truth|vulkan-heaps|ocl-alloc-ceiling|gpu-health) exec "$D/diag/bin/$t.sh" "$@";;
         *) echo "usage: arc-rebar diag {bar-pin-check|pcie-link-truth|vulkan-heaps|ocl-alloc-ceiling|gpu-health}"; echo "docs: $D/diag/README.md"; exit 1;; esac ;;
-  *) echo "usage: arc-rebar {diagnose|prepare|live-test|install|verify|uninstall|diag <tool>} [options]"
+  *) echo "usage: arc-rebar {diagnose|prepare|live-test|install|verify|uninstall|integrity|version|diag <tool>} [options]"
      echo "  diagnose   PRE:  do you have the pinned-window Small BAR problem; would the fix apply safely"
      echo "  prepare    PRE:  (cautious path) add pci=realloc to GRUB only, so live-test can run after a reboot
   live-test  PRE:  run the fix once, live, no reboot, nothing persistent"
      echo "  install         enable at boot (safety checks, licence + disclaimer acceptance, backups)"
      echo "  verify     POST: PASS/FAIL/WARN after a reboot (verify --help)"
      echo "  uninstall       remove the boot hook
+  integrity       check installed files are genuine and unmodified (read-only)
+  version         version, copyright and the official source
   diag <tool>     read-only diagnostics: bar-pin-check | pcie-link-truth | vulkan-heaps |
                   ocl-alloc-ceiling | gpu-health   (see diag/README.md)"
      echo "docs: $D/README.md   licence: $D/LICENSE (personal use only)"; exit 1;;
