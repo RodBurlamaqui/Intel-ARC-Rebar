@@ -1,4 +1,8 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # Prove the fix on your hardware without rebooting. Stops the display manager
 # (SSH survives), runs the boot script for real, restarts the display manager.
 # If the machine hangs at the rescan: power cycle; nothing persistent changed.

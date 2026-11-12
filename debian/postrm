@@ -1,4 +1,8 @@
 #!/bin/sh
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # Purge runs after package files have gone: keep recovery self-contained here.
 set -e
 [ "${1:-}" = purge ] || exit 0

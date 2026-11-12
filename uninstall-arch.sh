@@ -1,4 +1,8 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # arc-rebar uninstaller for Arch Linux / CachyOS (mkinitcpio).
 set -e
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }

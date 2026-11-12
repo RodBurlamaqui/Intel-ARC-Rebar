@@ -30,6 +30,14 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
   same commit builds a byte-identical `.deb` from any working copy. CI rebuilds
   after touching every file and fails if the hash changes. Already-published
   releases keep their original hashes. Reported by @propstat-dev (#47).
+- Protect the code and the releases: every shipped script carries a copyright
+  and licence notice; tagged releases are built by GitHub Actions with a signed
+  build attestation (`gh attestation verify`) and can be signed with the
+  maintainer's key (`SHA256SUMS.asc`, `sign-release.sh`); INSTALL explains how
+  to check that a download is genuine.
+- Licence for v1.0.7 and later: distribution only from the official repository
+  (§2.2), no removing or bypassing checks, signatures or notices (§3.5), and
+  each earlier version keeps its own terms (§8.6).
 
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported

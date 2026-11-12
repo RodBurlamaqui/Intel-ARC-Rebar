@@ -1,4 +1,8 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # Which PCIe link is real? Intel Arc cards carry an integrated switch; the GPU function and
 # the switch's downstream port report "2.5 GT/s x1" — die-internal virtual ports with no PHY.
 # The real link is the hop that completed link equalization. Run as root (lspci needs it).

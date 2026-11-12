@@ -1,4 +1,9 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
+RB_REV=541a321068
 # arc-rebar verify: POST-check. PASS=0, FAIL=1, inconclusive PCIe WARN=2.
 # DevSta is sticky W1C status, not a timestamped health measurement.
 ok(){ echo "  [ok]   $*"; }

@@ -1,3 +1,9 @@
+/*
+ * arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+ * Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+ * modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+ * Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
+ */
 /* ocl_test: allocate N buffers of M MiB on the first OpenCL GPU, write each with a
  * kernel (forces real residency), run saxpy across all of them, report bandwidth.
  * Declares the small OpenCL API subset it needs so no OpenCL headers are required.

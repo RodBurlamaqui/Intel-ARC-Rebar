@@ -1,4 +1,9 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
+RB_REV=ea1aa73438
 # arc-rebar diagnose: do you have the pinned-window Small BAR problem, and would the fix apply safely?
 S=$(dirname "$(readlink -f "$0")")
 echo "== Intel GPUs with a Resizable BAR capability =="

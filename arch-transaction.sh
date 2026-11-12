@@ -1,4 +1,8 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # Shared by the source-tree Arch installer/uninstaller. Never run standalone.
 # Keep backups after success or failure so an operator can inspect/recover them.
 # Parse only the simple array form we can safely edit; never eval config text.

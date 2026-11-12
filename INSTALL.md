@@ -43,6 +43,15 @@ wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/S
 ```
 sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.5_all.deb: OK
 ```
+**Check that it really came from us (from v1.0.7).** A checksum only proves the file wasn't
+damaged; these prove it was built and signed by this project, not by an imitation:
+```
+gh attestation verify arc-rebar_<version>_all.deb -R RodBurlamaqui/Intel-ARC-Rebar
+gpg --verify SHA256SUMS.asc SHA256SUMS            # with the project's published signing key
+```
+The first needs the GitHub CLI (`gh`) and prints *"Verification succeeded"* for a genuine file.
+If either check fails, **don't install the file**; download it again from the Releases page.
+
 Then install it:
 ```
 sudo apt install ./arc-rebar_1.0.5_all.deb

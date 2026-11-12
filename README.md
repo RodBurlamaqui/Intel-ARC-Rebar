@@ -732,8 +732,10 @@ Software License Agreement in [LICENSE](LICENSE):
   requirement; free Personal Use remains governed by LICENSE §2.1.
 - **Modification** — no derivative works, ports or modified distributions without
   prior written approval. Bug reports and proposed changes are welcome.
-- **Resale** — no sale, sublicensing or distribution for payment without approval.
-  Free redistribution of complete, unmodified copies is permitted.
+- **Distribution** — from v1.0.7, arc-rebar is distributed only from this repository.
+  No re-uploads, mirrors, re-packaging or resale, modified or not, without approval
+  (LICENSE §2.2, §3.3). Linking here is welcome. Earlier versions keep their own terms.
+- **No tampering** — don't remove or bypass licence checks, signatures or notices (§3.5).
 - **No warranty** — see LICENSE §5–6 and [DISCLAIMER.md](DISCLAIMER.md).
 
 Not an open-source licence. The B580 product photo in `docs/img/` is © Intel

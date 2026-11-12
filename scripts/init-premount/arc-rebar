@@ -1,4 +1,8 @@
 #!/bin/sh
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # arc-rebar: Resizable BAR for Intel Arc dGPUs on firmware without ReBAR support.
 #
 # Mechanism: Arc cards carry an integrated PCIe switch whose upstream port has
@@ -26,6 +30,7 @@ case "$1" in prereqs) prereqs; exit 0;; esac
 log()  { echo "arc-rebar: $*"; [ -n "$DRY" ] || echo "arc-rebar: $*" > /dev/kmsg 2>/dev/null; }
 plan() { log "PLAN: $*"; exit 0; }
 D=/sys/bus/pci/devices
+RB_REV=e3ae75ebe1
 IOMEM=${ARC_REBAR_IOMEM:-/proc/iomem}
 CMDLINE=$(cat /proc/cmdline 2>/dev/null)
 DRY=${ARC_REBAR_DRYRUN:-}

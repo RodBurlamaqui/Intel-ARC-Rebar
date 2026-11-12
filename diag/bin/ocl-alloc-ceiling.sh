@@ -1,4 +1,8 @@
 #!/bin/bash
+# arc-rebar - Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
+# Proprietary software, licensed under the LICENSE file. Modifying it or distributing
+# modified versions is prohibited (LICENSE §3.2); removing this notice is prohibited (§3.4).
+# Official source: https://github.com/RodBurlamaqui/Intel-ARC-Rebar
 # Measures the REAL single-allocation ceiling and total usable VRAM via OpenCL.
 # clinfo's reported "max allocation" is not trustworthy on a small-BAR card; this allocates for real.
 S=$(dirname "$(readlink -f "$0")")/..; T=$S/bin/ocl_test

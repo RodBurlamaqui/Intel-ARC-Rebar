@@ -1,0 +1,48 @@
+name: Release build
+
+# Builds a release from a version tag on GitHub's servers, attaches a signed
+# build attestation (proof that the files were built from this repository at
+# that tag), and creates a DRAFT release. The owner reviews and publishes it.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write      # create the draft release
+  id-token: write      # sign the attestation
+  attestations: write  # store the attestation
+
+jobs:
+  release:
+    name: Build, attest and draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build the package (reproducible) and source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=$(grep -m1 '^Version:' debian/control | awk '{print $2}')
+          [ "v$V" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME does not match debian/control Version $V"; exit 1; }
+          ./build-deb.sh
+          git archive --format=tar.gz --prefix="arc-rebar-$V/" -o "dist/arc-rebar-$V.tar.gz" HEAD
+          (cd dist && sha256sum "arc-rebar_${V}_all.deb" "arc-rebar-$V.tar.gz" > SHA256SUMS && cat SHA256SUMS)
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.deb
+            dist/*.tar.gz
+      - name: Create a draft release for review
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${GITHUB_REF_NAME#v}
+          gh release create "$GITHUB_REF_NAME" dist/*.deb dist/*.tar.gz dist/SHA256SUMS \
+            --draft --title "arc-rebar $V" \
+            --notes "Draft built by GitHub Actions from tag $GITHUB_REF_NAME. Verify a download: \`sha256sum -c SHA256SUMS\` and \`gh attestation verify <file> -R RodBurlamaqui/Intel-ARC-Rebar\`."
