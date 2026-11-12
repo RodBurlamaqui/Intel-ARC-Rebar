@@ -36,8 +36,10 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
   maintainer's key (`SHA256SUMS.asc`, `sign-release.sh`); INSTALL explains how
   to check that a download is genuine.
 - Licence for v1.0.7 and later: distribution only from the official repository
-  (§2.2), no removing or bypassing checks, signatures or notices (§3.5), and
-  each earlier version keeps its own terms (§8.6).
+  (§2.2), no removing or bypassing checks, signatures or notices (§3.5), no
+  rebranding or presenting it as someone else's work (§3.6), separate terms for
+  separate editions (§8.7), and each earlier version keeps its own terms (§8.6).
+  A plain-language summary opens the licence.
 
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported

@@ -732,6 +732,8 @@ Software License Agreement in [LICENSE](LICENSE):
   requirement; free Personal Use remains governed by LICENSE §2.1.
 - **Modification** — no derivative works, ports or modified distributions without
   prior written approval. Bug reports and proposed changes are welcome.
+- **Free utility** — free for personal use. It can't be modified, rebranded, sold or
+  redistributed without permission (LICENSE §2.2, §3.2, §3.3, §3.6).
 - **Distribution** — from v1.0.7, arc-rebar is distributed only from this repository.
   No re-uploads, mirrors, re-packaging or resale, modified or not, without approval
   (LICENSE §2.2, §3.3). Linking here is welcome. Earlier versions keep their own terms.

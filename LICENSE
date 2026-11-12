@@ -2,6 +2,12 @@
 
 Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
 
+arc-rebar is a free utility, made to help people get the most out of their graphics
+cards. It currently supports Intel Arc cards, and support for other vendors is being
+tested. It is free for personal use. It may not be modified, rebranded, sold or
+redistributed without the author's written permission. Some editions or features may
+be offered under separate terms; where they are, those terms apply.
+
 This Software License Agreement (the "Agreement") is a legal agreement between
 you, either an individual or a single entity (the "Licensee"), and Rod
 Burlamaqui (the "Licensor"), governing the use of the arc-rebar software,
@@ -86,6 +92,11 @@ Software.
     or accompanying the Software, and shall not distribute any copy from
     which any of them has been removed or altered.
 
+3.6 Branding and attribution. The Licensee shall not distribute or present the
+    Software, or any part or modification of it, under another name, brand,
+    logo or author; remove or replace the Licensor's name; or represent the
+    Software as the Licensee's own work or as endorsed by the Licensor.
+
 4.  INTELLECTUAL PROPERTY
 
 4.1 The Software is licensed, not sold. The Licensor retains all right, title
@@ -162,6 +173,11 @@ Software.
 8.6 Versions. This Agreement applies to version 1.0.7 and all later versions
     of the Software. Each earlier version remains governed by the agreement
     distributed with it.
+
+8.7 Separate editions. The Licensor may offer certain editions, versions or
+    features of the Software under separate written terms, including beta,
+    paid or commercial editions. Where such terms exist, they govern that
+    edition and prevail over this Agreement to the extent of any conflict.
 
 9.  COMMERCIAL AND ENTERPRISE LICENSING
 
