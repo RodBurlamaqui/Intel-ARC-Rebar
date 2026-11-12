@@ -106,6 +106,10 @@ working on them takes ongoing testing and fixes.
 **Dual and multi-GPU support is currently in testing.** Use stable v1.0.5 for now.
 To help test, see the [Beta Testing Program](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/discussions/54).
 
+> Modifying, unlocking or redistributing modified versions of arc-rebar is not permitted
+> ([LICENSE](LICENSE) §3.2). Commercial use requires a written licence (§3.1).
+> To report misuse, contact burlam1nx@outlook.com.
+
 [Browse all releases and source archives](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases),
 including the historical Arch source preview. Arch/CachyOS is a separate
 experimental source port; the **v1.0.5 `.deb` and source release do not include
@@ -122,7 +126,7 @@ contributing ports. Here is the evidence reported so far:
 |---|---|---|
 | **B580** | Original project hardware tests, reboots and Vulkan/OpenCL workloads on Supermicro X9DRH-7TF, Debian, `xe` | [Recorded tests](docs/TESTS.md); benchmarks below belong to this setup |
 | **A750** | @TheKusja1 confirms a direct v1.0.3 → v1.0.5 package upgrade, 8 GiB BAR2 after reboot, `i915`, read-only WARN and successful Jellyfin AV1 hardware transcoding on Supermicro H11SSL-i / Proxmox | [Report #2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2) and [v1.0.5 hardware follow-up](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2#issuecomment-6707332319); no AER reports or GPU hangs/resets observed in that run; the latch's physical age/cause remain unknown |
-| **A310 4 GB — Proxmox / VFIO** | @optiz0r reports the first card resized from 256 MiB to 4 GiB on Fujitsu RX2540 M2 with v1.0.5, its full BAR usable in the guest VM; with the v1.0.6 Experimental two-A310 preview, both cards at 4 GiB on `vfio-pci` and a LocalAI model spanning both | [v1.0.5 report](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363), [diagnostics](https://gist.github.com/optiz0r/7cd12c10d971fc3fcc8549abe4eb9731) and [two-card result](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908); one setup; verify returned WARN for latched DevSta `0x0008` on both cards (age and cause unknown) |
+| **A310 4 GB — Proxmox / VFIO** | @optiz0r reports the first card resized from 256 MiB to 4 GiB on Fujitsu RX2540 M2 with v1.0.5, its full BAR usable in the guest VM; with an early dual-GPU test build, both cards at 4 GiB on `vfio-pci` and a LocalAI model spanning both | [v1.0.5 report](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363), [diagnostics](https://gist.github.com/optiz0r/7cd12c10d971fc3fcc8549abe4eb9731) and [two-card result](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908); one setup; verify returned WARN for latched DevSta `0x0008` on both cards (age and cause unknown) |
 | **A770 / A750** | Reporter describes appropriate BAR sizes with a locally modified loop on Asus Z9PA-D8, Debian SID / `xe` | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6649456377); unmodified diagnostics pending; upstream script still handles only the first qualifying GPU |
 | **A380 — Debian / Lenovo** | Community reports an 8 GiB BAR, boot persistence and normal `i915` use on Lenovo ThinkCentre M900 / OpenMediaVault | [Report #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10); legacy verifier failed on DevSta `0x0008`; v1.0.5 has a matching software test returning unresolved WARN; physical cause and hardware acceptance remain pending |
 | **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
@@ -736,7 +740,7 @@ implementation only.
 - @optiz0r — hardware-testing contributor: A310 first-card 4 GiB BAR and guest
   access confirmation, detailed Proxmox/VFIO diagnostics and separate-root
   topology in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363),
-  and the first two-A310 result with the v1.0.6 Experimental preview: both cards
+  and the first two-A310 result with an early dual-GPU test build: both cards
   at 4 GiB and a model spanning both ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)).
 - @ThatGuy-Bob — A770/A750 results and the multi-GPU limitation report in
   [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).

@@ -19,9 +19,8 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
   skips with `kernel-lockdown` when lockdown is visible before any change, and
   reports `done` only if the control register reads back the written value and
   BAR2 has the target size. Otherwise it reports `rebar-write-not-applied` or
-  rolls back. Covered by 6 new mocked tests. The register read-back after the
-  rescan matches the check the dual-A310 preview passed on community hardware;
-  other models are not hardware-confirmed.
+  rolls back. Covered by 6 new mocked tests. The register read-back is not yet
+  hardware-confirmed on every model.
 - When `pci=nocrs` is on the kernel command line, the `no-mmio-window-above-4g`
   refusal now says to remove `pci=nocrs` instead of pointing to Above 4G Decoding
   (also for the combined `pci=...,nocrs` form). The refusal reason is unchanged.
