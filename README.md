@@ -15,20 +15,25 @@
 
 Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enterprise use requires separate licensing** — see [LICENSE](LICENSE) §9.
 
-> [!WARNING]
-> **Beware of imitations and replicas.** The only official source of arc-rebar is
+> [!CAUTION]
+> **Beware of imitations, replicas and malware.** The only official source of arc-rebar is
 > **https://github.com/RodBurlamaqui/Intel-ARC-Rebar**. Official downloads are the `.deb`
 > packages on this repository's [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)
-> page, with published SHA256 checksums.
+> page, each with a published SHA256 checksum. Always check it: `sha256sum -c SHA256SUMS`.
 >
-> **We never distribute `.zip` files or installers through other accounts or websites.** (The only
-> `.zip` you will see from us is GitHub's automatic "Source code" archive on our own Releases page.)
-> Copies of this project have appeared under other GitHub accounts, some pointing to unknown `.zip`
-> downloads that may be malicious. **Do not download or run them.**
+> **We never distribute `.zip`, `.rar`, `.exe`, "setup" or "installer" files, and never through
+> other GitHub accounts, websites, file-sharing services or download buttons.** (The only `.zip`
+> you will see from us is GitHub's automatic "Source code" archive on our own Releases page.)
+>
+> Copies of this project have appeared under other accounts. Some point to unknown downloads that
+> may contain **malware, or hijacked and tampered files disguised as arc-rebar**. arc-rebar runs
+> with full system (root) privileges at boot, so a tampered copy could take complete control of
+> your computer. **Do not download or run them.** If you already ran one, treat that system as
+> compromised: disconnect it, and reinstall from trusted media.
 >
 > Unauthorized copies and modified versions violate our [LICENSE](LICENSE) (§3.2). We report every
-> one we find and pursue takedowns and further action against those responsible. If you come across
-> one, please tell us at burlam1nx@outlook.com.
+> one we find to the hosting provider and pursue takedowns and further action against those
+> responsible. To report one, contact burlam1nx@outlook.com.
 
 > **USE AT YOUR OWN RISK. NO WARRANTY.** Provided "as is". The author accepts no
 > liability for data loss, hardware damage, downtime or any other loss arising
