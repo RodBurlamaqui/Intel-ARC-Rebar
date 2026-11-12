@@ -21,6 +21,20 @@ arc-rebar version               # shows the version and the official source
 ```
 If any check fails, don't use that copy. Download it again from the Releases page.
 
+### Release signing key
+
+Releases from v1.0.7 include `SHA256SUMS.asc`, signed with this key:
+
+- Owner: Rod Burlamaqui
+- Fingerprint: `C3CF CBF8 EE59 2C27 BCBE  1E49 8D8E D73D 0C2D E44B`
+- Public key: [docs/signing-key.asc](docs/signing-key.asc)
+
+```
+gpg --import docs/signing-key.asc          # once
+gpg --verify SHA256SUMS.asc SHA256SUMS     # must say "Good signature" and show the fingerprint above
+```
+A good signature from any other key means the file is not from us.
+
 ## Reporting a vulnerability
 
 Please report security problems **privately**, not in a public issue:
