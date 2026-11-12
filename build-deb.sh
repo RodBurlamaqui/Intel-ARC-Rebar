@@ -12,7 +12,8 @@ set -e
 S=$(dirname "$(readlink -f "$0")"); cd "$S"
 V=$(grep -m1 '^Version:' debian/control | awk '{print $2}'); [ -n "$V" ] || { echo "no Version: in debian/control"; exit 1; }
 B=build/arc-rebar_${V}_all; rm -rf build; mkdir -p $B/DEBIAN $B/usr/share/arc-rebar $B/usr/bin $B/usr/share/doc/arc-rebar dist
-for f in diagnose.sh prepare.sh live-test.sh install.sh verify.sh uninstall.sh README.md INSTALL.md DISCLAIMER.md LICENSE CHANGELOG.md; do cp "$f" $B/usr/share/arc-rebar/; done
+for f in diagnose.sh prepare.sh live-test.sh install.sh verify.sh uninstall.sh selfcheck.sh README.md INSTALL.md DISCLAIMER.md LICENSE CHANGELOG.md; do cp "$f" $B/usr/share/arc-rebar/; done
+for f in MANIFEST.sha256 MANIFEST.sha256.asc; do [ ! -f "$f" ] || cp "$f" $B/usr/share/arc-rebar/; done
 cp -a hooks scripts $B/usr/share/arc-rebar/; cp bin/arc-rebar $B/usr/bin/arc-rebar
 mkdir -p $B/usr/share/arc-rebar/diag; cp -a diag/bin diag/src diag/Makefile diag/README.md diag/INSTALL.md $B/usr/share/arc-rebar/diag/; rm -f $B/usr/share/arc-rebar/diag/bin/ocl_test
 cp debian/control debian/postinst debian/prerm debian/postrm $B/DEBIAN/; chmod 0755 $B/DEBIAN/postinst $B/DEBIAN/prerm $B/DEBIAN/postrm

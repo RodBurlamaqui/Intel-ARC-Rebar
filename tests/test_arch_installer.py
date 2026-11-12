@@ -27,6 +27,9 @@ class ArchInstallerTests(unittest.TestCase):
             for prefix in ('/etc/', '/boot/', '/var/lib/', '/proc/'):
                 text = text.replace(prefix, str(root) + prefix)
             (source / 'install.sh').write_text(text)
+            # A developer checkout: the integrity self-check allows it without a release manifest.
+            shutil.copyfile(REPO / 'selfcheck.sh', source / 'selfcheck.sh')
+            (source / '.git').mkdir()
             if helper:
                 handoff = source / 'install-arch.sh'
                 handoff.write_text('#!/bin/sh\nprintf "arch: %s\\n" "$*"\nexit 23\n')
@@ -51,7 +54,9 @@ class ArchInstallerTests(unittest.TestCase):
     def test_entrypoint_hands_off_before_debian_backend_checks(self):
         rc, out = self.run_entrypoint(['--experimental-arch', '--yes', '--reinstall'])
         self.assertEqual(rc, 23, out)
-        self.assertEqual(out, 'arch: --experimental-arch --yes --reinstall\n')
+        # The integrity self-check runs first, then the hand-off is the only other output.
+        self.assertIn('== INTEGRITY: is this the official, unmodified arc-rebar? ==', out)
+        self.assertTrue(out.endswith('arch: --experimental-arch --yes --reinstall\n'), out)
 
     def test_entrypoint_requires_opt_in_before_arch_dispatch(self):
         for args in ([], ['--yes'], ['--yes', '--reinstall']):
@@ -87,6 +92,8 @@ class ArchInstallerTests(unittest.TestCase):
                                '/usr/lib/arc-rebar', '/proc/cmdline'):
                     text = text.replace(prefix, str(root) + prefix)
                 (source / name).write_text(text)
+            shutil.copyfile(REPO / 'selfcheck.sh', source / 'selfcheck.sh')
+            (source / '.git').mkdir()
             for name in ('mkinitcpio/install/arc-rebar', 'mkinitcpio/hooks/arc-rebar'):
                 path = source / name
                 path.parent.mkdir(parents=True, exist_ok=True)

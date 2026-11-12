@@ -26,6 +26,9 @@ class InstallerTests(unittest.TestCase):
         for prefix in ('/etc/', '/boot/', '/var/lib/', '/proc/'):
             source = source.replace(prefix, str(self.root) + prefix)
         self.put('repo/install.sh', source)
+        # A developer checkout: the integrity self-check allows it without a release manifest.
+        self.put('repo/selfcheck.sh', (SOURCE / 'selfcheck.sh').read_text())
+        (self.root / 'repo/.git').mkdir()
         mocks = {
             'id': 'echo 0', 'uname': 'echo 6.12-test', 'setpci': 'exit 99',
             'sync': 'exit 0',

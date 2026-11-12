@@ -23,15 +23,31 @@ case "$cmd" in
      # Read-only. Compares installed files with the package's own checksum list,
      # and the active boot hook with the packaged copy.
      rc=0
+     if [ -f "$D/selfcheck.sh" ]; then . "$D/selfcheck.sh"; arc_selfcheck "$D" || rc=1
+     else echo "  [FAIL] integrity checker missing from $D"; rc=1; fi
      if dpkg-query -W -f '${Status}' arc-rebar 2>/dev/null | grep -q 'install ok installed'; then
        out=$(dpkg --verify arc-rebar 2>&1)
+       if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
+       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
+     elif command -v pacman >/dev/null 2>&1 && pacman -Q arc-rebar >/dev/null 2>&1; then
+       out=$(pacman -Qkk arc-rebar 2>&1 | grep -v ' 0 altered files')
+       if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
+       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
+     elif command -v rpm >/dev/null 2>&1 && rpm -q arc-rebar >/dev/null 2>&1; then
+       out=$(rpm -V arc-rebar 2>&1)
        if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
        else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
      else
        echo "  [info] not installed from the .deb; package checksums not available"
      fi
      for pair in "hooks/arc-rebar:/etc/initramfs-tools/hooks/arc-rebar" \
-                 "scripts/init-premount/arc-rebar:/etc/initramfs-tools/scripts/init-premount/arc-rebar"; do
+                 "scripts/init-premount/arc-rebar:/etc/initramfs-tools/scripts/init-premount/arc-rebar" \
+                 "scripts/init-premount/arc-rebar:/usr/lib/dracut/modules.d/90arc-rebar/arc-rebar-boot" \
+                 "dracut/90arc-rebar/arc-rebar-hook.sh:/usr/lib/dracut/modules.d/90arc-rebar/arc-rebar-hook.sh" \
+                 "dracut/90arc-rebar/module-setup.sh:/usr/lib/dracut/modules.d/90arc-rebar/module-setup.sh" \
+                 "scripts/init-premount/arc-rebar:/usr/lib/arc-rebar/arc-rebar-boot" \
+                 "mkinitcpio/hooks/arc-rebar:/etc/initcpio/hooks/arc-rebar" \
+                 "mkinitcpio/install/arc-rebar:/etc/initcpio/install/arc-rebar"; do
        src=$D/${pair%%:*}; dst=${pair#*:}
        [ -e "$dst" ] || continue
        if cmp -s "$src" "$dst"; then echo "  [ok]   $dst matches this release"

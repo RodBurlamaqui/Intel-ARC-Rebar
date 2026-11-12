@@ -16,6 +16,7 @@ for a in "$@"; do case "$a" in
   *) echo "usage: $0 [--yes] [--live-test] [--reinstall] [--recover] [--experimental-arch]"; exit 1;; esac; done
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
+. "$S/selfcheck.sh"; arc_selfcheck_or_refuse "$S"
 # Arch / CachyOS remains an explicit source-tree experiment.
 if [ ! -d /etc/initramfs-tools ] && [ -f /etc/mkinitcpio.conf ]; then
   [ -n "$EXPERIMENTAL_ARCH" ] || {
@@ -25,6 +26,12 @@ if [ ! -d /etc/initramfs-tools ] && [ -f /etc/mkinitcpio.conf ]; then
     echo 'Experimental Arch support requires the complete source checkout; it is not shipped in the Debian package.'; exit 2;
   }
   exec "$S/install-arch.sh" "$@"
+fi
+# Fedora / RHEL / Rocky / Alma / openSUSE: hand over to the dracut installer.
+if [ ! -d /etc/initramfs-tools ] && [ ! -f /etc/mkinitcpio.conf ] && [ -d /etc/dracut.conf.d ] && command -v dracut >/dev/null 2>&1; then
+  [ -z "$EXPERIMENTAL_ARCH" ] || { echo '--experimental-arch is for Arch/mkinitcpio systems; no boot files changed.'; exit 2; }
+  [ -f "$S/install-dracut.sh" ] || { echo 'dracut support requires the complete package; install the .rpm or use the source checkout.'; exit 2; }
+  exec "$S/install-dracut.sh" "$@"
 fi
 [ -z "$EXPERIMENTAL_ARCH" ] || {
   echo '--experimental-arch requires an Arch/mkinitcpio system; no boot files changed.'; exit 2;

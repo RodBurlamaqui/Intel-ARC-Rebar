@@ -28,7 +28,8 @@ package() {
   install -d "$d" "${pkgdir}/usr/bin" "${pkgdir}/usr/share/doc/arc-rebar" "${pkgdir}/usr/share/licenses/arc-rebar"
   install -m0755 diagnose.sh prepare.sh live-test.sh install.sh verify.sh uninstall.sh \
                  install-arch.sh uninstall-arch.sh arch-transaction.sh "$d/"
-  install -m0644 README.md INSTALL.md DISCLAIMER.md LICENSE CHANGELOG.md SECURITY.md "$d/"
+  install -m0644 README.md INSTALL.md DISCLAIMER.md LICENSE CHANGELOG.md SECURITY.md selfcheck.sh "$d/"
+  for f in MANIFEST.sha256 MANIFEST.sha256.asc; do [ ! -f "$f" ] || install -m0644 "$f" "$d/"; done
   cp -a hooks scripts mkinitcpio docs "$d/"
   install -d "$d/diag"
   cp -a diag/bin diag/src diag/Makefile diag/README.md diag/INSTALL.md "$d/diag/"

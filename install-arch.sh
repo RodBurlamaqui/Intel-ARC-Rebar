@@ -20,6 +20,7 @@ for a in "$@"; do case "$a" in
 }
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
+. "$S/selfcheck.sh"; arc_selfcheck_or_refuse "$S"
 BOOT_DST=/usr/lib/arc-rebar/arc-rebar-boot
 HOOK_DST=/etc/initcpio/install/arc-rebar
 RUN_DST=/etc/initcpio/hooks/arc-rebar
