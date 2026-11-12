@@ -107,7 +107,13 @@ licensing terms or guarantee support for a particular hardware configuration.*
 
 ### Downloads
 
-**Debian / Ubuntu: choose stable v1.0.5 for normal use.**
+> [!IMPORTANT]
+> **Please upgrade to 1.0.8.** It fixes a kernel issue on some systems with Secure Boot, where
+> an earlier version could report success without applying the fix. Everyone on an older
+> version should upgrade: install the new package, then run `sudo arc-rebar install --reinstall`.
+
+**arc-rebar 1.0.8**: one release, with one package for each Linux family. Download it from the
+[latest release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest).
 
 **If arc-rebar worked for you or helped in any way, please consider a [donation](https://buymeacoffee.com/rodburlamaqui), one-time or monthly.**
 New Linux kernels, distributions and GPU drivers keep changing, and keeping arc-rebar
@@ -116,25 +122,24 @@ working on them takes ongoing testing and fixes.
 <a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="One-time donation on Buy Me a Coffee" width="116" height="32"></a>
 <a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="docs/img/bmc-monthly-supporter.svg" alt="Monthly support on Buy Me a Coffee" height="32"></a>
 
-| Release | Use | Download | Notes and checksums |
-|---|---|---|---|
-| **v1.0.5 — stable** | Single GPU Support — Debian/Ubuntu | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
-| **Arch/CachyOS — current source** | Single GPU Support — Experimental Arch/CachyOS (source only) | [Download current source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/archive/refs/heads/main.tar.gz) | Requires `--experimental-arch`; [install guide](INSTALL.md#arch-linux--cachyos-mkinitcpio) · [Hardware validation pending (#15)](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
-| **v1.0.4 — previous** | Installer/purge recovery fixes; predates the v1.0.5 verifier correction | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.4/arc-rebar_1.0.4_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.4) |
-| **v1.0.3 — original release** | Historical package; lacks the newer installer/purge and verifier fixes | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.3/arc-rebar_1.0.3_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3) |
+| Linux | Package | Install it with |
+|---|---|---|
+| **Debian, Ubuntu, Linux Mint, Pop!_OS, Proxmox** | `arc-rebar_1.0.8_all.deb` | `sudo apt install ./arc-rebar_1.0.8_all.deb` |
+| **Arch, CachyOS, EndeavourOS, Manjaro** | `arc-rebar-1.0.8-1-any.pkg.tar.zst` | `sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst` |
+| **Fedora, RHEL, Rocky, AlmaLinux, openSUSE** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm` (openSUSE: `sudo zypper install`) |
 
-**Dual and multi-GPU support is currently in testing.** Use stable v1.0.5 for now.
+Every release comes with `SHA256SUMS`, a maintainer signature (`SHA256SUMS.asc`, plus a `.sig`
+for each package) and a GitHub build attestation. **Check your download before installing it:**
+see [SECURITY.md](SECURITY.md#check-that-your-copy-is-genuine). Installing a package enables
+nothing by itself: next, run `sudo arc-rebar diagnose`, then `sudo arc-rebar install`
+([INSTALL.md](INSTALL.md)).
+
+**Dual and multi-GPU support is currently in testing.** Use 1.0.8 for single-GPU systems.
 To help test, see the [Beta Testing Program](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/discussions/54).
 
 > Modifying, unlocking or redistributing modified versions of arc-rebar is not permitted
 > ([LICENSE](LICENSE) §3.2). Commercial use requires a written licence (§3.1).
 > To report misuse, contact burlam1nx@outlook.com.
-
-[Browse all releases and source archives](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases),
-including the historical Arch source preview. Arch/CachyOS is a separate
-experimental source port; the **v1.0.5 `.deb` and source release do not include
-the Arch installer**. Use the current source and its
-[Arch/CachyOS install guide](INSTALL.md#arch-linux--cachyos-mkinitcpio).
 
 ### Community hardware reports
 
@@ -150,7 +155,7 @@ contributing ports. Here is the evidence reported so far:
 | **A770 / A750** | Reporter describes appropriate BAR sizes with a locally modified loop on Asus Z9PA-D8, Debian SID / `xe` | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6649456377); unmodified diagnostics pending; upstream script still handles only the first qualifying GPU |
 | **A380 — Debian / Lenovo** | Community reports an 8 GiB BAR, boot persistence and normal `i915` use on Lenovo ThinkCentre M900 / OpenMediaVault | [Report #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10); legacy verifier failed on DevSta `0x0008`; v1.0.5 has a matching software test returning unresolved WARN; physical cause and hardware acceptance remain pending |
 | **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
-| **A380 — Arch experimental** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the experimental Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
+| **A380 — Arch** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the original Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
 
 **Testing another model? Your report is welcome.** Additional Arc models may
 qualify when the PCIe topology, ReBAR capability and MMIO checks pass. A model
@@ -161,13 +166,8 @@ or read the [compatibility evidence and reporting guide](docs/COMPATIBILITY.md).
 
 Community reports describe particular setups; they do not establish universal
 support. Stars show interest in the project; compatibility comes from documented
-hardware results. Arch/CachyOS support is **experimental and source-only**;
-installation requires `sudo ./install.sh --experimental-arch`. It has software
-integration coverage but no maintainer-verified physical Arch/GPU boot result.
-[Hardware validation is tracked in #15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
-The earlier [Arch preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/arch-preview-2026.11.05.1)
-remains an unchanged historical snapshot; its CLI predates this opt-in flag.
-Use the current source for the gated installer. Multi-GPU operation remains an
+hardware results. Reports from Arch, Fedora, RHEL and openSUSE systems are welcome.
+Multi-GPU operation remains an
 open limitation.
 
 ![Intel Arc B580 Limited Edition, exploded view](docs/img/intel-arc-b580-press.jpg)
@@ -362,20 +362,20 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 
 ## 4. Requirements
 
-- Debian or Ubuntu with an active `initramfs-tools` backend. A dracut-backed
-  `update-initramfs` is not supported by this installer, even if
-  `/etc/initramfs-tools` exists. Draft Arch Linux / CachyOS support uses
-  `mkinitcpio`; `install.sh` hands over to `install-arch.sh` on that layout.
-  Kernel 6.12 or newer recommended (the `xe` driver's ReBAR support). `pciutils`.
+- One of the supported boot-image systems: **initramfs-tools** (Debian, Ubuntu, Mint,
+  Pop!_OS, Proxmox), **mkinitcpio** (Arch, CachyOS, EndeavourOS, Manjaro) or **dracut**
+  (Fedora, RHEL, Rocky, AlmaLinux, openSUSE; boot images at `/boot/initramfs-<kernel>.img`
+  or `/boot/initrd-<kernel>`; unified kernel images are not supported). `arc-rebar install`
+  picks the right one. Kernel 6.12 or newer recommended (the `xe` driver's ReBAR support).
+  `pciutils` and `gpgv` (installed with the package).
 - **Above 4G Decoding enabled in BIOS**, and an MMIO window above 4 GB at least
   as large as your VRAM rounded up to a power of two. `diagnose` checks this.
 - The GPU directly in a slot on a root port of its own (no external PCIe switch,
   riser, or Thunderbolt in between). `diagnose` checks this.
 - A second way into the machine (SSH) if you run the optional live test, which
   turns the local display off for about ten seconds.
-- Other initramfs systems (dracut): the boot script is plain POSIX `sh` and needs
-  only `setpci`; porting it is a Modification under the licence — ask first.
-  mkinitcpio is already ported: see [INSTALL.md](INSTALL.md#arch-linux--cachyos-mkinitcpio).
+- Other initramfs systems: not supported. Porting arc-rebar is a Modification under
+  the licence; ask first.
 
 ### Recommended BIOS settings
 
@@ -509,41 +509,39 @@ reports are welcome; unreported combinations remain unverified.
 Full step-by-step with the exact output you should see at every step, and what
 to do if you don't: **[INSTALL.md](INSTALL.md)**. The short form:
 
-**Current Debian/Ubuntu package: 1.0.5**, containing read-only PCIe verification
-and the installer/purge recovery fixes. [Version 1.0.3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
-remains downloadable with its original assets and checksums; it lacks those fixes.
-The experimental Arch source port is separate and requires `--experimental-arch`.
-Published Debian/Ubuntu packages do not include the Arch installer.
+**Current release: 1.0.8**, for Debian/Ubuntu, Arch and Fedora/RHEL/openSUSE.
 
-**Debian / Ubuntu, from the `.deb`** — download it from the [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page, or:
-
+**1. Download** the package for your system from the [latest release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest), together with
+`SHA256SUMS` and `SHA256SUMS.asc`, and check them
+([SECURITY.md](SECURITY.md#check-that-your-copy-is-genuine)):
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.5_all.deb
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
+sha256sum -c --ignore-missing SHA256SUMS        # your package must print: OK
 ```
+**2. Install the package** (this enables nothing yet):
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.5_all.deb: OK
+sudo apt install ./arc-rebar_1.0.8_all.deb               # Debian, Ubuntu, Mint, Pop!_OS, Proxmox
+sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst       # Arch, CachyOS, EndeavourOS, Manjaro
+sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm          # Fedora, RHEL, Rocky, AlmaLinux
+sudo zypper install ./arc-rebar-1.0.8-1.noarch.rpm       # openSUSE
 ```
+**3. Enable it**, the same on every system:
 ```
-sudo apt install ./arc-rebar_1.0.5_all.deb    # step 0: installs the tool; ENABLES NOTHING
-```
-```
-sudo arc-rebar diagnose                         # step 1: last line must be "YES: pinned window, all safety checks pass"
-```
-```
-sudo arc-rebar install                          # step 2: pre-checks, plan, type ACCEPT, backup, install, post-checks
-```
-```
-sudo reboot                                     # step 3
+sudo arc-rebar diagnose     # last line must be "YES: pinned window, all safety checks pass"
 ```
 ```
-sudo arc-rebar verify                           # step 4, after reboot: review PASS / WARN / FAIL
+sudo arc-rebar install      # integrity check, pre-checks, plan, type ACCEPT, backup, install, post-checks
+```
+```
+sudo reboot
+```
+```
+sudo arc-rebar verify       # after reboot: review PASS / WARN / FAIL
 ```
 
-**From source:**
+**From source** (use the release tag, not `main`, which may be newer than the release):
 
 ```
-git clone https://github.com/RodBurlamaqui/Intel-ARC-Rebar.git
+git clone --branch v1.0.8 https://github.com/RodBurlamaqui/Intel-ARC-Rebar.git
 cd Intel-ARC-Rebar
 ```
 ```
@@ -565,10 +563,12 @@ reboot; `sudo arc-rebar live-test` runs the fix once over SSH with nothing
 persistent changed; then install as above. Two reboots total. INSTALL.md
 Path B covers it.
 
-The installer: runs the environment and hardware pre-checks → shows the plan →
-prints the licence and disclaimer and requires you to type `ACCEPT` → backs up
-the initramfs and GRUB config → installs → verifies every piece is inside the
-rebuilt initramfs, restoring the backup if not.
+The installer: checks that its own files are the official, unmodified release (signed
+file list) → runs the environment and hardware pre-checks → shows the plan → prints the
+licence and disclaimer and requires you to type `ACCEPT` → backs up the boot images and
+boot-loader configuration → installs → verifies every piece is inside the rebuilt boot
+image, restoring the backup if not. `sudo arc-rebar integrity` checks an installed copy
+at any time; `arc-rebar version` shows the version and the official source.
 
 ## 7. After it is installed
 
@@ -627,10 +627,8 @@ unrelated devices. Missing boot-verdict messages are reported as warnings;
 a PASS covers only checks with available evidence, not proof of this hook's
 execution or guest GPU workload health.
 
-The optional register-clearing experiment is preserved separately on
-[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck)
-at commit `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is excluded from the
-stable verifier and still lacks physical GPU validation. The stable CLI rejects
+The optional register-clearing experiment is kept separately and is not part of the
+release. It still lacks physical GPU validation. The stable CLI rejects
 `--recheck-pcie` with exit 64 before reading hardware.
 See [the evidence and validation limits](docs/VERIFY-PCIE.md).
 
@@ -680,35 +678,38 @@ ever disabled.
 ## 11. Uninstall
 
 ```
-sudo apt purge arc-rebar        # .deb: removes the tool AND the boot hook — but only if the .deb installed the hook
-sudo ./uninstall.sh             # source checkout
+sudo arc-rebar uninstall        # any system: removes the boot hook and rebuilds the boot images
 ```
+Then remove the package if you like: `sudo apt purge arc-rebar` (Debian/Ubuntu; purge also
+removes a hook the `.deb` installed), `sudo pacman -R arc-rebar` (Arch), or
+`sudo dnf remove arc-rebar` / `sudo zypper remove arc-rebar` (Fedora/RHEL/openSUSE; removing
+the RPM also removes its boot hook). `apt remove` without purge deliberately leaves an
+enabled boot hook in place.
 
-`apt remove` (without purge) removes the tool and deliberately leaves an enabled
-boot hook in place. Both leave `pci=realloc` in GRUB; it is harmless. To revert
-it:
-
-```
-sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
-```
-```
-sudo update-grub
-```
+All of them leave `pci=realloc` on the kernel command line; it is harmless. To remove it:
+Debian/Ubuntu `sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub && sudo update-grub`;
+Fedora/RHEL `sudo grubby --update-kernel=ALL --remove-args=pci=realloc`; Arch/openSUSE: delete it
+from `/etc/default/grub` and regenerate the GRUB menu.
 
 ## 12. Repository layout
 
 ```
 scripts/init-premount/arc-rebar   the boot-time fix (POSIX sh, self-checking)
 hooks/arc-rebar                   initramfs-tools hook: ships setpci into the initramfs
+mkinitcpio/                       Arch/CachyOS hook (install-arch.sh, uninstall-arch.sh)
+dracut/90arc-rebar/               Fedora/RHEL/openSUSE dracut module (install-dracut.sh, uninstall-dracut.sh)
 diagnose.sh  prepare.sh  live-test.sh  install.sh  verify.sh  uninstall.sh
-bin/arc-rebar                     the `arc-rebar` command (installed by the .deb)
+selfcheck.sh                      integrity check: files must match the signed release list
+bin/arc-rebar                     the `arc-rebar` command (diagnose, install, verify, integrity, version, ...)
 diag/                             diagnostics: bin/ (five tools), src/ocl_test.c, Makefile, README, INSTALL
 debian/  build-deb.sh             .deb build inputs and the script that builds it
+packaging/  build-arch.sh  build-rpm.sh   Arch and RPM package recipes and builders
+tools/                            release signing (make-manifest.sh) and checks (verify-manifest.sh)
 docs/img/intel-arc-b580-press.jpg  Intel's press photo of the card (© Intel Corporation, credited; not under this licence)
 docs/img/arc-rebar-pin.svg        the mechanism diagram (original artwork)
 docs/ROOT-CAUSE.md                the full investigation, with the kernel log evidence
 docs/TESTS.md                     every test command used, with before/after numbers
-INSTALL.md  DISCLAIMER.md  LICENSE  CHANGELOG.md
+INSTALL.md  SECURITY.md  DISCLAIMER.md  LICENSE  CHANGELOG.md
 ```
 
 ## 13. Contributing
@@ -739,7 +740,7 @@ Software License Agreement in [LICENSE](LICENSE):
   prior written approval. Bug reports and proposed changes are welcome.
 - **Free utility** — free for personal use. It can't be modified, rebranded, sold or
   redistributed without permission (LICENSE §2.2, §3.2, §3.3, §3.6).
-- **Distribution** — from v1.0.7, arc-rebar is distributed only from this repository.
+- **Distribution** — from v1.0.8, arc-rebar is distributed only from this repository.
   No re-uploads, mirrors, re-packaging or resale, modified or not, without approval
   (LICENSE §2.2, §3.3). Linking here is welcome. Earlier versions keep their own terms.
 - **No tampering** — don't remove or bypass licence checks, signatures or notices (§3.5).

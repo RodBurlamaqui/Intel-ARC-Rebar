@@ -51,9 +51,12 @@ case "$cmd" in
        src=$D/${pair%%:*}; dst=${pair#*:}
        [ -e "$dst" ] || continue
        if cmp -s "$src" "$dst"; then echo "  [ok]   $dst matches this release"
-       else echo "  [FAIL] $dst differs from this release (modified, or from another version)"; rc=1; fi
+       else echo "  [FAIL] $dst differs from this release (older version or modified)"; old=1; rc=1; fi
      done
-     [ $rc -eq 0 ] && echo "RESULT: genuine, unmodified files" || echo "RESULT: MODIFIED - reinstall from $OFFICIAL/releases"
+     if [ $rc -eq 0 ]; then echo "RESULT: genuine, unmodified files"
+     elif [ -n "${old:-}" ]; then echo "RESULT: the active boot hook is not this release: run  sudo arc-rebar install --reinstall"
+       echo "        (if that does not fix it, reinstall the package from $OFFICIAL/releases)"
+     else echo "RESULT: MODIFIED - reinstall from $OFFICIAL/releases"; fi
      exit $rc;;
   diagnose|prepare|live-test|install|verify|uninstall) exec "$D/$cmd.sh" "$@" ;;
   diag) t=$1; [ $# -gt 0 ] && shift; case "$t" in bar-pin-check|pcie-link-truth|vulkan-heaps|ocl-alloc-ceiling|gpu-health) exec "$D/diag/bin/$t.sh" "$@";;

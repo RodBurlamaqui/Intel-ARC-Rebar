@@ -3,19 +3,21 @@
 ## The only official source
 
 arc-rebar is published **only** at https://github.com/RodBurlamaqui/Intel-ARC-Rebar.
-Official downloads are the `.deb` packages on its
-[Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page, with a
-`SHA256SUMS` file. We never distribute `.zip`, `.rar`, `.exe`, "setup" or "installer"
+Official downloads are the packages on its
+[Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page (`.deb` for
+Debian/Ubuntu, `.pkg.tar.zst` for Arch, `.rpm` for Fedora/RHEL/openSUSE), with `SHA256SUMS`,
+`SHA256SUMS.asc` and a `.sig` for each package. We never distribute `.zip`, `.rar`, `.exe`, "setup" or "installer"
 files, and never through other accounts, websites or file-sharing services.
 
 arc-rebar runs with full system (root) privileges at boot, so only install a genuine copy.
 
 ## Check that your copy is genuine
 
-From v1.0.7:
+From v1.0.8:
 ```
-sha256sum -c SHA256SUMS
-gh attestation verify arc-rebar_<version>_all.deb -R RodBurlamaqui/Intel-ARC-Rebar
+sha256sum -c --ignore-missing SHA256SUMS
+gpg --verify SHA256SUMS.asc SHA256SUMS     # see the signing key below
+gh attestation verify <package file> -R RodBurlamaqui/Intel-ARC-Rebar
 sudo arc-rebar integrity        # after installing: are the installed files unmodified?
 arc-rebar version               # shows the version and the official source
 ```
@@ -23,23 +25,27 @@ If any check fails, don't use that copy. Download it again from the Releases pag
 
 ### Release signing key
 
-Releases from v1.0.7 include `SHA256SUMS.asc`, signed with this key:
+Releases from v1.0.8 include `SHA256SUMS.asc` and a `.sig` per package, signed with this key:
 
 - Owner: Rod Burlamaqui
 - Fingerprint: `C3CF CBF8 EE59 2C27 BCBE  1E49 8D8E D73D 0C2D E44B`
 - Public key: [docs/signing-key.asc](docs/signing-key.asc)
 
 ```
-gpg --import docs/signing-key.asc          # once
+wget https://raw.githubusercontent.com/RodBurlamaqui/Intel-ARC-Rebar/v1.0.8/docs/signing-key.asc
+gpg --import signing-key.asc               # once
 gpg --verify SHA256SUMS.asc SHA256SUMS     # must say "Good signature" and show the fingerprint above
 ```
 A good signature from any other key means the file is not from us.
 
+Every `arc-rebar install` also checks, before changing anything, that its files match a file
+list signed with this key, and refuses a modified copy. This catches accidental or simple
+modifications; for a download, the signature and attestation checks above are the proof.
+
 ## Reporting a vulnerability
 
-Please report security problems **privately**, not in a public issue:
-- use GitHub's **Report a vulnerability** button under this repository's **Security** tab, or
-- email **burlam1nx@outlook.com** with "arc-rebar security" in the subject.
+Please report security problems **privately**, not in a public issue: email
+**burlam1nx@outlook.com** with "arc-rebar security" in the subject.
 
 Include the arc-rebar version, your distribution and kernel, and the steps to reproduce.
 We aim to acknowledge reports within a few days. Please give us reasonable time to fix

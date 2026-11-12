@@ -19,7 +19,7 @@ unreported model/platform combination will work.
 | A380 6 GB; Lenovo ThinkCentre M900, OpenMediaVault/Debian, `i915`, initramfs-tools | Reporter describes boot persistence, an 8 GiB BAR at the card's advertised maximum, a `PLAN: done` boot verdict and normal GPU use | [Issue #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10). Before-size, BIOS/kernel versions and installed revision were not recorded; reinstall/removal were untested. The legacy verifier FAIL was triggered by DevSta `0008`, with no AER reports in the supplied excerpt. A matching test against the released v1.0.5 verifier returns unresolved WARN without writes; the physical latch's age/cause and reporter confirmation on that version remain unknown. This is Debian evidence, separate from the Arch port. |
 | B580 12 GB; Dell PowerEdge R720, Proxmox host / VFIO, Ubuntu guest / `xe` | Reporter describes a 256 MiB to 16 GiB BAR change, persistence across reported reboots, full guest-visible VRAM and llama.cpp workloads | [Issue #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11), closed by its author as a completed hardware report. The boot verdict is missing; the exact hook execution on that boot is unconfirmed. Guest copy-engine faults/hangs and slow pageable transfers are reported, with cause unassigned and no comparison baseline. These limits remain despite resource-check PASS. |
 | A750 8 GB; Dell PowerEdge T430 (BIOS 2.19.0, 2x 795 W PSUs), Proxmox host / VFIO guest | **Not working on this platform.** @meshuggah27 reports the host power-cycling under sustained GPU transcoding load (ffmpeg/Tdarr) within minutes, with no iDRAC event, pstore record or AER error logged. arc-rebar's 8 GiB BAR2 sat inside the BIOS window above 4 GB. The resets continued with the BAR limited to 4 GiB (`rebar.size=12`), and with a 150 W GPU power cap and Proxmox HA disabled. Heat and NFS/storage were ruled out. The same card works in an ASUS X570 desktop with native ReBAR. | [Issue #28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28), closed as a completed hardware report after the reporter ended testing. Root cause not identified. Earlier boot-time crashes in slot 5 were a separate problem (an ASMedia SATA card), fixed by removing that card. There is no baseline without arc-rebar, because the card never worked in this server without it. A GTX 1060 ran the same workload for days. Not tested: a watchdog debug run (`softdog soft_noboot=1`), newer BIOS/iDRAC firmware, and the redundant 1100 W PSUs from Dell's T430 GPU guide. |
-| A380; CachyOS, `i915`, experimental mkinitcpio port | Contributor describes image contents and dry-run topology resolution inside the built image | [Original PR #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), preserved in [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6). Installation requires `--experimental-arch`. Successful real boot/runtime, workload, reinstall and removal validation are tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). |
+| A380; CachyOS, `i915`, original mkinitcpio port | Contributor describes image contents and dry-run topology resolution inside the built image | [Original PR #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), preserved in [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6). Successful real boot/runtime, workload, reinstall and removal validation are tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). |
 
 These rows reflect project tests and first-hand reports. Repeated articles about
 the original B580 test and GitHub stars are not additional hardware validations.
@@ -55,11 +55,10 @@ a modified fork does not automatically validate this project's version.
   remains open.
 - A750/A380 BAR/workload success does not establish that their PCIe latches are harmless.
   Report the actual verifier result/exit code and relevant kernel evidence as observed.
-- An [experimental Arch source preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/arch-preview-2026.11.05.1)
-  remains public and unchanged. The current source installer requires
-  `--experimental-arch`; its hardware follow-up is [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
-  Mocked tests and isolated moduleless Arch userspace builds with an inert payload
-  validate installer plumbing, not a physical GPU or real Arch kernel boot.
+- Since 1.0.8, Arch/CachyOS (mkinitcpio) and Fedora/RHEL/openSUSE (dracut) have their own
+  packages and installers, using the same boot script. Reports from those systems are welcome
+  ([#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) for Arch).
+validate installer plumbing, not a physical GPU or real Arch kernel boot.
 
 ## Share a result for your setup
 
