@@ -99,25 +99,12 @@ working on them takes ongoing testing and fixes.
 | Release | Use | Download | Notes and checksums |
 |---|---|---|---|
 | **v1.0.5 — stable** | Single GPU Support — Debian/Ubuntu | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.5/arc-rebar_1.0.5_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.5) · [Install guide](INSTALL.md) |
-| **v1.0.6 Experimental** | Dual GPU Support — **two Intel Arc A310s only** — Experimental Debian/Ubuntu | [Download experimental `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-a310-preview-2026.11.09.1/arc-rebar_1.0.6.dual-a3101_all.deb) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1) · [Required preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/b0f1df35640fd5cfc66e6e2d4fca9ed131ecd717/docs/DUAL-A310-PREVIEW.md) |
-| **v1.0.6 Experimental** | Dual GPU Support — **two Intel Arc A310s only** — Experimental Arch/CachyOS | [Download experimental source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/dual-gpu-arch-preview-2026.11.09.1/arc-rebar-dual-gpu-arch-preview-2026.11.09.1.tar.gz) | [Release notes and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-gpu-arch-preview-2026.11.09.1) · [Required Arch preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/experimental/dual-a310/docs/DUAL-GPU-ARCH-PREVIEW.md) |
 | **Arch/CachyOS — current source** | Single GPU Support — Experimental Arch/CachyOS (source only) | [Download current source](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/archive/refs/heads/main.tar.gz) | Requires `--experimental-arch`; [install guide](INSTALL.md#arch-linux--cachyos-mkinitcpio) · [Hardware validation pending (#15)](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
 | **v1.0.4 — previous** | Installer/purge recovery fixes; predates the v1.0.5 verifier correction | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.4/arc-rebar_1.0.4_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.4) |
 | **v1.0.3 — original release** | Historical package; lacks the newer installer/purge and verifier fixes | [Download `.deb`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/download/v1.0.3/arc-rebar_1.0.3_all.deb) | [Release notes, source and SHA256SUMS](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3) |
 
-**The dual-GPU previews work only with two Intel Arc A310 cards.** Any other model
-or mix (B580, B50, A750, A770, A380 and others) is refused, so other dual-card
-setups should stay on stable v1.0.5 for now. Dual support for more cards,
-including Battlemage (B-series), is being worked on.
-
-Both dual-GPU previews require an explicit boot opt-in and accept exactly two
-non-console A310s on separate root ports, unbound or using VFIO. The Debian
-preview has one community two-card confirmation (@optiz0r, Fujitsu RX2540 M2,
-Proxmox/VFIO, [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908));
-the Arch preview has no physical two-card validation yet. Follow the linked
-preflight/test/recovery guide; the Debian preview's download commands also handle
-GitHub's filename normalization for checksum verification. Report results in
-[#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+**Dual and multi-GPU support is currently in testing.** Use stable v1.0.5 for now.
+To help test, see the [Beta Testing Program](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/discussions/54).
 
 [Browse all releases and source archives](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases),
 including the historical Arch source preview. Arch/CachyOS is a separate
@@ -140,16 +127,6 @@ contributing ports. Here is the evidence reported so far:
 | **A380 — Debian / Lenovo** | Community reports an 8 GiB BAR, boot persistence and normal `i915` use on Lenovo ThinkCentre M900 / OpenMediaVault | [Report #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10); legacy verifier failed on DevSta `0x0008`; v1.0.5 has a matching software test returning unresolved WARN; physical cause and hardware acceptance remain pending |
 | **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
 | **A380 — Arch experimental** | Contributor reports CachyOS / `i915` image contents and dry-run topology checks for the experimental Arch port | [Original report #4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/4), consolidated into [PR #6](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/pull/6); real boot/workload validation tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15) |
-
-**Two A310s? An experimental `.deb` is available:**
-[download the two-A310 preview](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/dual-a310-preview-2026.11.09.1).
-It requires an explicit boot opt-in and exactly two non-console A310s on separate
-root ports, unbound or using VFIO. **Other models are refused.** One community
-two-card confirmation so far (@optiz0r, [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)).
-Start with the [read-only preflight, boot test and recovery guide](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/blob/b0f1df35640fd5cfc66e6e2d4fca9ed131ecd717/docs/DUAL-A310-PREVIEW.md),
-and report results in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
-Stable **v1.0.5** remains the normal download; other GPU models/counts are refused
-by this preview. Thanks to @optiz0r for the A310 diagnostics and the first-card and two-card results.
 
 **Testing another model? Your report is welcome.** Additional Arc models may
 qualify when the PCIe topology, ReBAR capability and MMIO checks pass. A model
@@ -390,7 +367,7 @@ itself.
 | **Above 4G Decoding**: "Memory Mapped I/O above 4GB" (Dell), "64-bit MMIO", "Above 4G memory" (MSI) | **Enabled** | Gives the BIOS address space above 4 GB for a large BAR. Without it arc-rebar refuses: `skip reason=no-mmio-window-above-4g`. | **Everyone** |
 | **Resizable BAR / Re-Size BAR Support** | **Enabled, if your BIOS has it** | If the BIOS already resizes the BAR, the card boots at its maximum and arc-rebar does nothing (`none reason=already-at-target`). You probably don't need arc-rebar at all. | Boards that have it |
 | **Secure Boot** | **Disabled on Ubuntu** (see note) | Ubuntu's kernel turns on *lockdown* when Secure Boot is on, and lockdown blocks the PCI register write arc-rebar depends on. The BAR then stays at its original size. | Ubuntu; check other distros |
-| **Primary / boot display**: "Primary Graphics Adapter" (ASRock), "onboard graphics" | **Onboard video**, if the board has it | Required for the dual-GPU preview, which refuses a GPU that drives the console. On servers it also keeps a console if the Arc card has a problem. | Dual-GPU preview; recommended on servers |
+| **Primary / boot display**: "Primary Graphics Adapter" (ASRock), "onboard graphics" | **Onboard video**, if the board has it | Recommended for multi-GPU setups, so the display does not depend on an Arc card. On servers it also keeps a console if the Arc card has a problem. | Multi-GPU (in testing); recommended on servers |
 | **VT-d / IOMMU** (Intel), **AMD-Vi / IOMMU** (AMD) | **Enabled only for VM passthrough** | Needed for Proxmox/VFIO passthrough. arc-rebar itself doesn't use it. | Proxmox / VFIO |
 | **SR-IOV** | **Only if you use SR-IOV virtual functions** | arc-rebar doesn't use it. SR-IOV with Arc Pro cards is still being investigated in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3). | SR-IOV users |
 | **64-bit MMIO size / base**, if your BIOS has such an option | **Larger** | If arc-rebar steps the BAR size down (`note: MMIO window is ...`) or refuses with `mmio-window-too-small`, a larger 64-bit MMIO area can fit the full BAR. | Only if you hit those messages |
@@ -462,7 +439,7 @@ Decoding is on.
 | One Arc card, **no Resizable BAR option** (most older desktops, workstations and servers) | Above 4G Decoding **on**. On Ubuntu, Secure Boot **off**. Then install arc-rebar | Supermicro X9DRH-7TF (maintainer), Lenovo ThinkCentre M900 ([#10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10)) |
 | Server with onboard video, Arc used for compute or transcoding | As above, plus primary display on **onboard video** | Fujitsu RX2540 M2 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
 | **Proxmox / VFIO passthrough** to a VM | As above, plus **VT-d / IOMMU on**. Install arc-rebar on the **Proxmox host**, not in the VM | Dell PowerEdge R720 ([#11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11)), Fujitsu RX2540 M2 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
-| **Two GPUs** (v1.0.6 Experimental, two A310s only) | As above, plus primary display on **onboard video**. Neither Arc card may drive the console, and each card needs its own root port | Fujitsu RX2540 M2, 2x A310 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
+| **Two or more GPUs** (currently in testing) | As above, plus primary display on **onboard video** where available. Each card needs its own root port | Fujitsu RX2540 M2, 2x A310 ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3)) |
 | **SR-IOV** (e.g. Arc Pro B50) | No recommendation yet | Under investigation in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3) |
 
 **If the boot log says...**
