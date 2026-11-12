@@ -15,6 +15,21 @@
 
 Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enterprise use requires separate licensing** — see [LICENSE](LICENSE) §9.
 
+> [!WARNING]
+> **Beware of imitations and replicas.** The only official source of arc-rebar is
+> **https://github.com/RodBurlamaqui/Intel-ARC-Rebar**. Official downloads are the `.deb`
+> packages on this repository's [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)
+> page, with published SHA256 checksums.
+>
+> **We never distribute `.zip` files or installers through other accounts or websites.** (The only
+> `.zip` you will see from us is GitHub's automatic "Source code" archive on our own Releases page.)
+> Copies of this project have appeared under other GitHub accounts, some pointing to unknown `.zip`
+> downloads that may be malicious. **Do not download or run them.**
+>
+> Unauthorized copies and modified versions violate our [LICENSE](LICENSE) (§3.2). We report every
+> one we find and pursue takedowns and further action against those responsible. If you come across
+> one, please tell us at burlam1nx@outlook.com.
+
 > **USE AT YOUR OWN RISK. NO WARRANTY.** Provided "as is". The author accepts no
 > liability for data loss, hardware damage, downtime or any other loss arising
 > from its use. It writes one PCI register and re-enumerates one PCIe root port
