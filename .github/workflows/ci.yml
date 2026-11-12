@@ -70,3 +70,11 @@ jobs:
           h2=$(sha256sum "dist/arc-rebar_${V}_all.deb" | cut -d' ' -f1)
           echo "build 1: $h1"; echo "build 2: $h2"
           [ "$h1" = "$h2" ] || { echo "package is not reproducible"; exit 1; }
+      - name: Verify the signed release manifest (when present)
+        shell: bash
+        run: |
+          if [ -f MANIFEST.sha256 ]; then
+            tools/verify-manifest.sh
+          else
+            echo "no MANIFEST.sha256 in this commit (added only for releases)"
+          fi

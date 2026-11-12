@@ -13,10 +13,11 @@ S=$(dirname "$(readlink -f "$0")")
 source "$S/dracut-transaction.sh"
 command -v dracut >/dev/null || { echo "dracut missing" >&2; exit 1; }
 if [ ! -e "$CONF_DST" ] && [ ! -d "$MOD_DST" ]; then echo "arc-rebar is not installed (dracut)"; exit 0; fi
-dracut_begin
+dracut_begin || { echo "Manual removal: rm -f $CONF_DST; rm -rf $MOD_DST; then dracut --force --regenerate-all" >&2; exit 1; }
 rm -f "$CONF_DST" "$MOD_DST/module-setup.sh" "$MOD_DST/arc-rebar-hook.sh" "$MOD_DST/arc-rebar-boot" "$ORIGIN"
 rmdir "$MOD_DST" 2>/dev/null || true
 echo "removed the arc-rebar dracut module"
+DR_DRACUT_RAN=1
 if ! dracut --force --regenerate-all > "$DR_BACKUP/build.log" 2>&1; then
   echo "ERROR: dracut failed; see $DR_BACKUP/build.log" >&2
   exit 1

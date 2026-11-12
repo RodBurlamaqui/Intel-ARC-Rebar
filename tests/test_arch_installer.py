@@ -13,7 +13,7 @@ MANAGED = ('etc/mkinitcpio.conf', 'etc/default/grub', 'boot/grub/grub.cfg',
 
 
 class ArchInstallerTests(unittest.TestCase):
-    def run_entrypoint(self, args, arch=True, debian=False, helper=True):
+    def run_entrypoint(self, args, arch=True, debian=False, helper=True, untouched=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / 'source'
@@ -47,8 +47,9 @@ class ArchInstallerTests(unittest.TestCase):
                 ['bash', str(source / 'install.sh'), *args],
                 env=dict(os.environ, PATH=str(mock) + ':' + os.environ['PATH']),
                 capture_output=True, text=True, timeout=10)
-            self.assertFalse((root / 'backend-probed').exists())
-            self.assertFalse((root / 'var').exists())
+            if untouched:
+                self.assertFalse((root / 'backend-probed').exists())
+                self.assertFalse((root / 'var').exists())
             return result.returncode, result.stdout + result.stderr
 
     def test_entrypoint_hands_off_before_debian_backend_checks(self):
@@ -58,26 +59,29 @@ class ArchInstallerTests(unittest.TestCase):
         self.assertIn('== INTEGRITY: is this the official, unmodified arc-rebar? ==', out)
         self.assertTrue(out.endswith('arch: --experimental-arch --yes --reinstall\n'), out)
 
-    def test_entrypoint_requires_opt_in_before_arch_dispatch(self):
+    def test_entrypoint_hands_off_to_arch_without_any_flag(self):
+        # Arch is a normal install: no opt-in flag is needed.
         for args in ([], ['--yes'], ['--yes', '--reinstall']):
             with self.subTest(args=args):
                 rc, out = self.run_entrypoint(args)
-                self.assertEqual(rc, 2, out)
-                self.assertIn('--experimental-arch', out)
-                self.assertNotIn('arch: ', out)
+                self.assertEqual(rc, 23, out)
+                self.assertTrue(out.endswith('arch: ' + ' '.join(args) + '\n'), out)
+                self.assertNotIn('experimental', out)
 
-    def test_entrypoint_rejects_arch_flag_on_debian_before_changes(self):
-        # initramfs-tools takes precedence even if mkinitcpio is also present.
+    def test_initramfs_tools_takes_precedence_and_old_flag_is_harmless(self):
+        # initramfs-tools takes precedence even if mkinitcpio is also present; the old
+        # --experimental-arch flag is accepted and ignored.
         for arch in (False, True):
+            # The Debian installer proceeds normally (its own backend checks run).
             rc, out = self.run_entrypoint(['--experimental-arch', '--yes'],
-                                          arch=arch, debian=True)
-            self.assertEqual(rc, 2, out)
+                                          arch=arch, debian=True, untouched=False)
             self.assertNotIn('arch: ', out)
+            self.assertNotIn('usage:', out)
 
     def test_entrypoint_reports_missing_arch_source(self):
-        rc, out = self.run_entrypoint(['--experimental-arch'], helper=False)
+        rc, out = self.run_entrypoint([], helper=False)
         self.assertEqual(rc, 2, out)
-        self.assertIn('complete source checkout', out)
+        self.assertIn('install the Arch package', out)
 
     def run_fixture(self, mode='ok', reinstall=False, uninstall=False,
                     missing=False, cmdline=True, grubfail=False, hookfail=False,
@@ -178,16 +182,12 @@ exit 0''',
         self.assertTrue(backup)
         return out, logs, calls
 
-    def test_arch_install_requires_opt_in_before_probing_or_mutation(self):
-        for reinstall in (False, True):
-            rc, out, before, after, logs, calls, backup = self.run_fixture(
-                experimental=False, reinstall=reinstall)
-            self.assertEqual(rc, 2, out)
-            self.assertIn('--experimental-arch', out)
-            self.assertEqual(before, after)
-            self.assertEqual(logs['probes'], '')
-            self.assertEqual(calls, 0)
-            self.assertFalse(backup)
+    def test_arch_install_needs_no_opt_in_flag(self):
+        # Without the old --experimental-arch flag the install runs normally.
+        rc, out, before, after, logs, calls, backup = self.run_fixture(experimental=False)
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn('experimental', out)
+        self.assertNotEqual(logs['probes'], '')
 
     def test_success_retains_backup_and_correct_order(self):
         rc, out, before, after, logs, calls, backup = self.run_fixture()

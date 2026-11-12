@@ -20,8 +20,7 @@ S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
 . "$S/selfcheck.sh"; arc_selfcheck_or_refuse "$S"
 source "$S/dracut-transaction.sh"
 
-echo "== arc-rebar install (dracut) =="
-echo "New in 1.0.8: built and tested with dracut; first hardware reports are welcome."
+echo "== arc-rebar install (dracut: Fedora, RHEL, Rocky, Alma, openSUSE) =="
 echo; echo "== PRE-CHECKS: environment =="
 [ ! -d /etc/initramfs-tools ] || { echo "This system uses initramfs-tools: use install.sh."; exit 1; }
 [ ! -f /etc/mkinitcpio.conf ] || { echo "This system uses mkinitcpio: use install.sh."; exit 1; }
@@ -30,6 +29,8 @@ command -v lsinitrd >/dev/null || { echo "lsinitrd missing (part of dracut)"; ex
 command -v setpci >/dev/null || { echo "pciutils missing (dnf install pciutils / zypper install pciutils)"; exit 1; }
 command -v tr >/dev/null || { echo "coreutils 'tr' missing"; exit 1; }
 [ -d /etc/dracut.conf.d ] || { echo "/etc/dracut.conf.d missing: not a standard dracut system"; exit 1; }
+dracut_layout_supported || exit 1
+echo "boot image: $DR_IMAGE"
 for f in "$S/dracut/90arc-rebar/module-setup.sh" "$S/dracut/90arc-rebar/arc-rebar-hook.sh" "$SCRIPT"; do
   [ -f "$f" ] || { echo "incomplete package: $f missing"; exit 1; }
 done
@@ -116,6 +117,7 @@ if ! grep -q 'pci=realloc' /proc/cmdline; then
   fi
 fi
 
+DR_DRACUT_RAN=1
 if ! dracut --force --regenerate-all > "$DR_BACKUP/build.log" 2>&1; then
   echo "ERROR: dracut failed; see $DR_BACKUP/build.log" >&2
   exit 1
@@ -132,7 +134,7 @@ grep -q 'arc-rebar' "$CONF_DST" && echo "  [ok] module enabled in $CONF_DST" || 
 { grep -q 'pci=realloc' /proc/cmdline || grubby --info=DEFAULT 2>/dev/null | grep -q 'pci=realloc' || grep -q 'pci=realloc' /etc/default/grub 2>/dev/null; } \
   && echo "  [ok] pci=realloc active or configured" || { echo "  [FAIL] pci=realloc missing"; pc=1; }
 grep -q 'pci=realloc' /proc/cmdline && echo "  [ok] pci=realloc active this boot" || echo "  [warn] pci=realloc not active yet: reboot before verify"
-img=; for c in "/boot/initramfs-$kv.img" "/boot/initrd-$kv"; do [ -f "$c" ] && { img=$c; break; }; done
+img=$(dracut_image_for "$kv") || img=
 if [ -z "$img" ]; then echo "  [FAIL] no boot image found for kernel $kv"; pc=1
 else
   l=$(lsinitrd "$img" 2>/dev/null) || { echo "  [FAIL] cannot list $img"; pc=1; }
