@@ -22,27 +22,36 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Build the package (reproducible) and source archive
+      - name: Install the packaging tools (Debian, Arch, RPM)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq pacman-package-manager libarchive-tools fakeroot zstd rpm >/dev/null
+      - name: Build all packages (reproducible) and the source archive
         shell: bash
         run: |
           set -euo pipefail
           V=$(grep -m1 '^Version:' debian/control | awk '{print $2}')
           [ "v$V" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME does not match debian/control Version $V"; exit 1; }
+          [ -f MANIFEST.sha256 ] && [ -f MANIFEST.sha256.asc ] || { echo "release commit has no signed MANIFEST (run tools/make-manifest.sh)"; exit 1; }
           ./build-deb.sh
-          git archive --format=tar.gz --prefix="arc-rebar-$V/" -o "dist/arc-rebar-$V.tar.gz" HEAD
-          (cd dist && sha256sum "arc-rebar_${V}_all.deb" "arc-rebar-$V.tar.gz" > SHA256SUMS && cat SHA256SUMS)
+          ./build-arch.sh
+          ./build-rpm.sh
+          git archive --format=tar --prefix="arc-rebar-$V/" HEAD | gzip -n > "dist/arc-rebar-$V.tar.gz"
+          cd dist
+          sha256sum "arc-rebar_${V}_all.deb" "arc-rebar-$V-1-any.pkg.tar.zst" "arc-rebar-$V-1.noarch.rpm" "arc-rebar-$V.tar.gz" > SHA256SUMS
+          cat SHA256SUMS
       - name: Attest build provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
             dist/*.deb
-            dist/*.tar.gz
+            dist/*.pkg.tar.zst
+            dist/*.rpm
+            dist/arc-rebar-*.tar.gz
       - name: Create a draft release for review
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           V=${GITHUB_REF_NAME#v}
-          gh release create "$GITHUB_REF_NAME" dist/*.deb dist/*.tar.gz dist/SHA256SUMS \
+          gh release create "$GITHUB_REF_NAME" dist/*.deb dist/*.pkg.tar.zst dist/*.rpm "dist/arc-rebar-$V.tar.gz" dist/SHA256SUMS \
             --draft --title "arc-rebar $V" \
             --notes "Draft built by GitHub Actions from tag $GITHUB_REF_NAME. Verify a download: \`sha256sum -c SHA256SUMS\` and \`gh attestation verify <file> -R RodBurlamaqui/Intel-ARC-Rebar\`."

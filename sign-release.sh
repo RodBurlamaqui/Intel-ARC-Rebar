@@ -26,8 +26,14 @@ gh release download "$TAG" -R "$REPO" -D "$W"
 (cd "$W" && sha256sum -c SHA256SUMS)
 gpg --batch --yes --local-user "$KEY" --armor --detach-sign --output "$W/SHA256SUMS.asc" "$W/SHA256SUMS"
 gpg --verify "$W/SHA256SUMS.asc" "$W/SHA256SUMS"
-mkdir -p dist && cp "$W/SHA256SUMS.asc" "dist/SHA256SUMS.asc"
+# Per-package detached signatures (Arch's pacman reads <package>.sig next to the file).
+for f in "$W"/*.deb "$W"/*.pkg.tar.zst "$W"/*.rpm; do
+  [ -f "$f" ] || continue
+  gpg --batch --yes --local-user "$KEY" --detach-sign --output "$f.sig" "$f"
+  gpg --verify "$f.sig" "$f"
+done
+mkdir -p dist && cp "$W/SHA256SUMS.asc" "$W"/*.sig dist/
 echo
 echo "Signed: dist/SHA256SUMS.asc"
 echo "Review it, then upload it yourself:"
-echo "  gh release upload $TAG dist/SHA256SUMS.asc -R $REPO"
+echo "  gh release upload $TAG dist/SHA256SUMS.asc dist/*.sig -R $REPO"
