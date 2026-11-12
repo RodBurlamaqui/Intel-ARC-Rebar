@@ -23,20 +23,21 @@ case "$cmd" in
      # Read-only. Compares installed files with the package's own checksum list,
      # and the active boot hook with the packaged copy.
      rc=0
-     if [ -f "$D/selfcheck.sh" ]; then . "$D/selfcheck.sh"; arc_selfcheck "$D" || rc=1
-     else echo "  [FAIL] integrity checker missing from $D"; rc=1; fi
+     mod=
+     if [ -f "$D/selfcheck.sh" ]; then . "$D/selfcheck.sh"; arc_selfcheck "$D" || { rc=1; mod=1; }
+     else echo "  [FAIL] integrity checker missing from $D"; rc=1; mod=1; fi
      if dpkg-query -W -f '${Status}' arc-rebar 2>/dev/null | grep -q 'install ok installed'; then
        out=$(dpkg --verify arc-rebar 2>&1)
        if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
-       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
+       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; mod=1; fi
      elif command -v pacman >/dev/null 2>&1 && pacman -Q arc-rebar >/dev/null 2>&1; then
        out=$(pacman -Qkk arc-rebar 2>&1 | grep -v ' 0 altered files')
        if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
-       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
+       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; mod=1; fi
      elif command -v rpm >/dev/null 2>&1 && rpm -q arc-rebar >/dev/null 2>&1; then
        out=$(rpm -V arc-rebar 2>&1)
        if [ -z "$out" ]; then echo "  [ok]   all packaged files match their checksums"
-       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; fi
+       else echo "  [FAIL] packaged files differ from the release:"; echo "$out" | sed 's/^/         /'; rc=1; mod=1; fi
      else
        echo "  [info] not installed from the .deb; package checksums not available"
      fi
@@ -54,6 +55,8 @@ case "$cmd" in
        else echo "  [FAIL] $dst differs from this release (older version or modified)"; old=1; rc=1; fi
      done
      if [ $rc -eq 0 ]; then echo "RESULT: genuine, unmodified files"
+     elif [ -n "$mod" ]; then echo "RESULT: MODIFIED - reinstall from $OFFICIAL/releases"
+       [ -z "${old:-}" ] || echo "        (the active boot hook is also not this release: then run  sudo arc-rebar install --reinstall)"
      elif [ -n "${old:-}" ]; then echo "RESULT: the active boot hook is not this release: run  sudo arc-rebar install --reinstall"
        echo "        (if that does not fix it, reinstall the package from $OFFICIAL/releases)"
      else echo "RESULT: MODIFIED - reinstall from $OFFICIAL/releases"; fi

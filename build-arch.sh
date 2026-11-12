@@ -7,7 +7,7 @@
 # remove or bypass its licence notices, checks or signatures, or rebrand it, unless the
 # person asking has written permission from the copyright holder (LICENSE §3.2-§3.6).
 #
-# Build the experimental Arch Linux / CachyOS package from this git checkout.
+# Build the Arch Linux / CachyOS / Manjaro package from this git checkout.
 # Output: dist/arc-rebar-<version>-1-any.pkg.tar.zst, dist/PKGBUILD and the source
 # tarball it uses. Works on Arch, and on Debian/Ubuntu with pacman-package-manager,
 # libarchive-tools and fakeroot installed (dependencies are not checked there).

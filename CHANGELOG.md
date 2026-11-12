@@ -8,8 +8,8 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 **Recommended upgrade for everyone.** It fixes a kernel issue on some systems with
 Secure Boot, where an earlier version could report success without applying the fix.
 
-- One release, one package per Linux family: `.deb` (Debian, Ubuntu, Mint, Pop!_OS,
-  Proxmox), Arch `.pkg.tar.zst` (Arch, CachyOS, EndeavourOS, Manjaro) and `.rpm`
+- One release, one package per Linux family: `.deb` (Debian, Ubuntu, Mint,
+  Proxmox), Arch `.pkg.tar.zst` (Arch, CachyOS, Manjaro) and `.rpm`
   (Fedora, RHEL, Rocky, AlmaLinux, openSUSE). `arc-rebar install` picks the right
   installer; the boot script is the same everywhere.
 - New dracut support for Fedora/RHEL/openSUSE: a dracut module that runs the boot
@@ -26,8 +26,9 @@ Secure Boot, where an earlier version could report success without applying the 
   signed with the maintainer key and refuses a modified copy. New
   `arc-rebar integrity` (installed files unmodified?) and `arc-rebar version`.
 - Signed, reproducible releases: every package is built by GitHub Actions with a
-  build attestation, signed by the maintainer (`SHA256SUMS.asc`, `.sig` per package)
-  and byte-identical when rebuilt. SECURITY.md explains how to check a download.
+  build attestation and signed by the maintainer (`SHA256SUMS.asc`, `.sig` per package);
+  the `.deb` and `.rpm` are byte-identical when rebuilt. SECURITY.md explains how to check
+  a download.
 - Every shipped file carries a copyright and licence notice.
 - Licence for v1.0.8 and later: a plain-language summary; distribution only from the
   official repository (§2.2); no removing or bypassing checks, signatures or notices

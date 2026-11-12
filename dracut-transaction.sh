@@ -51,21 +51,28 @@ dracut_managed_files(){
 }
 # Atomic restore: copy beside the target, then rename over it.
 dracut_restore_file(){
-  cp -a -- "$1" "$2.arc-rebar-restore" && mv -f -- "$2.arc-rebar-restore" "$2"
+  mkdir -p -- "$(dirname -- "$2")" && cp -a -- "$1" "$2.arc-rebar-restore" && mv -f -- "$2.arc-rebar-restore" "$2"
 }
 dracut_begin(){
   local file
   dracut_layout_supported || return 1
-  mkdir -p /var/lib/arc-rebar/backups
-  DR_BACKUP=$(mktemp -d /var/lib/arc-rebar/backups/change.XXXXXXXX)
-  chmod 0700 "$DR_BACKUP"
+  mkdir -p /var/lib/arc-rebar/backups || { echo "cannot create /var/lib/arc-rebar/backups" >&2; return 1; }
+  DR_BACKUP=$(mktemp -d /var/lib/arc-rebar/backups/change.XXXXXXXX) || { echo "cannot create a backup directory" >&2; return 1; }
+  chmod 0700 "$DR_BACKUP" || return 1
   mapfile -t DR_FILES < <(dracut_managed_files)
   for file in "${DR_FILES[@]}"; do
     [[ ! -L $file ]] || { echo "Refusing managed symlink: $file" >&2; return 1; }
     [[ ! -e $file || -f $file ]] || { echo "Not a regular file: $file" >&2; return 1; }
     if [[ -e $file ]]; then
-      mkdir -p "$DR_BACKUP/files$(dirname "$file")"
-      cp -a -- "$file" "$DR_BACKUP/files$file"
+      # A backup that cannot be made or verified (e.g. disk full) stops everything
+      # before any change: a truncated backup must never be restored over a real file.
+      if ! { mkdir -p "$DR_BACKUP/files$(dirname "$file")" &&
+             cp -a -- "$file" "$DR_BACKUP/files$file" &&
+             cmp -s -- "$file" "$DR_BACKUP/files$file"; }; then
+        echo "ERROR: could not back up $file (disk full?). Nothing was changed." >&2
+        rm -rf -- "${DR_BACKUP:?}"
+        return 1
+      fi
     fi
   done
   echo "Backups (configuration, boot entries, boot images): $DR_BACKUP"
@@ -74,11 +81,20 @@ dracut_begin(){
   trap 'exit 143' TERM
   trap 'exit 129' HUP
 }
+dracut_say(){  # to the recovery log always; to the terminal if it is still there
+  printf '%s\n' "$*" >> "$DR_BACKUP/recovery.log" 2>/dev/null
+  printf '%s\n' "$*" >&2 2>/dev/null
+  return 0
+}
 dracut_finish(){
   local status=$? file restore_failed=0 rebuilt=1
-  trap - EXIT INT TERM HUP
+  # Nothing may stop the recovery: not a write error on a closed SSH terminal (set -e),
+  # not a second Ctrl-C, hang-up or broken pipe.
+  set +e
+  trap - EXIT
+  trap '' INT TERM HUP PIPE
   if (( status == 0 )); then return; fi
-  echo "ERROR: operation failed (exit $status); restoring the previous state." >&2
+  dracut_say "ERROR: operation failed (exit $status); restoring the previous state."
   # 1. Settings and module files first (so a rebuild no longer includes arc-rebar).
   for file in "${DR_FILES[@]}"; do
     dracut_is_image "$file" && continue
@@ -100,13 +116,13 @@ dracut_finish(){
     [[ -f $DR_BACKUP/files$file ]] && { dracut_restore_file "$DR_BACKUP/files$file" "$file" || restore_failed=1; }
   done
   if (( restore_failed )); then
-    echo "ERROR: restoration incomplete. Do not reboot; recover from $DR_BACKUP." >&2
+    dracut_say "ERROR: restoration incomplete. Do not reboot; recover from $DR_BACKUP."
   elif (( ! rebuilt )); then
-    echo "WARNING: settings and previous boot images restored, but the cleanup rebuild failed" >&2
-    echo "         ($DR_BACKUP/recovery-build.log). Images for other kernels may still include arc-rebar;" >&2
-    echo "         boot with 'norebar' and run 'dracut --force --regenerate-all'." >&2
+    dracut_say "WARNING: settings and previous boot images restored, but the cleanup rebuild failed"
+    dracut_say "         ($DR_BACKUP/recovery-build.log). Images for other kernels may still include arc-rebar;"
+    dracut_say "         boot with 'norebar' and run 'dracut --force --regenerate-all'."
   else
-    echo "Previous settings and boot images restored (backup: $DR_BACKUP)." >&2
+    dracut_say "Previous settings and boot images restored (backup: $DR_BACKUP)."
   fi
   # Never turn a failed operation into success, even if recovery worked.
   exit "$status"

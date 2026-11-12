@@ -10,7 +10,7 @@
 # (mkinitcpio) and Fedora/RHEL/openSUSE (dracut) are handed to their installers.
 # Refuses unless the boot script's own dry run says it would act on this machine.
 set -e
-YES=; LIVE=; REINST=; RECOVER=; EXPERIMENTAL_ARCH=
+YES=; LIVE=; REINST=; RECOVER=
 for a in "$@"; do case "$a" in
   --experimental-arch) ;;   # accepted for compatibility; no longer needed
   --recover) RECOVER=1;; --yes) YES=1;; --live-test) LIVE=1;; --reinstall) REINST=1;;
@@ -18,7 +18,7 @@ for a in "$@"; do case "$a" in
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
 . "$S/selfcheck.sh"; arc_selfcheck_or_refuse "$S"
-# Arch / CachyOS / EndeavourOS / Manjaro: hand over to the mkinitcpio installer.
+# Arch / CachyOS / Manjaro: hand over to the mkinitcpio installer.
 if [ ! -d /etc/initramfs-tools ] && [ -f /etc/mkinitcpio.conf ]; then
   [ -f "$S/install-arch.sh" ] || {
     echo 'This copy has no Arch installer: install the Arch package (arc-rebar-<version>-1-any.pkg.tar.zst). No boot files changed.'; exit 2;
@@ -74,8 +74,10 @@ fi
 [ -z "$RECOVER" ] || { echo "No interrupted transaction."; exit 0; }
 transaction_exit() {
   local rc=$?
+  # Nothing may stop the recovery: not a write error on a closed terminal, not a signal.
+  set +e
   trap - EXIT
-  trap '' INT TERM HUP
+  trap '' INT TERM HUP PIPE
   if [ -f "$TX/active" ]; then
     echo "Installation failed; restoring previous files. Logs/backups: $TX"
     if ! restore_transaction; then

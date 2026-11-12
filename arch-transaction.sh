@@ -43,10 +43,14 @@ arch_begin(){
   trap arch_finish EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
+  trap 'exit 129' HUP
 }
 arch_finish(){
   local status=$? file restore_failed=0
-  trap - EXIT INT TERM
+  # Nothing may stop the recovery: not a write error on a closed terminal, not a signal.
+  set +e
+  trap - EXIT
+  trap '' INT TERM HUP PIPE
   if (( status == 0 )); then return; fi
   echo "ERROR: operation failed (exit $status); restoring previous configuration/hooks." >&2
   for file in "${ARCH_FILES[@]}"; do

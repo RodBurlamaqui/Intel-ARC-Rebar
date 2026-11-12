@@ -124,8 +124,8 @@ working on them takes ongoing testing and fixes.
 
 | Linux | Package | Install it with |
 |---|---|---|
-| **Debian, Ubuntu, Linux Mint, Pop!_OS, Proxmox** | `arc-rebar_1.0.8_all.deb` | `sudo apt install ./arc-rebar_1.0.8_all.deb` |
-| **Arch, CachyOS, EndeavourOS, Manjaro** | `arc-rebar-1.0.8-1-any.pkg.tar.zst` | `sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst` |
+| **Debian, Ubuntu, Linux Mint, Proxmox** | `arc-rebar_1.0.8_all.deb` | `sudo apt install ./arc-rebar_1.0.8_all.deb` |
+| **Arch, CachyOS, Manjaro** | `arc-rebar-1.0.8-1-any.pkg.tar.zst` | `sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst` |
 | **Fedora, RHEL, Rocky, AlmaLinux, openSUSE** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm` (openSUSE: `sudo zypper install`) |
 
 Every release comes with `SHA256SUMS`, a maintainer signature (`SHA256SUMS.asc`, plus a `.sig`
@@ -363,11 +363,13 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
 ## 4. Requirements
 
 - One of the supported boot-image systems: **initramfs-tools** (Debian, Ubuntu, Mint,
-  Pop!_OS, Proxmox), **mkinitcpio** (Arch, CachyOS, EndeavourOS, Manjaro) or **dracut**
+  Proxmox), **mkinitcpio** (Arch, CachyOS, Manjaro) or **dracut**
   (Fedora, RHEL, Rocky, AlmaLinux, openSUSE; boot images at `/boot/initramfs-<kernel>.img`
   or `/boot/initrd-<kernel>`; unified kernel images are not supported). `arc-rebar install`
   picks the right one. Kernel 6.12 or newer recommended (the `xe` driver's ReBAR support).
-  `pciutils` and `gpgv` (installed with the package).
+  `pciutils` and `gpgv` (installed with the package). The installers add `pci=realloc` to the
+  kernel command line through GRUB (or `grubby` on Fedora/RHEL); with another boot loader, add
+  `pci=realloc` yourself first.
 - **Above 4G Decoding enabled in BIOS**, and an MMIO window above 4 GB at least
   as large as your VRAM rounded up to a power of two. `diagnose` checks this.
 - The GPU directly in a slot on a root port of its own (no external PCIe switch,
@@ -519,8 +521,8 @@ sha256sum -c --ignore-missing SHA256SUMS        # your package must print: OK
 ```
 **2. Install the package** (this enables nothing yet):
 ```
-sudo apt install ./arc-rebar_1.0.8_all.deb               # Debian, Ubuntu, Mint, Pop!_OS, Proxmox
-sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst       # Arch, CachyOS, EndeavourOS, Manjaro
+sudo apt install ./arc-rebar_1.0.8_all.deb               # Debian, Ubuntu, Mint, Proxmox
+sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst       # Arch, CachyOS, Manjaro
 sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm          # Fedora, RHEL, Rocky, AlmaLinux
 sudo zypper install ./arc-rebar-1.0.8-1.noarch.rpm       # openSUSE
 ```

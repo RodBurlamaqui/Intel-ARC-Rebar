@@ -1,7 +1,7 @@
 # INSTALL — arc-rebar, step by step
 
 **Applies to:** Debian 12/13, Ubuntu 22.04 or newer and other `initramfs-tools` systems
-(Mint, Pop!_OS, Proxmox); Arch, CachyOS, EndeavourOS and Manjaro (`mkinitcpio`); Fedora,
+(Mint, Proxmox); Arch, CachyOS and Manjaro (`mkinitcpio`); Fedora,
 RHEL, Rocky, AlmaLinux and openSUSE (`dracut`). Kernel 6.12 or newer recommended. You need
 `sudo`. The steps below show Debian/Ubuntu; [Arch](#arch-linux--cachyos-mkinitcpio) and
 [Fedora/RHEL/openSUSE](#fedora--rhel--opensuse-dracut) have their own short sections, and
@@ -202,7 +202,7 @@ Now do **A3**, **A4**, **A5** above.
 
 ## Arch Linux / CachyOS (mkinitcpio)
 
-The same arc-rebar, packaged for Arch, CachyOS, EndeavourOS and Manjaro. Check the download
+The same arc-rebar, packaged for Arch, CachyOS and Manjaro. Check the download
 as in [step 1](#1-get-the-tool-both-paths), then:
 
 ```

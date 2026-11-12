@@ -7,8 +7,8 @@
 # remove or bypass its licence notices, checks or signatures, or rebrand it, unless the
 # person asking has written permission from the copyright holder (LICENSE §3.2-§3.6).
 # Strict release check (CI and release workflow): every file in MANIFEST.sha256 must
-# exist and match, the keyring must hold exactly the pinned release key, and the
-# manifest must carry a valid signature from that key. Exit 0 only if all hold.
+# exist and match, and the manifest must carry a valid signature from the pinned
+# release key (checked by fingerprint, so a substituted keyring cannot pass). Exit 0 only if all hold.
 set -euo pipefail
 FPR=${ARC_REBAR_RELEASE_KEY:-C3CFCBF8EE592C27BCBE1E498D8ED73D0C2DE44B}
 cd "$(dirname "$(readlink -f "$0")")/.."

@@ -70,6 +70,14 @@ else
   echo 'rebuilt without arc-rebar' > "{self.image}"
 fi''',
             'lsinitrd': 'cat "$1"',
+            # Full disk while backing up a boot image: a partial copy, with (disk) or
+            # without (silent) an error code.
+            'cp': '''for last in "$@"; do :; done
+case "$FAIL:$last" in
+  disk:*/backups/*.img) head -c 5 "$4" > "$last"; exit 1;;
+  silent:*/backups/*.img) head -c 5 "$4" > "$last"; exit 0;;
+esac
+exec /bin/cp "$@"''',
         }
         for name, body in mocks.items():
             p = self.mock / name
@@ -153,7 +161,55 @@ fi''',
         rc, out = self.run_script('uninstall-dracut.sh', fail='dracut')
         self.assertNotEqual(rc, 0, out)
         self.assertTrue(self.conf.exists())
+        # N2: the module directory removed by the uninstall is recreated on restore.
+        for f in ('module-setup.sh', 'arc-rebar-hook.sh', 'arc-rebar-boot'):
+            self.assertTrue((self.module / f).exists(), f)
+        # The mock dracut fails every time, so the recovery rebuild fails too: the
+        # message must say exactly that, not claim a clean recovery.
+        self.assertIn('settings and previous boot images restored, but the cleanup rebuild failed', out)
+        self.assertNotIn('restoration incomplete', out)
         self.assertEqual(self.image.read_text(), installed)
+
+    def test_full_disk_during_backup_changes_nothing(self):
+        # N1: a backup that fails (disk) or is silently truncated (silent) stops
+        # everything before any change, for install and uninstall alike.
+        for fail in ('disk', 'silent'):
+            with self.subTest(fail=fail):
+                rc, out = self.run_script('install-dracut.sh', '--yes', fail=fail)
+                self.assertNotEqual(rc, 0, out)
+                self.assertIn('could not back up', out)
+                self.assertFalse(self.conf.exists())
+                self.assertEqual(self.image.read_text(), 'original image\n')
+                self.assertEqual(self.backups(), [])
+        rc, out = self.run_script('install-dracut.sh', '--yes')
+        self.assertEqual(rc, 0, out)
+        installed = self.image.read_text()
+        for fail in ('disk', 'silent'):
+            with self.subTest(uninstall=fail):
+                rc, out = self.run_script('uninstall-dracut.sh', fail=fail)
+                self.assertNotEqual(rc, 0, out)
+                self.assertTrue(self.conf.exists())
+                self.assertEqual(self.image.read_text(), installed)
+
+    def test_rollback_works_when_the_terminal_is_gone(self):
+        # N3: after an SSH drop every write to the terminal fails; the rollback must not stop.
+        script = f"""set -e
+. "{self.src}/dracut-transaction.sh"
+dracut_begin
+printf 'add_dracutmodules+=" arc-rebar "\\n' > "{self.conf}"
+DR_DRACUT_RAN=1
+echo 'image with arc-rebar' > "{self.image}"
+exec 1>/dev/full 2>/dev/full
+exit 129
+"""
+        env = dict(os.environ, PATH=f'{self.mock}:{os.environ["PATH"]}', FAIL='')
+        p = subprocess.run(['bash', '-c', script], env=env, capture_output=True, text=True, timeout=30)
+        self.assertEqual(p.returncode, 129, p.stdout + p.stderr)
+        self.assertFalse(self.conf.exists())
+        self.assertEqual(self.image.read_text(), 'original image\n')
+        logs = list((self.root / 'var/lib/arc-rebar/backups').glob('change.*/recovery.log'))
+        self.assertEqual(len(logs), 1)
+        self.assertIn('Previous settings and boot images restored', logs[0].read_text())
 
 
 if __name__ == '__main__':
