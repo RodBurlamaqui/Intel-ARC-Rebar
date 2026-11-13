@@ -7,7 +7,8 @@ Official downloads are the packages on its
 [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases) page (`.deb` for
 Debian/Ubuntu, `.pkg.tar.zst` for Arch, `.rpm` for Fedora/RHEL/openSUSE), with `SHA256SUMS`,
 `SHA256SUMS.asc` and a `.sig` for each package. We never distribute `.zip`, `.rar`, `.exe`, "setup" or "installer"
-files, and never through other accounts, websites or file-sharing services.
+files, and never through other accounts, websites or file-sharing services. (The only `.zip` you
+will see from us is GitHub's automatic "Source code" archive on our own Releases page.)
 
 arc-rebar runs with full system (root) privileges at boot, so only install a genuine copy.
 

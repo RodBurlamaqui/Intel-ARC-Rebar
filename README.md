@@ -17,9 +17,9 @@ Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enter
 
 > [!CAUTION]
 > **Beware of imitations, replicas and malware.** The only official source of arc-rebar is
-> **https://github.com/RodBurlamaqui/Intel-ARC-Rebar**. Official downloads are the `.deb`
-> packages on this repository's [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)
-> page, each with a published SHA256 checksum. Always check it: `sha256sum -c SHA256SUMS`.
+> **https://github.com/RodBurlamaqui/Intel-ARC-Rebar**. Official downloads are the packages
+> (`.deb`, `.pkg.tar.zst`, `.rpm`) on this repository's [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)
+> page, each with a published SHA256 checksum and our signature. Always check it: `sha256sum -c SHA256SUMS`.
 >
 > **We never distribute `.zip`, `.rar`, `.exe`, "setup" or "installer" files, and never through
 > other GitHub accounts, websites, file-sharing services or download buttons.** (The only `.zip`

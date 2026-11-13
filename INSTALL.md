@@ -69,10 +69,11 @@ Installing the package changes nothing on your system yet. Every `arc-rebar inst
 checks that its files are the official, unmodified release; a modified copy is refused.
 `sudo arc-rebar integrity` checks an installed copy at any time.
 
-**From the tarball instead:**
+**From source instead** (the signed release tag; every install checks the files against your
+copy's signed file list):
 ```
-tar xzf arc-rebar-1.0.8.tar.gz
-cd arc-rebar
+git clone --branch v1.0.8 https://github.com/RodBurlamaqui/Intel-ARC-Rebar.git
+cd Intel-ARC-Rebar
 ```
 Then everywhere below, replace `sudo arc-rebar <command>` with `sudo ./<command>.sh`.
 

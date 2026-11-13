@@ -37,10 +37,10 @@ mkdir -p "$W/rel" "$W/cmp"
 
 echo "== 1. download and checksums =="
 gh release download "$TAG" -R "$REPO" -D "$W/rel"
-DEB=arc-rebar_${V}_all.deb; PKG=arc-rebar-$V-1-any.pkg.tar.zst; RPM=arc-rebar-$V-1.noarch.rpm; TGZ=arc-rebar-$V.tar.gz
+DEB=arc-rebar_${V}_all.deb; PKG=arc-rebar-$V-1-any.pkg.tar.zst; RPM=arc-rebar-$V-1.noarch.rpm
 (cd "$W/rel" && sha256sum --strict -c SHA256SUMS) || die "a file does not match SHA256SUMS"
 listed=$(awk '{print $2}' "$W/rel/SHA256SUMS" | LC_ALL=C sort | tr '\n' ' ')
-expect=$(printf '%s\n' "$DEB" "$PKG" "$RPM" "$TGZ" | LC_ALL=C sort | tr '\n' ' ')
+expect=$(printf '%s\n' "$DEB" "$PKG" "$RPM" | LC_ALL=C sort | tr '\n' ' ')
 [ "$listed" = "$expect" ] || die "SHA256SUMS lists [$listed], expected [$expect]"
 for f in "$W"/rel/*; do
   b=$(basename "$f"); [ "$b" = SHA256SUMS ] || case " $expect " in *" $b "*) ;; *) die "unexpected file in the release: $b";; esac
@@ -58,7 +58,7 @@ echo "$TAG = $C, on main"
 
 echo "== 3. GitHub build attestation =="
 if gh attestation --help >/dev/null 2>&1; then
-  for f in "$DEB" "$PKG" "$RPM" "$TGZ"; do
+  for f in "$DEB" "$PKG" "$RPM"; do
     gh attestation verify "$W/rel/$f" -R "$REPO" >/dev/null || die "no valid build attestation for $f"
     echo "  [ok] $f"
   done
@@ -72,7 +72,6 @@ echo "== 4. rebuild locally from $TAG and compare contents =="
 git clone -q --no-hardlinks "$S" "$W/src"
 git -C "$W/src" -c advice.detachedHead=false checkout -q "$C"
 (cd "$W/src" && ./build-deb.sh >/dev/null && ./build-arch.sh >/dev/null && ./build-rpm.sh >/dev/null)
-git -C "$W/src" archive --format=tar --prefix="arc-rebar-$V/" HEAD | gzip -n > "$W/src/dist/$TGZ"
 cmpdirs(){
   { diff -r --no-dereference "$1" "$2" &&
     diff <(cd "$1" && find . -printf '%P %y %m %l\n' | LC_ALL=C sort) <(cd "$2" && find . -printf '%P %y %m %l\n' | LC_ALL=C sort); } >"$W/cmp/diff" 2>&1 \
@@ -81,14 +80,13 @@ cmpdirs(){
 }
 for side in ci local; do
   case $side in ci) d=$W/rel;; local) d=$W/src/dist;; esac
-  o=$W/cmp/$side; mkdir -p "$o"/{deb,debctl,arch,rpm,tgz}
+  o=$W/cmp/$side; mkdir -p "$o"/{deb,debctl,arch,rpm}
   dpkg-deb -x "$d/$DEB" "$o/deb"; dpkg-deb -e "$d/$DEB" "$o/debctl"
   bsdtar -xf "$d/$PKG" -C "$o/arch"
   grep -v -E '^(builddate|packager|size) = ' "$o/arch/.PKGINFO" > "$o/arch-pkginfo"; rm -f "$o/arch/.PKGINFO" "$o/arch/.BUILDINFO" "$o/arch/.MTREE"
   (cd "$o/rpm" && rpm2cpio "$d/$RPM" | cpio -idm --quiet)
   rpm -qp --qf '[%{REQUIRENAME} %{REQUIREFLAGS} %{REQUIREVERSION}\n]' "$d/$RPM" 2>/dev/null | grep -v '^rpmlib(' > "$o/rpm-requires"
   rpm -qp --scripts "$d/$RPM" > "$o/rpm-scripts" 2>/dev/null
-  tar -xzf "$d/$TGZ" -C "$o/tgz"
 done
 cmpdirs "$W/cmp/ci/deb" "$W/cmp/local/deb" "$DEB files"
 cmpdirs "$W/cmp/ci/debctl" "$W/cmp/local/debctl" "$DEB control and install scripts"
@@ -97,13 +95,12 @@ diff "$W/cmp/ci/arch-pkginfo" "$W/cmp/local/arch-pkginfo" >&2 || die "$PKG metad
 cmpdirs "$W/cmp/ci/rpm" "$W/cmp/local/rpm" "$RPM files"
 diff "$W/cmp/ci/rpm-requires" "$W/cmp/local/rpm-requires" >&2 || die "$RPM dependencies differ"
 diff "$W/cmp/ci/rpm-scripts" "$W/cmp/local/rpm-scripts" >&2 || die "$RPM install scripts differ"; echo "  [ok] $RPM dependencies and scripts"
-cmpdirs "$W/cmp/ci/tgz" "$W/cmp/local/tgz" "$TGZ"
 
 echo "== 5. sign =="
 gpg --batch --yes --local-user "$KEY" --armor --detach-sign --output "$W/rel/SHA256SUMS.asc" "$W/rel/SHA256SUMS"
 gpg --verify "$W/rel/SHA256SUMS.asc" "$W/rel/SHA256SUMS"
 # Per-package detached signatures (Arch's pacman reads <package>.sig next to the file).
-for f in "$DEB" "$PKG" "$RPM" "$TGZ"; do
+for f in "$DEB" "$PKG" "$RPM"; do
   gpg --batch --yes --local-user "$KEY" --detach-sign --output "$W/rel/$f.sig" "$W/rel/$f"
   gpg --verify "$W/rel/$f.sig" "$W/rel/$f"
 done
