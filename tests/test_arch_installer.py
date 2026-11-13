@@ -39,6 +39,8 @@ class ArchInstallerTests(unittest.TestCase):
             for name, body in {
                 'id': 'echo 0',
                 'update-initramfs': f'touch "{root}/backend-probed"; exit 99',
+                # Hermetic and fast: the host's package database can take seconds to search.
+                'dpkg-query': 'exit 1',
             }.items():
                 command = mock / name
                 command.write_text('#!/bin/sh\n' + body + '\n')
