@@ -17,7 +17,18 @@ for a in "$@"; do case "$a" in
   *) echo "usage: $0 [--yes] [--live-test] [--reinstall]"; exit 1;; esac; done
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
-. "$S/selfcheck.sh"; arc_selfcheck_or_refuse "$S"
+# Independent second check, before trusting the checker itself: the file list must be
+# signed by the pinned maintainer key and selfcheck.sh must match it.
+if [ -f "$S/MANIFEST.sha256" ]; then
+  command -v gpgv >/dev/null || { echo "gpgv is required to check this copy is genuine (install gpgv / gnupg2 / gnupg / gpg2)"; exit 4; }
+  _gst=$(gpgv --status-fd 1 --ignore-time-conflict --keyring "$S/docs/signing-key.gpg" "$S/MANIFEST.sha256.asc" "$S/MANIFEST.sha256" 2>/dev/null || true)
+  case "$_gst" in *'[GNUPG:] BADSIG'*|*'[GNUPG:] ERRSIG'*|*'[GNUPG:] REVKEYSIG'*) _gst=;; esac
+  { case "$_gst" in *'[GNUPG:] VALIDSIG C3CFCBF8EE592C27BCBE1E498D8ED73D0C2DE44B '*) true;; *) false;; esac &&
+    (cd "$S" && grep '^[0-9a-f]\{64\}  selfcheck\.sh$' MANIFEST.sha256 | sha256sum --strict --quiet -c -) >/dev/null 2>&1; } ||
+    { echo "REFUSING: this copy of arc-rebar has been modified or is not an official release."
+      echo "Download the official version from https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases"; exit 4; }
+fi
+. "$S/selfcheck.sh"; arc_selfcheck_or_refuse "$S" install-dracut.sh dracut-transaction.sh dracut/90arc-rebar/module-setup.sh dracut/90arc-rebar/arc-rebar-hook.sh
 source "$S/dracut-transaction.sh"
 
 echo "== arc-rebar install (dracut: Fedora, RHEL, Rocky, Alma, openSUSE) =="
@@ -90,8 +101,17 @@ echo "dracut module: $MOD_DST"
 printf '# arc-rebar: include the arc-rebar dracut module (see arc-rebar uninstall)\nadd_dracutmodules+=" arc-rebar "\n' > "$CONF_DST"
 chmod 0644 "$CONF_DST"
 echo "enabled: $CONF_DST"
-echo dracut > "$ORIGIN"
+# Who installed the hook: the RPM's %preun removes it only if the package did.
+case "$S" in /usr/share/arc-rebar) echo rpm > "$ORIGIN";; *) printf 'source:%s\n' "$S" > "$ORIGIN";; esac
 
+# pci=realloc in what the bootloader actually reads (not just /etc/default/grub).
+boot_config_has_realloc(){
+  local f
+  for f in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/grub2/grubenv /boot/loader/entries/*.conf /boot/efi/loader/entries/*.conf; do
+    [ -f "$f" ] && grep -q 'pci=realloc' "$f" && return 0
+  done
+  return 1
+}
 if ! grep -q 'pci=realloc' /proc/cmdline; then
   if command -v grubby >/dev/null; then
     grubby --update-kernel=ALL --args=pci=realloc > "$DR_BACKUP/grubby.log" 2>&1 || { echo "ERROR: grubby failed; see $DR_BACKUP/grubby.log" >&2; exit 1; }
@@ -109,6 +129,8 @@ if ! grep -q 'pci=realloc' /proc/cmdline; then
     cfg=; for c in /boot/grub2/grub.cfg /boot/grub/grub.cfg; do [ -f "$c" ] && { cfg=$c; break; }; done
     [ -n "$cfg" ] || { echo "ERROR: no grub.cfg found to regenerate"; exit 1; }
     "$mk" -o "$cfg" > "$DR_BACKUP/grub-build.log" 2>&1 || { echo "ERROR: $mk failed; see $DR_BACKUP/grub-build.log" >&2; exit 1; }
+    boot_config_has_realloc || { echo "ERROR: $mk ran but the generated boot configuration does not contain pci=realloc."
+      echo "       This system may not boot through GRUB. Add pci=realloc to your bootloader by hand, reboot, then rerun."; exit 1; }
     echo "GRUB: added pci=realloc ($cfg)"
   else
     echo "ERROR: pci=realloc is not active and no grubby or GRUB config was found to edit."
@@ -131,7 +153,7 @@ for f in module-setup.sh arc-rebar-hook.sh arc-rebar-boot; do
 done
 cmp -s "$SCRIPT" "$MOD_DST/arc-rebar-boot" && echo "  [ok] boot script matches this release" || { echo "  [FAIL] boot script differs from this release"; pc=1; }
 grep -q 'arc-rebar' "$CONF_DST" && echo "  [ok] module enabled in $CONF_DST" || { echo "  [FAIL] module not enabled"; pc=1; }
-{ grep -q 'pci=realloc' /proc/cmdline || grubby --info=DEFAULT 2>/dev/null | grep -q 'pci=realloc' || grep -q 'pci=realloc' /etc/default/grub 2>/dev/null; } \
+{ grep -q 'pci=realloc' /proc/cmdline || grubby --info=DEFAULT 2>/dev/null | grep -q 'pci=realloc' || boot_config_has_realloc; } \
   && echo "  [ok] pci=realloc active or configured" || { echo "  [FAIL] pci=realloc missing"; pc=1; }
 grep -q 'pci=realloc' /proc/cmdline && echo "  [ok] pci=realloc active this boot" || echo "  [warn] pci=realloc not active yet: reboot before verify"
 img=$(dracut_image_for "$kv") || img=

@@ -45,7 +45,7 @@ class ArchInstallerTests(unittest.TestCase):
                 command.chmod(0o755)
             result = subprocess.run(
                 ['bash', str(source / 'install.sh'), *args],
-                env=dict(os.environ, PATH=str(mock) + ':' + os.environ['PATH']),
+                env=dict(os.environ, ARC_REBAR_DEV='1', PATH=str(mock) + ':' + os.environ['PATH']),
                 capture_output=True, text=True, timeout=10)
             if untouched:
                 self.assertFalse((root / 'backend-probed').exists())
@@ -84,7 +84,7 @@ class ArchInstallerTests(unittest.TestCase):
         self.assertIn('install the Arch package', out)
 
     def run_fixture(self, mode='ok', reinstall=False, uninstall=False,
-                    missing=False, cmdline=True, grubfail=False, hookfail=False,
+                    missing=False, cmdline=True, grubfail=False, hookfail=False, grubnoeffect=False,
                     hooks=None, override=False, experimental=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -144,7 +144,8 @@ echo "build $n" > "$FIXTURE/boot/initramfs-linux.img"
 echo "build attempt $n"
 case "$MODE:$n" in fail-all:*|fail-first:1) exit 7;; esac
 exit 0''',
-                'grub-mkconfig': '''echo changed > "$FIXTURE/boot/grub/grub.cfg"
+                'grub-mkconfig': '''if [ "$GRUBNOEFFECT" = 1 ]; then echo changed > "$FIXTURE/boot/grub/grub.cfg"
+else cat "$FIXTURE/etc/default/grub" > "$FIXTURE/boot/grub/grub.cfg"; fi
 echo "grub generation output"
 exit "$GRUBFAIL"''',
                 'lsinitcpio': '''echo arc-rebar-boot
@@ -159,8 +160,8 @@ exit 0''',
                 p = binpath / name
                 p.write_text('#!/bin/bash\n' + body + '\n')
                 p.chmod(0o755)
-            env = dict(os.environ, PATH=str(binpath) + ':' + os.environ['PATH'],
-                       FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)))
+            env = dict(os.environ, ARC_REBAR_DEV='1', PATH=str(binpath) + ':' + os.environ['PATH'],
+                       FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)), GRUBNOEFFECT=str(int(grubnoeffect)))
             args = ['bash', str(source / ('uninstall-arch.sh' if uninstall else 'install-arch.sh'))]
             if not uninstall:
                 args += (['--experimental-arch'] if experimental else [])
@@ -221,6 +222,16 @@ exit 0''',
         out, logs, calls = self.assert_restored(self.run_fixture(cmdline=False, grubfail=True))
         self.assertIn('grub-mkconfig failed', out)
         self.assertIn('grub generation output', logs['grub-build.log'])
+
+    def test_grub_edit_succeeds_when_the_menu_has_realloc(self):
+        rc, out, before, after, logs, calls, backup = self.run_fixture(cmdline=False)
+        self.assertEqual(rc, 0, out)
+        self.assertIn(b'pci=realloc', after['boot/grub/grub.cfg'][0])
+
+    def test_grub_edit_without_effect_restores_config_and_menu(self):
+        # M6: grub-mkconfig "succeeds" but the menu has no pci=realloc: never report success.
+        out, logs, calls = self.assert_restored(self.run_fixture(cmdline=False, grubnoeffect=True))
+        self.assertIn('does not contain pci=realloc', out)
 
     def test_copy_failure_aborts_before_success(self):
         self.assert_restored(self.run_fixture(hookfail=True))

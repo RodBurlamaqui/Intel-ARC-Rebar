@@ -39,8 +39,12 @@ gpg --verify SHA256SUMS.asc SHA256SUMS     # must say "Good signature" and show 
 A good signature from any other key means the file is not from us.
 
 Every `arc-rebar install` also checks, before changing anything, that its files match a file
-list signed with this key, and refuses a modified copy. This catches accidental or simple
-modifications; for a download, the signature and attestation checks above are the proof.
+list signed with this key, and refuses a modified copy. The key's fingerprint is built into
+the installers, so a file list re-signed with another key, a replaced or deleted key file, a
+missing file or a modified checker is refused, and a wrong system clock does not make a genuine
+copy fail. `gpgv` is required for this check. It runs on your machine, so someone who
+rewrites the installers themselves can still remove it. For a download, the signature and
+attestation checks above are the proof.
 
 ## Reporting a vulnerability
 

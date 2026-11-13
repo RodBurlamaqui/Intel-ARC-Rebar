@@ -39,7 +39,7 @@ elif dmesg 2>/dev/null | grep -q 'arc-rebar: PLAN: rolled-back'; then
 else
   planline=$(ARC_REBAR_DRYRUN=1 ARC_REBAR_ASSUME_REALLOC=1 sh "$S/scripts/init-premount/arc-rebar" 2>/dev/null | grep -m1 PLAN: | sed 's/.*PLAN: //')
   case "$planline" in
-    act*)  echo "  YES: pinned window, all safety checks pass. Run ./live-test.sh, then ./install.sh";;
+    act*)  echo "  YES: pinned window, all safety checks pass. Optionally: sudo arc-rebar live-test; then: sudo arc-rebar install";;
     none*) echo "  BAR already at full size (firmware ReBAR, or a live fix is active). Nothing to do.";;
     *)     echo "  NOT SAFE / NOT APPLICABLE here: $planline";;
   esac

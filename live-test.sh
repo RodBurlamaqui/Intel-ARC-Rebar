@@ -14,7 +14,7 @@ echo "WARNING: this stops your display manager. Run it over SSH and save your wo
 echo "         If the machine hangs at the rescan, power cycle. Nothing persistent is changed."
 echo "         AS IS, no warranty — see DISCLAIMER.md."
 S=$(dirname "$(readlink -f "$0")")
-grep -q 'pci=realloc' /proc/cmdline || { echo "pci=realloc is not active. Add it to GRUB_CMDLINE_LINUX_DEFAULT, update-grub, reboot, then retry."; exit 1; }
+grep -q 'pci=realloc' /proc/cmdline || { echo "pci=realloc is not active. Run: sudo arc-rebar prepare (or add it to your bootloader by hand), reboot, then retry."; exit 1; }
 echo "== dry run first =="
 out=$(ARC_REBAR_DRYRUN=1 sh "$S/scripts/init-premount/arc-rebar" 2>&1); echo "$out" | sed 's/^/  /'
 case "$(echo "$out" | grep -m1 PLAN:)" in *"PLAN: act"*) ;; *) echo; echo "boot script would not act here; not running live."; exit 2;; esac

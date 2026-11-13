@@ -55,10 +55,18 @@ chmod 0644 $d/selfcheck.sh
 chmod 0755 $d/hooks/arc-rebar $d/scripts/init-premount/arc-rebar
 
 %preun
-# Removing the package (not upgrading) also removes an enabled boot hook.
+# Removing the package (not upgrading) also removes the boot hook, but only one this
+# package installed; a hook installed from a source copy is left to that copy.
 if [ "$1" = 0 ] && [ -e /etc/dracut.conf.d/90-arc-rebar.conf ]; then
-  /usr/share/arc-rebar/uninstall-dracut.sh || echo "arc-rebar: could not remove the boot hook; run the uninstaller from a copy" >&2
+  if [ "$(cat /var/lib/arc-rebar/hook-origin 2>/dev/null)" = rpm ]; then
+    echo "arc-rebar: removing the boot hook this package installed (rebuilding boot images, please wait)"
+    /usr/share/arc-rebar/uninstall-dracut.sh || echo "arc-rebar: could not remove the boot hook; reinstall the package, then run: sudo arc-rebar uninstall" >&2
+  else
+    echo "arc-rebar: the boot hook was installed from a source copy and is left in place;" >&2
+    echo "           remove it with that copy's uninstall-dracut.sh" >&2
+  fi
 fi
+exit 0
 
 %files
 %license LICENSE DISCLAIMER.md

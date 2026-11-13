@@ -21,9 +21,14 @@ Secure Boot, where an earlier version could report success without applying the 
 - Fix the kernel issue above: the boot script now refuses when the kernel blocks the
   change, and reports `done` only after confirming the new size; otherwise it reports
   why or rolls back.
+- The GRUB step now succeeds only when the generated boot menu really contains
+  `pci=realloc`; otherwise the install is rolled back with a clear message.
+- `arc-rebar prepare` works on every family (grubby or GRUB), not only Debian/Ubuntu.
+- Removing the `.rpm` removes the boot hook only if the package installed it.
 - When `pci=nocrs` is on the kernel command line, the refusal now says to remove it.
 - Genuine-copy protection: every install first checks its files against a file list
-  signed with the maintainer key and refuses a modified copy. New
+  signed with the maintainer key (fingerprint built in; `gpgv` required) and refuses a
+  modified copy. New
   `arc-rebar integrity` (installed files unmodified?) and `arc-rebar version`.
 - Signed, reproducible releases: every package is built by GitHub Actions with a
   build attestation and signed by the maintainer (`SHA256SUMS.asc`, `.sig` per package);

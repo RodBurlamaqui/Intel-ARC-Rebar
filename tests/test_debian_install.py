@@ -81,7 +81,7 @@ fi
         for name, body in mocks.items():
             path = self.put('mock/' + name, '#!/bin/bash\n' + body + '\n')
             path.chmod(0o755)
-        self.env = dict(os.environ, PATH=str(self.root / 'mock') + ':' + os.environ['PATH'],
+        self.env = dict(os.environ, ARC_REBAR_DEV='1', PATH=str(self.root / 'mock') + ':' + os.environ['PATH'],
                         BACKEND='initramfs-tools', BACKEND_OWNER='initramfs-tools')
 
     def put(self, name, text):

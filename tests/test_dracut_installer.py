@@ -19,7 +19,7 @@ PREFIXES = ['/usr/lib/dracut', '/usr/lib/modules', '/lib/modules', '/var/lib/arc
 
 def rewrite(text, root):
     for prefix in PREFIXES:
-        text = re.sub(r'(?<![A-Za-z0-9_./-])' + re.escape(prefix) + r'(?=[/ "\'*]|$)', str(root) + prefix, text,
+        text = re.sub(r'(?<![A-Za-z0-9_./-])' + re.escape(prefix) + r'(?=[^A-Za-z0-9_.-]|$)', str(root) + prefix, text,
                       flags=re.M)
     return text
 
@@ -41,7 +41,7 @@ class DracutInstallerTests(unittest.TestCase):
             text = rewrite((REPO / name).read_text(), self.root)
             code = [l for l in text.splitlines() if not l.lstrip().startswith('#')]
             for prefix in PREFIXES:
-                stray = [l for l in code if re.search(r'(?<![A-Za-z0-9_./-])' + re.escape(prefix) + r'(?=[/ "\'*]|$)', l)]
+                stray = [l for l in code if re.search(r'(?<![A-Za-z0-9_./-])' + re.escape(prefix) + r'(?=[^A-Za-z0-9_.-]|$)', l)]
                 self.assertEqual(stray, [], f'{name}: unrewritten {prefix}')
             (self.src / name).write_text(text)
         shutil.copyfile(REPO / 'selfcheck.sh', self.src / 'selfcheck.sh')
@@ -86,7 +86,7 @@ exec /bin/cp "$@"''',
         self.module = self.root / 'usr/lib/dracut/modules.d/90arc-rebar'
 
     def run_script(self, name, *args, fail=''):
-        env = dict(os.environ, PATH=f'{self.mock}:{os.environ["PATH"]}', FAIL=fail)
+        env = dict(os.environ, ARC_REBAR_DEV='1', PATH=f'{self.mock}:{os.environ["PATH"]}', FAIL=fail)
         p = subprocess.run(['bash', str(self.src / name), *args], env=env,
                            capture_output=True, text=True, timeout=30)
         return p.returncode, p.stdout + p.stderr
@@ -210,6 +210,65 @@ exit 129
         logs = list((self.root / 'var/lib/arc-rebar/backups').glob('change.*/recovery.log'))
         self.assertEqual(len(logs), 1)
         self.assertIn('Previous settings and boot images restored', logs[0].read_text())
+
+    def grub_only(self, mkconfig_body):
+        """No grubby, pci=realloc not active: the GRUB fallback path."""
+        (self.mock / 'grubby').unlink()
+        (self.root / 'proc/cmdline').write_text('quiet\n')
+        (self.root / 'etc/default').mkdir()
+        (self.root / 'etc/default/grub').write_text('GRUB_CMDLINE_LINUX_DEFAULT="quiet"\n')
+        (self.root / 'boot/grub2').mkdir()
+        (self.root / 'boot/grub2/grub.cfg').write_text('linux /vmlinuz quiet\n')
+        mk = self.mock / 'grub2-mkconfig'
+        mk.write_text('#!/bin/sh\n' + mkconfig_body + '\n'); mk.chmod(0o755)
+
+    def test_grub_fallback_succeeds_when_the_boot_config_has_realloc(self):
+        default = self.root / 'etc/default/grub'
+        self.grub_only(f'. "{default}"; echo "linux /vmlinuz $GRUB_CMDLINE_LINUX_DEFAULT" > "$2"')
+        rc, out = self.run_script('install-dracut.sh', '--yes')
+        self.assertEqual(rc, 0, out)
+        self.assertIn('pci=realloc', (self.root / 'boot/grub2/grub.cfg').read_text())
+
+    def test_grub_fallback_without_effect_is_an_error_and_rolls_back(self):
+        # M6: the generator "succeeds" but the boot config never gets pci=realloc
+        # (e.g. the system does not really boot through GRUB): never report success.
+        self.grub_only('echo "linux /vmlinuz quiet" > "$2"')
+        rc, out = self.run_script('install-dracut.sh', '--yes')
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn('does not contain pci=realloc', out)
+        self.assertFalse(self.conf.exists())
+        self.assertEqual((self.root / 'etc/default/grub').read_text(), 'GRUB_CMDLINE_LINUX_DEFAULT="quiet"\n')
+        self.assertEqual(self.image.read_text(), 'original image\n')
+
+    def test_install_records_who_installed_the_hook(self):
+        rc, out = self.run_script('install-dracut.sh', '--yes')
+        self.assertEqual(rc, 0, out)
+        self.assertEqual((self.root / 'var/lib/arc-rebar/hook-origin').read_text(), f'source:{self.src}\n')
+
+    def rpm_preun(self, origin):
+        spec = (REPO / 'packaging/rpm/arc-rebar.spec.in').read_text()
+        body = spec[spec.index('%preun') + len('%preun'):spec.index('%files')]
+        share = self.tmp / 'share'; share.mkdir()
+        (share / 'uninstall-dracut.sh').write_text(f'#!/bin/sh\ntouch "{self.tmp}/uninstalled"\n')
+        (share / 'uninstall-dracut.sh').chmod(0o755)
+        body = rewrite(body, self.root).replace('/usr/share/arc-rebar', str(share))
+        self.conf.write_text('add_dracutmodules+=" arc-rebar "\n')
+        (self.root / 'var/lib/arc-rebar').mkdir(parents=True, exist_ok=True)
+        (self.root / 'var/lib/arc-rebar/hook-origin').write_text(origin + '\n')
+        p = subprocess.run(['sh', '-c', body, 'preun', '0'], capture_output=True, text=True, timeout=10)
+        return p.returncode, p.stdout + p.stderr
+
+    def test_rpm_removal_removes_a_hook_the_package_installed(self):
+        rc, out = self.rpm_preun('rpm')
+        self.assertEqual(rc, 0, out)
+        self.assertTrue((self.tmp / 'uninstalled').exists(), out)
+
+    def test_rpm_removal_leaves_a_hook_installed_from_source(self):
+        # M5: removing the package must not tear out a hook a source copy installed.
+        rc, out = self.rpm_preun(f'source:{self.src}')
+        self.assertEqual(rc, 0, out)
+        self.assertFalse((self.tmp / 'uninstalled').exists(), out)
+        self.assertIn('left in place', out)
 
 
 if __name__ == '__main__':
