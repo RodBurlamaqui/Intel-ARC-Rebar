@@ -319,9 +319,8 @@ sudo apt purge arc-rebar      # removes the tool AND the boot hook (only if the 
 ```
 (`apt remove` removes only the tool and deliberately leaves the boot hook active.)
 
-Packages built from the current source snapshot package-owned hooks, their origin
-marker, GRUB files and existing conventional initramfs images before purging the
-hook. Purge rebuilds all kernel images and checks that the runtime script is gone.
+Before removing the hook, purge saves copies of the package-installed hooks, their
+origin marker, the GRUB files and the existing initramfs images. Purge rebuilds all kernel images and checks that the runtime script is gone.
 A missing tool, failed rebuild, failed archive inspection or stale image returns
 failure and attempts to restore the saved boot files. Source-owned/unknown hooks
 are preserved. Partial package-owned hook installations are also cleaned up.
@@ -343,21 +342,18 @@ file and original escape-hatch backups remain. See the
 
 These package-purge safeguards are included since v1.0.4.
 
-**Tarball:**
+**From source** (any system; it picks the right uninstaller):
 ```
 sudo ./uninstall.sh
 ```
 
-**Arch / CachyOS:**
+All of them leave `pci=realloc` on the kernel command line; it is harmless. To remove it:
 ```
-sudo ./uninstall-arch.sh
+sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub && sudo update-grub   # Debian/Ubuntu
+sudo grubby --update-kernel=ALL --remove-args=pci=realloc                       # Fedora/RHEL
 ```
-
-All leave `pci=realloc` in GRUB; it is harmless. To remove it:
-```
-sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
-sudo update-grub          # Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
+On Arch and openSUSE, delete `pci=realloc` from `/etc/default/grub`, then regenerate the menu
+(`sudo grub-mkconfig -o /boot/grub/grub.cfg`, or `sudo grub2-mkconfig -o /boot/grub2/grub.cfg`).
 
 ### Debian/Ubuntu installer failure recovery
 

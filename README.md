@@ -115,30 +115,29 @@ licensing terms or guarantee support for a particular hardware configuration.*
 > and tampered or counterfeit copies. Everyone on an older version should upgrade: install the
 > new package, then run `sudo arc-rebar install --reinstall`.
 
-**arc-rebar 1.0.8**: one release, with one package for each Linux family. Download it from the
-[latest release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest).
-
-**If arc-rebar worked for you or helped in any way, please consider a [donation](https://buymeacoffee.com/rodburlamaqui), one-time or monthly.**
-New Linux kernels, distributions and GPU drivers keep changing, and keeping arc-rebar
-working on them takes ongoing testing and fixes.
-
-<a href="https://buymeacoffee.com/rodburlamaqui"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="One-time donation on Buy Me a Coffee" width="116" height="32"></a>
-<a href="https://buymeacoffee.com/rodburlamaqui/membership"><img src="docs/img/bmc-monthly-supporter.svg" alt="Monthly support on Buy Me a Coffee" height="32"></a>
+**Current release: arc-rebar 1.0.8.** Download the package for your system from the
+[latest release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest):
 
 | Linux | Package | Install it with |
 |---|---|---|
 | **Debian, Ubuntu, Linux Mint, Proxmox** | `arc-rebar_1.0.8_all.deb` | `sudo apt install ./arc-rebar_1.0.8_all.deb` |
 | **Arch, CachyOS, Manjaro** | `arc-rebar-1.0.8-1-any.pkg.tar.zst` | `sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst` |
-| **Fedora, RHEL, Rocky, AlmaLinux, openSUSE** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm` (openSUSE: `sudo zypper install`) |
+| **Fedora, RHEL, Rocky, AlmaLinux** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm` |
+| **openSUSE** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo zypper install ./arc-rebar-1.0.8-1.noarch.rpm` |
 
-Every release comes with `SHA256SUMS`, a maintainer signature (`SHA256SUMS.asc`, plus a `.sig`
-for each package) and a GitHub build attestation. **Check your download before installing it:**
-see [SECURITY.md](SECURITY.md#check-that-your-copy-is-genuine). Installing a package enables
-nothing by itself: next, run `sudo arc-rebar diagnose`, then `sudo arc-rebar install`
-([INSTALL.md](INSTALL.md)).
+1. **Check your download** before installing it. Every release has `SHA256SUMS`, our signature
+   (`SHA256SUMS.asc`, plus a `.sig` for each package) and a GitHub build attestation; see
+   [SECURITY.md](SECURITY.md#check-that-your-copy-is-genuine).
+2. **Install the package.** This enables nothing by itself.
+3. **Enable it:** `sudo arc-rebar diagnose`, then `sudo arc-rebar install`. Step by step:
+   [INSTALL.md](INSTALL.md).
 
 **Dual and multi-GPU support is currently in testing.** Use 1.0.8 for single-GPU systems.
-To help test, see the [Beta Testing Program](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/discussions/54).
+To help test, join the [Beta Testing Program](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/discussions/54).
+
+**If arc-rebar helped you, please consider a [donation](https://buymeacoffee.com/rodburlamaqui),
+one-time or [monthly](https://buymeacoffee.com/rodburlamaqui/membership).** New kernels,
+distributions and drivers keep changing, and keeping arc-rebar working takes ongoing testing.
 
 > Modifying, unlocking or redistributing modified versions of arc-rebar is not permitted
 > ([LICENSE](LICENSE) §3.2). Commercial use requires a written licence (§3.1).
@@ -170,8 +169,7 @@ or read the [compatibility evidence and reporting guide](docs/COMPATIBILITY.md).
 Community reports describe particular setups; they do not establish universal
 support. Stars show interest in the project; compatibility comes from documented
 hardware results. Reports from Arch, Fedora, RHEL and openSUSE systems are welcome.
-Multi-GPU operation remains an
-open limitation.
+Multi-GPU operation is in testing.
 
 ![Intel Arc B580 Limited Edition, exploded view](docs/img/intel-arc-b580-press.jpg)
 
@@ -221,7 +219,7 @@ pcieport 0000:80:03.0: bridge window [...]: was not released (still contains ass
 That line is the signature. The tool's own check does all of this and more:
 
 ```
-sudo arc-rebar diagnose          # from the .deb
+sudo arc-rebar diagnose          # installed from a package
 sudo ./diagnose.sh               # from a source checkout
 ```
 
@@ -302,16 +300,18 @@ and by `vulkaninfo`.
 
 ### What it changes on your system
 
-Installing it touches exactly these things, all reversible:
+Installing it touches only these things, all reversible. Every installer backs them up first
+and restores them automatically if anything fails.
 
-| What | Where | Backup |
-|---|---|---|
-| The initramfs hook and the boot script | `/etc/initramfs-tools/hooks/arc-rebar`, `/etc/initramfs-tools/scripts/init-premount/arc-rebar` | — |
-| Rebuilt initramfs | `/boot/initrd.img-<kernel>` | `/boot/initrd.img-<kernel>.arc-rebar.bak` |
-| `pci=realloc` added to the kernel command line | `/etc/default/grub` | `/etc/default/grub.arc-rebar.bak` |
-| A marker recording who installed the hook | `/var/lib/arc-rebar/hook-origin` | — |
+| What | Debian, Ubuntu, Mint, Proxmox | Arch, CachyOS, Manjaro | Fedora, RHEL, openSUSE |
+|---|---|---|---|
+| The boot hook and boot script | `/etc/initramfs-tools/hooks/arc-rebar`, `/etc/initramfs-tools/scripts/init-premount/arc-rebar` | `/etc/initcpio/hooks/arc-rebar`, `/etc/initcpio/install/arc-rebar`, `arc-rebar` added to `HOOKS` in `/etc/mkinitcpio.conf` | `/usr/lib/dracut/modules.d/90arc-rebar/`, `/etc/dracut.conf.d/90-arc-rebar.conf` |
+| Rebuilt boot images | `/boot/initrd.img-<kernel>` | `/boot/initramfs-*.img` | `/boot/initramfs-<kernel>.img` or `/boot/initrd-<kernel>` |
+| `pci=realloc` on the kernel command line | `/etc/default/grub` | `/etc/default/grub` | `grubby` (or `/etc/default/grub`) |
+| Backups | `/boot/initrd.img-<kernel>.arc-rebar.bak`, `/etc/default/grub.arc-rebar.bak` | `/var/lib/arc-rebar/backups/` | `/var/lib/arc-rebar/backups/` |
 
-Nothing else. No firmware, no BIOS settings, no driver files, no kernel modules.
+It also records who installed the hook in `/var/lib/arc-rebar/hook-origin`. Nothing else: no
+firmware, no BIOS settings, no driver files, no kernel modules.
 
 ### What it does not do
 
@@ -412,10 +412,9 @@ selected value (in brackets) is `[integrity]` or `[confidentiality]`, arc-rebar
 cannot resize the BAR. **In v1.0.5 and earlier**, the boot script then still
 logs `PLAN: done` with the *old* size (for example `bar2=256M`), because
 `setpci` does not report the refused write; `sudo arc-rebar verify` shows the
-real BAR size. The fix is on `main` and will ship in the next release: it
-refuses up front with `skip reason=kernel-lockdown` (which `diagnose` also
-reports), or `skip reason=rebar-write-not-applied` if the write did not take
-effect.
+real BAR size. **From 1.0.8** it refuses up front with `skip reason=kernel-lockdown`
+(which `diagnose` also reports), or `skip reason=rebar-write-not-applied` if the
+write did not take effect. Upgrade to 1.0.8.
 
 **If Above 4G Decoding is missing or greyed out:** some boards only offer it
 when booting in UEFI mode. Check your manual.
@@ -475,10 +474,10 @@ Decoding is on.
 
 | Boot log message | Most likely cause | What to check |
 |---|---|---|
-| `skip reason=no-mmio-window-above-4g` | No address space above 4 GB, or `pci=nocrs` hides it | **Above 4G Decoding** in BIOS, or remove `pci=nocrs` from the kernel command line. After v1.0.5 the message says which |
+| `skip reason=no-mmio-window-above-4g` | No address space above 4 GB, or `pci=nocrs` hides it | **Above 4G Decoding** in BIOS, or remove `pci=nocrs` from the kernel command line. From 1.0.8 the message says which |
 | `skip reason=mmio-window-too-small` or `note: MMIO window is ..., stepping target down` | The 64-bit MMIO area is too small for the full BAR | A **64-bit MMIO size** option in BIOS, if available, or a smaller `rebar.size` (see [INSTALL.md](INSTALL.md)) |
-| `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` (after v1.0.5) | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
-| v1.0.5 and earlier: `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Same as above: the write was refused but not reported | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| `skip reason=kernel-lockdown` or `skip reason=rebar-write-not-applied` (from 1.0.8) | Kernel lockdown blocks the write, often because **Secure Boot** is on | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
+| Before 1.0.8: `PLAN: done` but with the **original** size (e.g. `bar2=256M`), and `verify` shows the BAR still small | Same as above: the write was refused but not reported | **Secure Boot** in BIOS, and `cat /sys/kernel/security/lockdown` |
 | `skip reason=no-pci-realloc` | `pci=realloc` is missing | The kernel command line, not BIOS |
 
 ## 5. Where it applies — and where it refuses
@@ -493,14 +492,14 @@ Decoding is on.
 | No Intel GPU with a ReBAR capability (AMD, NVIDIA, Intel iGPU) | `none` — no-op |
 | GPU behind an external switch, riser, or Thunderbolt | `skip unexpected-topology` |
 | Other devices share the GPU's root port | `skip shared-root-port` |
-| No MMIO window above 4 GB (Above 4G Decoding off, or `pci=nocrs` on the kernel command line) | `skip no-mmio-window-above-4g`; after v1.0.5 the hint names `pci=nocrs` when that is the cause |
+| No MMIO window above 4 GB (Above 4G Decoding off, or `pci=nocrs` on the kernel command line) | `skip no-mmio-window-above-4g`; from 1.0.8 the hint names `pci=nocrs` when that is the cause |
 | Window above 4 GB too small for even 512 MB | `skip mmio-window-too-small` |
 | Window fits a smaller BAR than the card's maximum | **acts with the smaller size**, logs the step-down |
 | BAR2 unassigned after the rescan | **rolls back** to the original size; `rolled-back` |
 | `norebar` on the kernel command line | `skip norebar` |
-| Kernel lockdown active (often Secure Boot), seen in `/sys/kernel/security/lockdown` | `skip kernel-lockdown`, before any change (after v1.0.5) |
-| The ReBAR write did not take effect (register unchanged after the rescan), e.g. lockdown not yet visible at boot | `skip rebar-write-not-applied`; BAR stays at its original size (after v1.0.5) |
-| Register changed but BAR2 came back at the wrong size | **rolls back** to the original size; `rolled-back` (after v1.0.5) |
+| Kernel lockdown active (often Secure Boot), seen in `/sys/kernel/security/lockdown` | `skip kernel-lockdown`, before any change (from 1.0.8) |
+| The ReBAR write did not take effect (register unchanged after the rescan), e.g. lockdown not yet visible at boot | `skip rebar-write-not-applied`; BAR stays at its original size (from 1.0.8) |
+| Register changed but BAR2 came back at the wrong size | **rolls back** to the original size; `rolled-back` (from 1.0.8) |
 
 Maintainer hardware validation covers the B580 setup above. Community Alchemist
 reports and their limits are listed in [Community hardware reports](#community-hardware-reports).
@@ -710,6 +709,7 @@ diag/                             diagnostics: bin/ (five tools), src/ocl_test.c
 debian/  build-deb.sh             .deb build inputs and the script that builds it
 packaging/  build-arch.sh  build-rpm.sh   Arch and RPM package recipes and builders
 tools/                            release signing (make-manifest.sh) and checks (verify-manifest.sh)
+docs/signing-key.asc              the public key that signs every release (see SECURITY.md)
 docs/img/intel-arc-b580-press.jpg  Intel's press photo of the card (© Intel Corporation, credited; not under this licence)
 docs/img/arc-rebar-pin.svg        the mechanism diagram (original artwork)
 docs/ROOT-CAUSE.md                the full investigation, with the kernel log evidence
@@ -781,9 +781,9 @@ implementation only.
 - @meshuggah27 — the A750/Dell PowerEdge T430 Proxmox/VFIO report with iDRAC,
   slot-map and PCIe diagnostics in [#28](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/28).
 - @desiwko — Arc Pro B50 pair on a Dell PowerEdge R740 (Proxmox, SR-IOV):
-  diagnostics and dual-preview preflight in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+  diagnostics and early multi-GPU testing in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - @LukeImYourFasia — dual B580 on a Dell Precision 5820: diagnostics,
-  dual-preview preflight and suspend/resume testing in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
+  early multi-GPU and suspend/resume testing in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
 - @propstat-dev — the reproducible-build report and fix design (`SOURCE_DATE_EPOCH`)
   in [#47](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/47).
 - Ilpo Järvinen and Lucas De Marchi (Intel) — the kernel-side analysis and the

@@ -40,6 +40,3 @@ fi
 dpkg-deb --build --root-owner-group $B dist/ >/dev/null
 echo "built: dist/arc-rebar_${V}_all.deb"; dpkg-deb -I dist/arc-rebar_${V}_all.deb | grep -E '^ (Package|Version|Depends|Maintainer):'
 echo "reproducibility: SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-unset}; $(dpkg-deb --version | head -1)"
-echo; echo "to also refresh the tarball and checksums:"
-echo "  (cd .. && tar czf $(basename $S)/dist/arc-rebar-${V}.tar.gz --exclude=.git --exclude=dist --exclude=build $(basename $S))"
-echo "  (cd dist && sha256sum arc-rebar_${V}_all.deb arc-rebar-${V}.tar.gz > SHA256SUMS)"
