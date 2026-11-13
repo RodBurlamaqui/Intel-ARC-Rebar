@@ -67,7 +67,7 @@ case "$planline" in
   act*)  ;;
   none*) if [ -n "$REINST" ]; then echo; echo "BAR already at target (fix active or firmware ReBAR); reinstalling anyway."
          else echo; echo "Nothing to install: $planline"; exit 0; fi;;
-  *)     echo; echo "REFUSING to install: $planline"; echo "This machine fails a safety check. See README: 'Where it does not apply'."; exit 2;;
+  *)     echo; echo "REFUSING to install: $planline"; echo "This machine fails a safety check. See README section 5, 'Where it applies, and where it refuses'."; exit 2;;
 esac
 
 echo; echo "== PLAN =="; echo "  $planline"

@@ -4,12 +4,13 @@ The original 2026-09-05 investigation was developed and verified on a Supermicro
 (C602, 2x Xeon E5-2670 v2, AMI BIOS 3.2) with an Intel Arc B580 12 GB,
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
-## 1.0.8 — 2026-11-12
+## 1.0.8 — 2026-11-13
 **Recommended upgrade for everyone.** It includes many bug fixes and safety improvements:
 a fix for a kernel issue on some systems with Secure Boot, safer installs that automatically
 restore everything if anything fails, and built-in authenticity checks that confirm every file
 is the genuine, signed release before anything is installed, so you are protected against
-malware and tampered or counterfeit copies. After installing the new package, run `sudo arc-rebar install --reinstall`.
+malware and tampered or counterfeit copies. After installing the new package, run
+`sudo arc-rebar install --reinstall`.
 
 - One release, one package per Linux family: `.deb` (Debian, Ubuntu, Mint,
   Proxmox), Arch `.pkg.tar.zst` (Arch, CachyOS, Manjaro) and `.rpm`
@@ -19,11 +20,10 @@ malware and tampered or counterfeit copies. After installing the new package, ru
   script before udev loads the graphics driver, with an installer that backs up the
   configuration, boot entries and every boot image, refuses boot layouts it cannot
   restore, and rolls back fully on any failure (including a dropped SSH session).
-- Arch/CachyOS is a normal install from its package; `--experimental-arch` is no
-  longer needed (still accepted). @hrimfaxi's original port is preserved.
-- Fix the kernel issue above: the boot script now refuses when the kernel blocks the
-  change, and reports `done` only after confirming the new size; otherwise it reports
-  why or rolls back.
+- Arch/CachyOS is a normal install from its package, with no extra option needed.
+  @hrimfaxi's original port is preserved.
+- Fix the kernel issue above: the boot script reports `done` only after confirming the
+  new size; otherwise it reports why or rolls back.
 - The GRUB step now succeeds only when the generated boot menu really contains
   `pci=realloc`; otherwise the install is rolled back with a clear message.
 - `arc-rebar prepare` works on every family (grubby or GRUB), not only Debian/Ubuntu.
@@ -31,8 +31,8 @@ malware and tampered or counterfeit copies. After installing the new package, ru
 - When `pci=nocrs` is on the kernel command line, the refusal now says to remove it.
 - Genuine-copy protection: every install first checks its files against a file list
   signed with the maintainer key (fingerprint built in; `gpgv` required) and refuses a
-  modified copy. New
-  `arc-rebar integrity` (installed files unmodified?) and `arc-rebar version`.
+  modified copy. New `arc-rebar integrity` (installed files unmodified?) and
+  `arc-rebar version`.
 - Signed, reproducible releases: every package is built by GitHub Actions with a
   build attestation and signed by the maintainer (`SHA256SUMS.asc`, `.sig` per package);
   the `.deb` and `.rpm` are byte-identical when rebuilt. SECURITY.md explains how to check
@@ -43,7 +43,8 @@ malware and tampered or counterfeit copies. After installing the new package, ru
   (§3.5); no rebranding (§3.6); separate terms for separate editions (§8.7); each
   earlier version keeps its own terms (§8.6).
 - Reproducible Debian package build (reported by @propstat-dev, #47).
-- Older releases are no longer offered for download; please use 1.0.8.
+- Releases now contain only the packages and their signatures. Earlier releases are no
+  longer offered for download; please use 1.0.8. (The entries below are kept as history.)
 
 ## 1.0.5 — 2026-11-05
 - Make PCIe verification explicitly read-only: unresolved correctable/Unsupported

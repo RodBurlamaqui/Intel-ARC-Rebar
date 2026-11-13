@@ -23,8 +23,10 @@ sudo apt update
 sudo apt install pciutils initramfs-tools
 uname -r
 ```
-Review the package manager's proposed changes first. Installing `initramfs-tools`
-can replace a dracut frontend and rebuild boot images; do not switch a working
+Review the package manager's proposed changes first. **Ubuntu releases that use dracut**
+(newer releases may by default): the `.deb` needs `initramfs-tools`, so apt will offer to
+replace dracut with it. Installing `initramfs-tools` replaces the dracut frontend and rebuilds
+boot images; do not switch a working
 production system's backend merely to bypass an installer refusal. The installer
 checks the selected updater and refuses incompatible or unidentifiable backends
 before hardware probing or boot-file changes. It does not convert backends.
@@ -52,7 +54,7 @@ gpg --import signing-key.asc                      # once
 gpg --verify SHA256SUMS.asc SHA256SUMS            # must say "Good signature"; fingerprint in SECURITY.md
 gh attestation verify arc-rebar_1.0.8_all.deb -R RodBurlamaqui/Intel-ARC-Rebar   # needs the GitHub CLI
 ```
-If either check fails, **don't install the file**; download it again from the Releases page.
+If any check fails, **don't install the file**; download it again from the Releases page.
 
 Then install it:
 ```
@@ -106,8 +108,7 @@ It prints PRE-CHECKS, then a PLAN line, then the licence and disclaimer. Type
 `ACCEPT` and press Enter. You should then see:
 ```
 == INSTALL ==
-backup: /boot/initrd.img-<kernel>.arc-rebar.bak
-GRUB: added pci=realloc (backup: /etc/default/grub.arc-rebar.bak)
+GRUB updated
 initramfs rebuilt
 
 == POST-CHECKS ==
@@ -175,9 +176,11 @@ After the reboot, confirm:
 ```
 grep -o pci=realloc /proc/cmdline
 ```
-You must see `pci=realloc`. If you see nothing, `prepare` could not edit GRUB;
-add `pci=realloc` to `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub` by hand,
-run `sudo update-grub`, reboot.
+You must see `pci=realloc`. If you see nothing, `prepare` could not edit your boot
+loader. Add `pci=realloc` by hand: Fedora/RHEL `sudo grubby --update-kernel=ALL --args=pci=realloc`;
+otherwise add it to `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub` and regenerate the menu
+(`sudo update-grub` on Debian/Ubuntu, `sudo grub-mkconfig -o /boot/grub/grub.cfg` on Arch,
+`sudo grub2-mkconfig -o /boot/grub2/grub.cfg` on openSUSE). Reboot.
 
 ### B4. Live test (over SSH, work saved)
 ```
@@ -251,6 +254,9 @@ sudo arc-rebar install
 sudo reboot
 sudo arc-rebar verify
 ```
+On openSUSE, zypper may report the package as unsigned: our signature is the separate `.sig`
+and `SHA256SUMS.asc` files you checked in step 1. After checking them, install with
+`sudo zypper install --allow-unsigned-rpm ./arc-rebar-1.0.8-1.noarch.rpm`.
 `arc-rebar install` hands over to the dracut installer, which does the same integrity check,
 safety checks and licence/disclaimer acceptance, then:
 
@@ -283,8 +289,8 @@ report the output of `sudo arc-rebar diagnose`.
 
 **`verify` says `boot verdict: rolled-back`.**
 Your MMIO window is too small for the full BAR. Try a smaller one: add
-`rebar.size=13` (8 GB) or `rebar.size=12` (4 GB) to the kernel command line in
-`/etc/default/grub`, `sudo update-grub`, reboot, verify again.
+`rebar.size=13` (8 GB) or `rebar.size=12` (4 GB) to the kernel command line (the same
+way as `pci=realloc` above), reboot, verify again.
 
 **`verify` says `boot verdict: skip reason=...`.**
 A safety check refused at boot. The reason maps to the table in README.md.
@@ -366,10 +372,10 @@ rebuilt, explicitly with `update-initramfs -u -k`.
 
 Diagnostics and snapshots remain in `/var/lib/arc-rebar/install-transaction` on
 failure. A new installation refuses to overwrite that journal. After checking the
-error and resolving any storage problem, run from the same source checkout:
+error and resolving any storage problem, run:
 
 ```bash
-sudo ./install.sh --recover
+sudo arc-rebar install --recover     # package install; from a source checkout: sudo ./install.sh --recover
 ```
 
 Recovery needs no GPU probe and can be retried if restoration fails. Do not reboot
@@ -392,8 +398,8 @@ Validation before release: run the mocked suite (`python3 -m unittest discover -
 reinstallation, `norebar` recovery, and removal on disposable Debian/Ubuntu systems
 with the affected Intel Arc hardware, checking BAR allocation, driver binding and
 a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
-Mocked tests do not establish bootability or hardware correctness. This change is
-independent of the Arch/mkinitcpio and dracut installers.
+Mocked tests do not establish bootability or hardware correctness. This section covers the
+Debian/Ubuntu installer; the Arch and dracut installers have their own sections.
 
 See [VM installer validation](docs/INSTALLER-VM-TESTS.md) for the completed
 software checks, their limits, and the remaining release gates.

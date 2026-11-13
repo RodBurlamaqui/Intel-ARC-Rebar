@@ -24,8 +24,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install the packaging tools (Debian, Arch, RPM)
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq pacman-package-manager libarchive-tools fakeroot zstd rpm cpio >/dev/null
-      - name: Build all packages (reproducible) and the source archive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pacman-package-manager libarchive-tools fakeroot zstd rpm cpio >/dev/null
+          # Newer Ubuntu ships makepkg as its own package (only recommended by pacman-package-manager).
+          if apt-cache show makepkg >/dev/null 2>&1; then sudo apt-get install -y -qq makepkg >/dev/null; fi
+          command -v makepkg >/dev/null || { echo "makepkg not available"; exit 1; }
+      - name: Build all packages (reproducible)
         shell: bash
         run: |
           set -euo pipefail

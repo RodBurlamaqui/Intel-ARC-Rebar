@@ -150,13 +150,15 @@ case "$planline" in
   act*)  ;;
   none*) if [ -n "$REINST" ]; then echo; echo "BAR already at target (fix active or firmware ReBAR); reinstalling anyway."
          else echo; echo "Nothing to install: $planline"; exit 0; fi;;
-  *)     echo; echo "REFUSING to install: $planline"; echo "This machine fails a safety check. See README: 'Where it does not apply'."; exit 2;;
+  *)     echo; echo "REFUSING to install: $planline"; echo "This machine fails a safety check. See README section 5, 'Where it applies, and where it refuses'."; exit 2;;
 esac
 
 echo; echo "== PLAN =="; echo "  $planline"
 echo "Will:   install hook + script into /etc/initramfs-tools, ensure pci=realloc in GRUB,"
 echo "        back up $INITRD, rebuild the initramfs."
-echo "Undo:   ./uninstall.sh   |   at the GRUB menu: append 'norebar' to the linux line"
+if [ "$S" = /usr/share/arc-rebar ]; then UNDO="sudo arc-rebar uninstall"; VERIFY="sudo arc-rebar verify"
+else UNDO="sudo $S/uninstall.sh"; VERIFY="sudo $S/verify.sh"; fi
+echo "Undo:   $UNDO   |   at the GRUB menu: append 'norebar' to the linux line"
 echo; echo "== DISCLAIMER =="
 echo "  Provided AS IS, no warranty. The authors accept no liability for data loss,"
 echo "  hardware damage, downtime or any other loss. It writes a PCI register and"
@@ -250,5 +252,5 @@ rm -f "$TX/active"
 sync
 rm -rf -- "$TX"
 trap - EXIT INT TERM HUP
-echo; echo "Installed. Next:   sudo reboot   then   sudo $S/verify.sh"
+echo; echo "Installed. Next:   sudo reboot   then   $VERIFY"
 echo "Escape hatch if anything goes wrong at boot: GRUB menu -> e -> append 'norebar' -> boot."

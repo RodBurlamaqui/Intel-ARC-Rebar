@@ -1,8 +1,8 @@
 # Debian/Ubuntu installer VM validation
 
-This document records installer plumbing tests for draft PR #8. It does not
-establish Intel Arc functionality, PCIe safety, or release readiness. Arch and
-PCIe-verifier changes remain separate.
+**Historical record** (v1.0.4 development, PR #8). It records the installer plumbing
+tests run then. It does not establish Intel Arc functionality or PCIe safety; the
+"open gates" below are as they stood at that time.
 
 ## Completed baseline run
 
@@ -100,7 +100,7 @@ run this procedure on a production boot configuration.
    it on the tested system. Recheck saved checksums and confirm no recovery
    transaction remains. Restore the VM snapshot after testing if desired.
 
-## Release gates still open
+## Release gates open at the time
 
 - Repeat supported-backend integration on disposable Debian and Ubuntu 24.04 VMs.
 - Have an affected Intel Arc hardware tester validate cold/warm boots, BAR size,

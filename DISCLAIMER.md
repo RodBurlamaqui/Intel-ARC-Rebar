@@ -26,9 +26,9 @@ of running it. No support is promised.
   flash, voltages or clocks. It resets on power cycle.
 - Removes and rescans one PCIe root port through the kernel's sysfs interface.
   This is software re-enumeration, the same thing hot-plug does.
-- Installs two small files into the initramfs (Debian/Ubuntu) and adds
-  `pci=realloc` to the kernel command line. Backups are taken; `uninstall.sh`
-  removes everything.
+- Installs its boot hook into the boot image (initramfs-tools, mkinitcpio or
+  dracut) and adds `pci=realloc` to the kernel command line. Backups are taken;
+  `arc-rebar uninstall` removes the hook (`pci=realloc` stays; it is harmless).
 
 It is **designed to fail safe** — to have no effect rather than a harmful one.
 Every safety check refuses rather than guesses; every step at boot is

@@ -19,7 +19,7 @@ git archive --format=tar --prefix="arc-rebar-$V/" HEAD | gzip -n > "$B/SOURCES/a
 # Ship the signed release file list when present (created by tools/make-manifest.sh).
 sed "s/@VERSION@/$V/" packaging/rpm/arc-rebar.spec.in > "$B/SPECS/arc-rebar.spec"
 rpmbuild -bb --quiet --nodeps \
-  --define "_topdir $B" --define "_buildhost reproducible" \
+  --define "_topdir $B" --define "_buildhost reproducible" --define "_rpmformat 4" \
   --define "use_source_date_epoch_as_buildtime 1" --define "build_mtime_policy clamp_to_source_date_epoch" --define "clamp_mtime_to_source_date_epoch 1" \
   --define "packager Rod Burlamaqui <burlam1nx@outlook.com>" --define "vendor Rod Burlamaqui" \
   "$B/SPECS/arc-rebar.spec" >/dev/null

@@ -70,6 +70,14 @@ jobs:
           h2=$(sha256sum "dist/arc-rebar_${V}_all.deb" | cut -d' ' -f1)
           echo "build 1: $h1"; echo "build 2: $h2"
           [ "$h1" = "$h2" ] || { echo "package is not reproducible"; exit 1; }
+      - name: Build the Arch and RPM packages (do not install)
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pacman-package-manager libarchive-tools fakeroot zstd rpm >/dev/null
+          if apt-cache show makepkg >/dev/null 2>&1; then sudo apt-get install -y -qq makepkg >/dev/null; fi
+          bash build-arch.sh
+          bash build-rpm.sh
       - name: Verify the signed release manifest (when present)
         shell: bash
         run: |

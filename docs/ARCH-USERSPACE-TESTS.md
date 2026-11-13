@@ -88,8 +88,8 @@ are tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15)
 and real Arch GRUB generation are outside this run. Do not cite these tests as
 proof of electrical safety or GPU correctness.
 
-## Opt-in flag (historical)
+## Opt-in option (historical)
 
-Before 1.0.8 the install dispatcher and the direct Arch installer required
-`--experimental-arch`. From 1.0.8 Arch is a normal install; the flag is still accepted
-and ignored, so older instructions keep working.
+Before 1.0.8 the Arch installer required an extra opt-in option. From 1.0.8 Arch is a
+normal install; the old option is still accepted and ignored, so older instructions keep
+working.

@@ -19,7 +19,7 @@ Copyright (c) 2026 Rod Burlamaqui. Free for personal use; **commercial and enter
 > **Beware of imitations, replicas and malware.** The only official source of arc-rebar is
 > **https://github.com/RodBurlamaqui/Intel-ARC-Rebar**. Official downloads are the packages
 > (`.deb`, `.pkg.tar.zst`, `.rpm`) on this repository's [Releases](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases)
-> page, each with a published SHA256 checksum and our signature. Always check it: `sha256sum -c SHA256SUMS`.
+> page, each with a published SHA256 checksum and our signature. Always check it: `sha256sum -c --ignore-missing SHA256SUMS`.
 >
 > **We never distribute `.zip`, `.rar`, `.exe`, "setup" or "installer" files, and never through
 > other GitHub accounts, websites, file-sharing services or download buttons.** (The only `.zip`
@@ -125,6 +125,11 @@ licensing terms or guarantee support for a particular hardware configuration.*
 | **Fedora, RHEL, Rocky, AlmaLinux** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm` |
 | **openSUSE** | `arc-rebar-1.0.8-1.noarch.rpm` | `sudo zypper install ./arc-rebar-1.0.8-1.noarch.rpm` |
 
+Ubuntu releases that use dracut (newer releases may by default): the `.deb` needs `initramfs-tools`,
+so apt will offer to replace dracut; review that change before accepting. On openSUSE, zypper may
+call the package unsigned, because our signature is the separate `.sig` file: after checking it,
+use `sudo zypper install --allow-unsigned-rpm`.
+
 1. **Check your download** before installing it. Every release has `SHA256SUMS`, our signature
    (`SHA256SUMS.asc`, plus a `.sig` for each package) and a GitHub build attestation; see
    [SECURITY.md](SECURITY.md#check-that-your-copy-is-genuine).
@@ -153,7 +158,7 @@ contributing ports. Here is the evidence reported so far:
 |---|---|---|
 | **B580** | Original project hardware tests, reboots and Vulkan/OpenCL workloads on Supermicro X9DRH-7TF, Debian, `xe` | [Recorded tests](docs/TESTS.md); benchmarks below belong to this setup |
 | **A750** | @TheKusja1 confirms a direct v1.0.3 → v1.0.5 package upgrade, 8 GiB BAR2 after reboot, `i915`, read-only WARN and successful Jellyfin AV1 hardware transcoding on Supermicro H11SSL-i / Proxmox | [Report #2](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2) and [v1.0.5 hardware follow-up](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/2#issuecomment-6707332319); no AER reports or GPU hangs/resets observed in that run; the latch's physical age/cause remain unknown |
-| **A310 4 GB — Proxmox / VFIO** | @optiz0r reports the first card resized from 256 MiB to 4 GiB on Fujitsu RX2540 M2 with v1.0.5, its full BAR usable in the guest VM; with an early dual-GPU test build, both cards at 4 GiB on `vfio-pci` and a LocalAI model spanning both | [v1.0.5 report](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363), [diagnostics](https://gist.github.com/optiz0r/7cd12c10d971fc3fcc8549abe4eb9731) and [two-card result](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908); one setup; verify returned WARN for latched DevSta `0x0008` on both cards (age and cause unknown) |
+| **A310 4 GB — Proxmox / VFIO** | @optiz0r reports the first card resized from 256 MiB to 4 GiB on Fujitsu RX2540 M2 with v1.0.5, its full BAR usable in the guest VM; in early dual-GPU testing, both cards at 4 GiB on `vfio-pci` and a LocalAI model spanning both | [v1.0.5 report](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363), [diagnostics](https://gist.github.com/optiz0r/7cd12c10d971fc3fcc8549abe4eb9731) and [two-card result](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908); one setup; verify returned WARN for latched DevSta `0x0008` on both cards (age and cause unknown) |
 | **A770 / A750** | Reporter describes appropriate BAR sizes with a locally modified loop on Asus Z9PA-D8, Debian SID / `xe` | [Report #3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6649456377); unmodified diagnostics pending; upstream script still handles only the first qualifying GPU |
 | **A380 — Debian / Lenovo** | Community reports an 8 GiB BAR, boot persistence and normal `i915` use on Lenovo ThinkCentre M900 / OpenMediaVault | [Report #10](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/10); legacy verifier failed on DevSta `0x0008`; v1.0.5 has a matching software test returning unresolved WARN; physical cause and hardware acceptance remain pending |
 | **B580 — Proxmox / VFIO** | Community reports a 16 GiB BAR passed to Ubuntu from Dell PowerEdge R720, with working compute workloads | [Report #11](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/11); missing boot verdict and intermittent guest copy-engine faults remain unexplained |
@@ -300,15 +305,16 @@ and by `vulkaninfo`.
 
 ### What it changes on your system
 
-Installing it touches only these things, all reversible. Every installer backs them up first
-and restores them automatically if anything fails.
+Installing it touches only these things, all reversible. Every installer backs up what it
+changes and restores it automatically if anything fails (on Arch, boot images are rebuilt from
+the restored configuration rather than copied back).
 
 | What | Debian, Ubuntu, Mint, Proxmox | Arch, CachyOS, Manjaro | Fedora, RHEL, openSUSE |
 |---|---|---|---|
-| The boot hook and boot script | `/etc/initramfs-tools/hooks/arc-rebar`, `/etc/initramfs-tools/scripts/init-premount/arc-rebar` | `/etc/initcpio/hooks/arc-rebar`, `/etc/initcpio/install/arc-rebar`, `arc-rebar` added to `HOOKS` in `/etc/mkinitcpio.conf` | `/usr/lib/dracut/modules.d/90arc-rebar/`, `/etc/dracut.conf.d/90-arc-rebar.conf` |
+| The boot hook and boot script | `/etc/initramfs-tools/hooks/arc-rebar`, `/etc/initramfs-tools/scripts/init-premount/arc-rebar` | `/etc/initcpio/hooks/arc-rebar`, `/etc/initcpio/install/arc-rebar`, `/usr/lib/arc-rebar/arc-rebar-boot`, `arc-rebar` added to `HOOKS` in `/etc/mkinitcpio.conf` | `/usr/lib/dracut/modules.d/90arc-rebar/`, `/etc/dracut.conf.d/90-arc-rebar.conf` |
 | Rebuilt boot images | `/boot/initrd.img-<kernel>` | `/boot/initramfs-*.img` | `/boot/initramfs-<kernel>.img` or `/boot/initrd-<kernel>` |
-| `pci=realloc` on the kernel command line | `/etc/default/grub` | `/etc/default/grub` | `grubby` (or `/etc/default/grub`) |
-| Backups | `/boot/initrd.img-<kernel>.arc-rebar.bak`, `/etc/default/grub.arc-rebar.bak` | `/var/lib/arc-rebar/backups/` | `/var/lib/arc-rebar/backups/` |
+| `pci=realloc` on the kernel command line | `/etc/default/grub` | `/etc/default/grub` | `grubby` (and `/etc/kernel/cmdline` if present), or `/etc/default/grub` |
+| Backups | `/boot/initrd.img-<kernel>.arc-rebar.bak` (running kernel), `/etc/default/grub.arc-rebar.bak` | `/var/lib/arc-rebar/backups/` | `/var/lib/arc-rebar/backups/` |
 
 It also records who installed the hook in `/var/lib/arc-rebar/hook-origin`. Nothing else: no
 firmware, no BIOS settings, no driver files, no kernel modules.
@@ -369,7 +375,9 @@ Full evidence in [docs/ROOT-CAUSE.md](docs/ROOT-CAUSE.md).
   Proxmox), **mkinitcpio** (Arch, CachyOS, Manjaro) or **dracut**
   (Fedora, RHEL, Rocky, AlmaLinux, openSUSE; boot images at `/boot/initramfs-<kernel>.img`
   or `/boot/initrd-<kernel>`; unified kernel images are not supported). `arc-rebar install`
-  picks the right one. Kernel 6.12 or newer recommended (the `xe` driver's ReBAR support).
+  picks the right one. On Arch, mkinitcpio must use the `udev` hook: setups using the `systemd`
+  hook are not supported yet (the installer refuses them safely, before changing anything).
+  Kernel 6.12 or newer recommended (the `xe` driver's ReBAR support).
   `pciutils` and `gpgv` (installed with the package). The installers add `pci=realloc` to the
   kernel command line through GRUB (or `grubby` on Fedora/RHEL); with another boot loader, add
   `pci=realloc` yourself first.
@@ -647,7 +655,7 @@ you change anything and proves the change afterwards. Full detail in
 | `sudo arc-rebar diag bar-pin-check` | BAR2 size vs card maximum, the root port window, **which bridge BAR0 pins it**, MMIO room, the kernel's signature line, a verdict |
 | `sudo arc-rebar diag pcie-link-truth` | which PCIe link is physical. The GPU function itself reports a *virtual* 2.5 GT/s x1 port — a trap; the real link is the card's upstream port |
 | `arc-rebar diag vulkan-heaps` | a separate 256 MiB device-local heap = small BAR; one merged heap = full aperture |
-| `arc-rebar diag ocl-alloc-ceiling` | the real single-allocation ceiling, by allocating for real (`clinfo` reports the wrong number), then total usable VRAM in chunks and measured bandwidth |
+| `sudo arc-rebar diag ocl-alloc-ceiling` | the real single-allocation ceiling, by allocating for real (`clinfo` reports the wrong number), then total usable VRAM in chunks and measured bandwidth |
 | `sudo arc-rebar diag gpu-health` | PCIe error bits, AER reports, hangs/resets, temperatures, clocks, throttle reasons |
 
 From a source checkout: `diag/bin/<tool>.sh`; build the allocator with `make -C diag`.
@@ -685,7 +693,8 @@ ever disabled.
 sudo arc-rebar uninstall        # any system: removes the boot hook and rebuilds the boot images
 ```
 Then remove the package if you like: `sudo apt purge arc-rebar` (Debian/Ubuntu; purge also
-removes a hook the `.deb` installed), `sudo pacman -R arc-rebar` (Arch), or
+removes a hook the `.deb` installed), `sudo pacman -R arc-rebar` (Arch; run `arc-rebar uninstall`
+first, because removing the package alone leaves the hook active), or
 `sudo dnf remove arc-rebar` / `sudo zypper remove arc-rebar` (Fedora/RHEL/openSUSE; removing
 the RPM also removes its boot hook). `apt remove` without purge deliberately leaves an
 enabled boot hook in place.
@@ -700,15 +709,16 @@ from `/etc/default/grub` and regenerate the GRUB menu.
 ```
 scripts/init-premount/arc-rebar   the boot-time fix (POSIX sh, self-checking)
 hooks/arc-rebar                   initramfs-tools hook: ships setpci into the initramfs
-mkinitcpio/                       Arch/CachyOS hook (install-arch.sh, uninstall-arch.sh)
-dracut/90arc-rebar/               Fedora/RHEL/openSUSE dracut module (install-dracut.sh, uninstall-dracut.sh)
+mkinitcpio/                       Arch/CachyOS hook (install-arch.sh, uninstall-arch.sh, arch-transaction.sh)
+dracut/90arc-rebar/               Fedora/RHEL/openSUSE dracut module (install-dracut.sh, uninstall-dracut.sh, dracut-transaction.sh)
 diagnose.sh  prepare.sh  live-test.sh  install.sh  verify.sh  uninstall.sh
 selfcheck.sh                      integrity check: files must match the signed release list
 bin/arc-rebar                     the `arc-rebar` command (diagnose, install, verify, integrity, version, ...)
 diag/                             diagnostics: bin/ (five tools), src/ocl_test.c, Makefile, README, INSTALL
 debian/  build-deb.sh             .deb build inputs and the script that builds it
 packaging/  build-arch.sh  build-rpm.sh   Arch and RPM package recipes and builders
-tools/                            release signing (make-manifest.sh) and checks (verify-manifest.sh)
+tools/  sign-release.sh            release signing (make-manifest.sh, sign-release.sh) and checks (verify-manifest.sh)
+MANIFEST.sha256 (+ .asc)          the signed list of every shipped file, checked by every install
 docs/signing-key.asc              the public key that signs every release (see SECURITY.md)
 docs/img/intel-arc-b580-press.jpg  Intel's press photo of the card (© Intel Corporation, credited; not under this licence)
 docs/img/arc-rebar-pin.svg        the mechanism diagram (original artwork)
@@ -738,9 +748,9 @@ Software License Agreement in [LICENSE](LICENSE):
   firmware, kernel or package, requires a separate written commercial licence
   (LICENSE §3.1, §9). Enquiries welcome, including from GPU and platform vendors —
   email [burlam1nx@outlook.com](mailto:burlam1nx@outlook.com) (LICENSE §9.4).
-- **Previews follow the same terms.** Experimental, beta, alpha and other
-  pre-release versions do not exempt Commercial Use from the written licence
-  requirement; free Personal Use remains governed by LICENSE §2.1.
+- **Pre-release versions follow the same terms.** Beta and other test versions
+  do not exempt Commercial Use from the written licence requirement; free
+  Personal Use remains governed by LICENSE §2.1.
 - **Modification** — no derivative works, ports or modified distributions without
   prior written approval. Bug reports and proposed changes are welcome.
 - **Free utility** — free for personal use. It can't be modified, rebranded, sold or
@@ -770,7 +780,7 @@ implementation only.
 - @optiz0r — hardware-testing contributor: A310 first-card 4 GiB BAR and guest
   access confirmation, detailed Proxmox/VFIO diagnostics and separate-root
   topology in [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6722498363),
-  and the first two-A310 result with an early dual-GPU test build: both cards
+  and the first two-A310 result in early dual-GPU testing: both cards
   at 4 GiB and a model spanning both ([#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3#issuecomment-6738373908)).
 - @ThatGuy-Bob — A770/A750 results and the multi-GPU limitation report in
   [#3](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/3).
