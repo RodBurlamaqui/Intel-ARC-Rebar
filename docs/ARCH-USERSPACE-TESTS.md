@@ -80,28 +80,16 @@ production boot payload, Arch hooks and Arch installer/uninstaller are unchanged
 
 ## Remaining validation
 
-These results strengthen software integration coverage. The source port is
-available as an explicit opt-in experiment via `--experimental-arch`. Real
+These results strengthen software integration coverage. Since 1.0.8 the port is a normal
+install from the Arch package (no opt-in flag). Real
 Arch/CachyOS installation and cold/warm boot tests on affected Intel Arc hardware,
 including hook timing, BAR allocation, driver/workload, reinstall and removal,
 are tracked in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). Kernel modules, custom presets, UKIs, systemd initramfs, non-GRUB paths
 and real Arch GRUB generation are outside this run. Do not cite these tests as
 proof of electrical safety or GPU correctness.
 
-## Experimental opt-in follow-up
+## Opt-in option (historical)
 
-The install dispatcher and direct Arch installer now require
-`--experimental-arch` before hardware probing or managed-file changes. The flag
-is required for reinstall and is independent of disclaimer acceptance with
-`--yes`. It is rejected on the Debian/initramfs-tools path. An incomplete source
-tree is refused with an explanation; the Debian package does not ship the Arch
-installer. Uninstall remains available without this flag.
-
-Four additional regression methods cover both entrypoints without opt-in,
-`--yes`/reinstall bypass attempts, Debian rejection (including both backend
-configurations present), and an incomplete source checkout. Refusal checks assert
-unchanged files, no hardware probe, no image rebuild and no transaction backup.
-The complete current suite contains 73 methods: 30 Debian install/purge, 14
-verifier, 18 Arch/dispatch and 11 boot dry-run. The earlier 39-test integration
-record above is historical evidence for its stated revision, not a claim that
-these new CLI guards were part of that run.
+Before 1.0.8 the Arch installer required an extra opt-in option. From 1.0.8 Arch is a
+normal install; the old option is still accepted and ignored, so older instructions keep
+working.

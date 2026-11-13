@@ -2,6 +2,12 @@
 
 Copyright (c) 2026 Rod Burlamaqui. All rights reserved.
 
+arc-rebar is a free utility, made to help people get the most out of their graphics
+cards. It currently supports Intel Arc cards, and support for other vendors is being
+tested. It is free for personal use. It may not be modified, rebranded, sold or
+redistributed without the author's written permission. Some editions or features may
+be offered under separate terms; where they are, those terms apply.
+
 This Software License Agreement (the "Agreement") is a legal agreement between
 you, either an individual or a single entity (the "Licensee"), and Rod
 Burlamaqui (the "Licensor"), governing the use of the arc-rebar software,
@@ -32,9 +38,15 @@ Software.
     royalty-free licence to download, install and use the Software solely for
     Personal Use.
 
-2.2 The Licensee may redistribute complete and unmodified copies of the
-    Software free of charge, provided that this Agreement, the above copyright
-    notice and the file DISCLAIMER.md are included with every copy.
+2.2 Distribution. The Software is distributed only by the Licensor, from the
+    official repository at https://github.com/RodBurlamaqui/Intel-ARC-Rebar.
+    The Licensee shall not redistribute, re-upload, mirror, re-package or
+    otherwise make the Software available to any third party, in whole or in
+    part, whether modified or unmodified and whether or not for payment,
+    without the prior written approval of the Licensor. Linking to the
+    official repository is permitted. A fork created on GitHub under GitHub's
+    Terms of Service grants no right to use, modify or distribute the Software
+    beyond those Terms and this Agreement.
 
 3.  RESTRICTIONS
 
@@ -74,6 +86,16 @@ Software.
 
 3.4 Notices. The Licensee shall not remove, alter or obscure any copyright,
     licence or disclaimer notice contained in or accompanying the Software.
+
+3.5 Circumvention. The Licensee shall not remove, disable, bypass or tamper
+    with any licence check, signature, attestation, identifier or notice in
+    or accompanying the Software, and shall not distribute any copy from
+    which any of them has been removed or altered.
+
+3.6 Branding and attribution. The Licensee shall not distribute or present the
+    Software, or any part or modification of it, under another name, brand,
+    logo or author; remove or replace the Licensor's name; or represent the
+    Software as the Licensee's own work or as endorsed by the Licensor.
 
 4.  INTELLECTUAL PROPERTY
 
@@ -145,8 +167,17 @@ Software.
     resides, without regard to its conflict-of-law principles.
 
 8.5 Contact. Requests for approval of Modifications or permission for
-    resale shall be directed to the Licensor, Rod Burlamaqui, through the
+    distribution or resale shall be directed to the Licensor, Rod Burlamaqui, through the
     issue tracker at https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues.
+
+8.6 Versions. This Agreement applies to version 1.0.8 and all later versions
+    of the Software. Each earlier version remains governed by the agreement
+    distributed with it.
+
+8.7 Separate editions. The Licensor may offer certain editions, versions or
+    features of the Software under separate written terms, including beta,
+    paid or commercial editions. Where such terms exist, they govern that
+    edition and prevail over this Agreement to the extent of any conflict.
 
 9.  COMMERCIAL AND ENTERPRISE LICENSING
 

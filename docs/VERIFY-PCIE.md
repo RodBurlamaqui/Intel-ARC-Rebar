@@ -49,10 +49,8 @@ Verification only reads PCI configuration registers. It never clears status,
 modifies bridges or AER masks, or removes evidence. `--recheck-pcie` is not a
 stable option and returns usage exit 64 before hardware access.
 
-The earlier one-shot clearing/polling experiment and its tests remain on
-[`experimental/pcie-clear-recheck`](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/tree/experimental/pcie-clear-recheck),
-pinned at `c6f78cbb1639fdc5451c4850179dc43f0d93cfe6`. It is not included in the
-stable package. Its read/clear race and physical hardware validation remain
+The earlier one-shot clearing/polling experiment and its tests are kept separately and
+are not included in the release. Its read/clear race and physical hardware validation remain
 unresolved; the read-only fix does not approve that experiment.
 
 Primary references:

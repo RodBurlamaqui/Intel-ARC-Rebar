@@ -12,11 +12,14 @@ sudo apt install pciutils vulkan-tools mesa-opencl-icd ocl-icd-libopencl1 gcc ma
 ```
 You should see the packages install (or "already the newest version").
 
-## 1. Get and extract
+## 1. Go to the diagnostics folder
 
 ```
-cd arc-rebar/diag        # or /usr/share/arc-rebar/diag after apt install
+cd /usr/share/arc-rebar/diag     # installed from a package
+cd Intel-ARC-Rebar/diag          # or: a source checkout (git clone)
 ```
+From a package you can also run every tool as `sudo arc-rebar diag <tool>` (see
+[the README](README.md)); the steps below use the scripts directly.
 
 ## 2. Build (one small C program)
 

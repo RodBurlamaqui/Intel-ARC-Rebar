@@ -1,12 +1,11 @@
 # INSTALL — arc-rebar, step by step
 
-**Applies to:** Debian 12/13, Ubuntu 22.04 or newer, or any distro using
-an active `initramfs-tools` backend. Kernel 6.12 or newer recommended. You need
-`sudo`. A distribution version or the presence of `/etc/initramfs-tools` alone
-does not establish compatibility: some systems provide a dracut-backed
-`update-initramfs` command instead.
-Experimental, source-only Arch Linux / CachyOS (mkinitcpio) support is described under
-[Arch Linux / CachyOS](#arch-linux--cachyos-mkinitcpio) below.
+**Applies to:** Debian 12/13, Ubuntu 22.04 or newer and other `initramfs-tools` systems
+(Mint, Proxmox); Arch, CachyOS and Manjaro (`mkinitcpio`); Fedora,
+RHEL, Rocky, AlmaLinux and openSUSE (`dracut`). Kernel 6.12 or newer recommended. You need
+`sudo`. The steps below show Debian/Ubuntu; [Arch](#arch-linux--cachyos-mkinitcpio) and
+[Fedora/RHEL/openSUSE](#fedora--rhel--opensuse-dracut) have their own short sections, and
+every `arc-rebar` command works the same on all of them.
 
 **Do this over SSH if you can.** The optional live test turns the local display
 off for about 10 seconds; if the machine were to hang, you want a second way in.
@@ -24,8 +23,10 @@ sudo apt update
 sudo apt install pciutils initramfs-tools
 uname -r
 ```
-Review the package manager's proposed changes first. Installing `initramfs-tools`
-can replace a dracut frontend and rebuild boot images; do not switch a working
+Review the package manager's proposed changes first. **Ubuntu releases that use dracut**
+(newer releases may by default): the `.deb` needs `initramfs-tools`, so apt will offer to
+replace dracut with it. Installing `initramfs-tools` replaces the dracut frontend and rebuilds
+boot images; do not switch a working
 production system's backend merely to bypass an installer refusal. The installer
 checks the selected updater and refuses incompatible or unidentifiable backends
 before hardware probing or boot-file changes. It does not convert backends.
@@ -35,17 +36,29 @@ but the `xe` driver's ReBAR support is younger than that; proceed with Path B.
 
 ## 1. Get the tool (both paths)
 
-**From the .deb.** Download it and its checksum file:
+**From the package.** Download the package for your system and the checksum files from the
+[latest release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest):
 ```
-wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.5_all.deb
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/arc-rebar_1.0.8_all.deb
 wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS
+wget https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest/download/SHA256SUMS.asc
 ```
 ```
-sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.5_all.deb: OK
+sha256sum -c --ignore-missing SHA256SUMS         # must print: arc-rebar_1.0.8_all.deb: OK
 ```
+**Check that it really came from us.** A checksum only proves the file wasn't damaged; these
+prove it was built and signed by this project, not by an imitation:
+```
+wget https://raw.githubusercontent.com/RodBurlamaqui/Intel-ARC-Rebar/v1.0.8/docs/signing-key.asc
+gpg --import signing-key.asc                      # once
+gpg --verify SHA256SUMS.asc SHA256SUMS            # must say "Good signature"; fingerprint in SECURITY.md
+gh attestation verify arc-rebar_1.0.8_all.deb -R RodBurlamaqui/Intel-ARC-Rebar   # needs the GitHub CLI
+```
+If any check fails, **don't install the file**; download it again from the Releases page.
+
 Then install it:
 ```
-sudo apt install ./arc-rebar_1.0.5_all.deb
+sudo apt install ./arc-rebar_1.0.8_all.deb
 ```
 You should see, at the end:
 ```
@@ -54,18 +67,15 @@ arc-rebar installed. Nothing is enabled yet.
   2. sudo arc-rebar live-test   # optional: prove it without rebooting
   3. sudo arc-rebar install     # enable at boot (checks + licence/disclaimer acceptance)
 ```
-Installing the package changes nothing on your system yet.
+Installing the package changes nothing on your system yet. Every `arc-rebar install` first
+checks that its files are the official, unmodified release; a modified copy is refused.
+`sudo arc-rebar integrity` checks an installed copy at any time.
 
-Earlier [v1.0.4](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.4)
-and [v1.0.3 release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/tag/v1.0.3)
-remain available unchanged for comparison or rollback. Version 1.0.3 lacks the
-installer/purge recovery fixes delivered in v1.0.4; both older versions use the
-previous verifier classification. Keep backups before changing versions.
-
-**From the tarball instead:**
+**From source instead** (the signed release tag; every install checks the files against your
+copy's signed file list):
 ```
-tar xzf arc-rebar-1.0.5.tar.gz
-cd arc-rebar
+git clone --branch v1.0.8 https://github.com/RodBurlamaqui/Intel-ARC-Rebar.git
+cd Intel-ARC-Rebar
 ```
 Then everywhere below, replace `sudo arc-rebar <command>` with `sudo ./<command>.sh`.
 
@@ -98,8 +108,7 @@ It prints PRE-CHECKS, then a PLAN line, then the licence and disclaimer. Type
 `ACCEPT` and press Enter. You should then see:
 ```
 == INSTALL ==
-backup: /boot/initrd.img-<kernel>.arc-rebar.bak
-GRUB: added pci=realloc (backup: /etc/default/grub.arc-rebar.bak)
+GRUB updated
 initramfs rebuilt
 
 == POST-CHECKS ==
@@ -167,9 +176,11 @@ After the reboot, confirm:
 ```
 grep -o pci=realloc /proc/cmdline
 ```
-You must see `pci=realloc`. If you see nothing, `prepare` could not edit GRUB;
-add `pci=realloc` to `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub` by hand,
-run `sudo update-grub`, reboot.
+You must see `pci=realloc`. If you see nothing, `prepare` could not edit your boot
+loader. Add `pci=realloc` by hand: Fedora/RHEL `sudo grubby --update-kernel=ALL --args=pci=realloc`;
+otherwise add it to `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub` and regenerate the menu
+(`sudo update-grub` on Debian/Ubuntu, `sudo grub-mkconfig -o /boot/grub/grub.cfg` on Arch,
+`sudo grub2-mkconfig -o /boot/grub2/grub.cfg` on openSUSE). Reboot.
 
 ### B4. Live test (over SSH, work saved)
 ```
@@ -195,29 +206,21 @@ Now do **A3**, **A4**, **A5** above.
 
 ## Arch Linux / CachyOS (mkinitcpio)
 
-The boot script is the same file; the initramfs plumbing is experimental.
-Use a complete source checkout. `install.sh` detects `mkinitcpio` and requires
-`--experimental-arch` before handing over to `install-arch.sh`. The direct
-`install-arch.sh` entrypoint requires the same flag. Without it, both refuse
-before hardware probing or boot-file changes; `--yes` and `--reinstall` do not
-bypass the opt-in. Debian/Ubuntu installation rejects this Arch-only flag.
-
-Real Arch boot/GPU validation remains open in
-[#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15). Software checks
-cannot establish boot ordering or workload health. Keep a restorable system
-backup, a known-good boot image and rescue access before trying the experiment.
-The flow is diagnose → explicitly opt in → install → reboot → verify:
+The same arc-rebar, packaged for Arch, CachyOS and Manjaro. Check the download
+as in [step 1](#1-get-the-tool-both-paths), then:
 
 ```
-sudo pacman -S --needed pciutils mkinitcpio
-sudo ./diagnose.sh
-sudo ./install.sh --experimental-arch   # explicitly opt in to the Arch port
+sudo pacman -U ./arc-rebar-1.0.8-1-any.pkg.tar.zst
+sudo arc-rebar diagnose
+sudo arc-rebar install
 sudo reboot
-sudo ./verify.sh
+sudo arc-rebar verify
 ```
+If pacman asks about the signing key (when the `.sig` file sits next to the package), add it
+once: `sudo pacman-key --add signing-key.asc && sudo pacman-key --lsign-key C3CFCBF8EE592C27BCBE1E498D8ED73D0C2DE44B`.
 
-`install-arch.sh --experimental-arch` does the same safety checks and the same licence/disclaimer
-acceptance, then:
+`arc-rebar install` hands over to the mkinitcpio installer, which does the same integrity
+check, safety checks and licence/disclaimer acceptance, then:
 
 - installs the boot script to `/usr/lib/arc-rebar/arc-rebar-boot`
 - installs `/etc/initcpio/install/arc-rebar` (build hook) and
@@ -226,25 +229,53 @@ acceptance, then:
   `kms`**, and leaves the rest of the array alone
 - adds `pci=realloc` to `/etc/default/grub` and runs `grub-mkconfig` if it is not
   there yet (any other bootloader: add it by hand)
-- backs up managed configuration/hooks, runs `mkinitcpio -P`, and post-checks the image for the boot script, the hook,
-  `setpci` and `tr`
+- backs up managed configuration/hooks, runs `mkinitcpio -P`, and post-checks the image for
+  the boot script, the hook, `setpci` and `tr`
 
-Two things that are mkinitcpio-specific:
+Two mkinitcpio details: `arc-rebar` stays after `udev` and before `kms`; and mkinitcpio's
+busybox has no `tr`, so the build hook also copies coreutils' `tr` into the image.
 
-- **`arc-rebar` must stay after `udev` and before `kms`.** This is the supported
-  configuration; physical testing must still establish actual timing relative
-  to driver initialization, including any early graphics loading.
-- **mkinitcpio's bundled busybox has no `tr` applet**, which the boot script uses
-  to split the device path. The build hook therefore also copies coreutils' `tr`
-  into the image. Without it the script would log
-  `skip reason=unexpected-topology` and silently do nothing.
+Uninstall with `sudo arc-rebar uninstall` (removes both hooks, drops `arc-rebar` from
+`HOOKS`, rebuilds the initramfs), then `sudo pacman -R arc-rebar`.
+Reinstall with `sudo arc-rebar install --reinstall`.
+See [installer safeguards](#arch-installer-safeguards) for rollback behaviour.
 
-GRUB on Arch has no `update-grub`; regenerate with
-`sudo grub-mkconfig -o /boot/grub/grub.cfg`. Uninstall with
-`sudo ./uninstall-arch.sh` (removes both hooks, drops `arc-rebar` from `HOOKS`,
-rebuilds the initramfs). Removal does not require the experimental flag.
-Reinstall with `sudo ./install.sh --experimental-arch --reinstall`.
-See [installer safeguards](#arch-installer-safeguards-pending-hardware-validation) for rollback behavior and validation limits.
+---
+
+## Fedora / RHEL / openSUSE (dracut)
+
+The same arc-rebar, packaged for Fedora, RHEL, Rocky, AlmaLinux and openSUSE. Check the
+download as in [step 1](#1-get-the-tool-both-paths), then:
+
+```
+sudo dnf install ./arc-rebar-1.0.8-1.noarch.rpm      # openSUSE: sudo zypper install ./arc-rebar-1.0.8-1.noarch.rpm
+sudo arc-rebar diagnose
+sudo arc-rebar install
+sudo reboot
+sudo arc-rebar verify
+```
+On openSUSE, zypper may report the package as unsigned: our signature is the separate `.sig`
+and `SHA256SUMS.asc` files you checked in step 1. After checking them, install with
+`sudo zypper install --allow-unsigned-rpm ./arc-rebar-1.0.8-1.noarch.rpm`.
+`arc-rebar install` hands over to the dracut installer, which does the same integrity check,
+safety checks and licence/disclaimer acceptance, then:
+
+- checks the boot images are at `/boot/initramfs-<kernel>.img` (Fedora/RHEL) or
+  `/boot/initrd-<kernel>` (openSUSE); other layouts, including unified kernel images, are
+  refused before anything changes
+- backs up the dracut configuration, boot entries, GRUB configuration and **every boot image**
+- installs the dracut module to `/usr/lib/dracut/modules.d/90arc-rebar` and enables it in
+  `/etc/dracut.conf.d/90-arc-rebar.conf`; it runs before udev loads the graphics driver
+- adds `pci=realloc` with `grubby` (Fedora/RHEL) or `/etc/default/grub` + `grub2-mkconfig`
+  (openSUSE), then rebuilds all boot images with `dracut --regenerate-all`
+- post-checks the running kernel's image for the boot script, the hook and `setpci`
+
+If anything fails, including a dropped SSH session, it restores the settings, rebuilds the
+images without arc-rebar and puts the exact previous images back.
+
+Uninstall with `sudo arc-rebar uninstall`, then `sudo dnf remove arc-rebar` (or `zypper remove`).
+Removing the RPM also removes an enabled boot hook. To drop `pci=realloc`:
+`sudo grubby --update-kernel=ALL --remove-args=pci=realloc`.
 
 ---
 
@@ -258,8 +289,8 @@ report the output of `sudo arc-rebar diagnose`.
 
 **`verify` says `boot verdict: rolled-back`.**
 Your MMIO window is too small for the full BAR. Try a smaller one: add
-`rebar.size=13` (8 GB) or `rebar.size=12` (4 GB) to the kernel command line in
-`/etc/default/grub`, `sudo update-grub`, reboot, verify again.
+`rebar.size=13` (8 GB) or `rebar.size=12` (4 GB) to the kernel command line (the same
+way as `pci=realloc` above), reboot, verify again.
 
 **`verify` says `boot verdict: skip reason=...`.**
 A safety check refused at boot. The reason maps to the table in README.md.
@@ -284,15 +315,18 @@ Use `sudo arc-rebar install --reinstall` to refresh the boot script.
 
 ## Uninstall
 
+**Any system:** `sudo arc-rebar uninstall` removes the boot hook and rebuilds the boot images.
+Then, if you like, remove the package: `sudo pacman -R arc-rebar` (Arch) or
+`sudo dnf remove arc-rebar` / `sudo zypper remove arc-rebar` (Fedora/RHEL/openSUSE).
+
 **.deb:**
 ```
 sudo apt purge arc-rebar      # removes the tool AND the boot hook (only if the .deb installed it), rebuilds the initramfs
 ```
 (`apt remove` removes only the tool and deliberately leaves the boot hook active.)
 
-Packages built from the current source snapshot package-owned hooks, their origin
-marker, GRUB files and existing conventional initramfs images before purging the
-hook. Purge rebuilds all kernel images and checks that the runtime script is gone.
+Before removing the hook, purge saves copies of the package-installed hooks, their
+origin marker, the GRUB files and the existing initramfs images. Purge rebuilds all kernel images and checks that the runtime script is gone.
 A missing tool, failed rebuild, failed archive inspection or stale image returns
 failure and attempts to restore the saved boot files. Source-owned/unknown hooks
 are preserved. Partial package-owned hook installations are also cleaned up.
@@ -312,24 +346,20 @@ third-party hook side effects outside the snapshot are not covered. A shared loc
 file and original escape-hatch backups remain. See the
 [package lifecycle test record](docs/DEBIAN-PACKAGE-TESTS.md).
 
-These package-purge safeguards are included in v1.0.4. The older v1.0.3
-release remains available unchanged and does not contain them.
+These package-purge safeguards are included since v1.0.4.
 
-**Tarball:**
+**From source** (any system; it picks the right uninstaller):
 ```
 sudo ./uninstall.sh
 ```
 
-**Arch / CachyOS:**
+All of them leave `pci=realloc` on the kernel command line; it is harmless. To remove it:
 ```
-sudo ./uninstall-arch.sh
+sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub && sudo update-grub   # Debian/Ubuntu
+sudo grubby --update-kernel=ALL --remove-args=pci=realloc                       # Fedora/RHEL
 ```
-
-All leave `pci=realloc` in GRUB; it is harmless. To remove it:
-```
-sudo cp /etc/default/grub.arc-rebar.bak /etc/default/grub
-sudo update-grub          # Arch: sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
+On Arch and openSUSE, delete `pci=realloc` from `/etc/default/grub`, then regenerate the menu
+(`sudo grub-mkconfig -o /boot/grub/grub.cfg`, or `sudo grub2-mkconfig -o /boot/grub2/grub.cfg`).
 
 ### Debian/Ubuntu installer failure recovery
 
@@ -342,10 +372,10 @@ rebuilt, explicitly with `update-initramfs -u -k`.
 
 Diagnostics and snapshots remain in `/var/lib/arc-rebar/install-transaction` on
 failure. A new installation refuses to overwrite that journal. After checking the
-error and resolving any storage problem, run from the same source checkout:
+error and resolving any storage problem, run:
 
 ```bash
-sudo ./install.sh --recover
+sudo arc-rebar install --recover     # package install; from a source checkout: sudo ./install.sh --recover
 ```
 
 Recovery needs no GPU probe and can be retried if restoration fails. Do not reboot
@@ -368,13 +398,13 @@ Validation before release: run the mocked suite (`python3 -m unittest discover -
 reinstallation, `norebar` recovery, and removal on disposable Debian/Ubuntu systems
 with the affected Intel Arc hardware, checking BAR allocation, driver binding and
 a real workload. Test real GRUB/initramfs-tools integration in a snapshot VM first.
-Mocked tests do not establish bootability or hardware correctness. This change is
-independent of the experimental Arch/mkinitcpio port.
+Mocked tests do not establish bootability or hardware correctness. This section covers the
+Debian/Ubuntu installer; the Arch and dracut installers have their own sections.
 
 See [VM installer validation](docs/INSTALLER-VM-TESTS.md) for the completed
 software checks, their limits, and the remaining release gates.
 
-### Arch installer safeguards (pending hardware validation)
+### Arch installer safeguards
 
 The source-tree Arch installer and uninstaller retain root-only backups of the
 managed configuration and hook files under `/var/lib/arc-rebar/backups/change.*`.
@@ -396,15 +426,8 @@ Reinstallation moves `arc-rebar` before `kms` if needed. Config drop-ins and
 systemd-based initramfs configurations are refused rather than silently editing
 an ineffective setting. Managed symlinks are also refused.
 
-The port is available as an explicit opt-in experiment. Before removing the
-experimental designation, record installation, warm/cold boot with BAR
-allocation and driver binding, workloads, reinstallation and removal on suitable
-Arch/CachyOS hardware in [#15](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/issues/15).
-Confirm the hook runs at the intended time;
-image membership alone does not prove runtime ordering. Preset-specific config
-or output paths, UKIs, early graphics modules and non-GRUB boot paths still
-need dedicated review/testing. The existing image post-check scans conventional
-paths; this experiment does not establish support for every mkinitcpio layout.
+Preset-specific config or output paths, UKIs and non-GRUB boot paths are not edited
+automatically; the image post-check scans the conventional paths.
 
 Hardware-free regression checks from the repository root:
 

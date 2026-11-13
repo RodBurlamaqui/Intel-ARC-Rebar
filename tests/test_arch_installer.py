@@ -13,7 +13,7 @@ MANAGED = ('etc/mkinitcpio.conf', 'etc/default/grub', 'boot/grub/grub.cfg',
 
 
 class ArchInstallerTests(unittest.TestCase):
-    def run_entrypoint(self, args, arch=True, debian=False, helper=True):
+    def run_entrypoint(self, args, arch=True, debian=False, helper=True, untouched=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / 'source'
@@ -27,6 +27,9 @@ class ArchInstallerTests(unittest.TestCase):
             for prefix in ('/etc/', '/boot/', '/var/lib/', '/proc/'):
                 text = text.replace(prefix, str(root) + prefix)
             (source / 'install.sh').write_text(text)
+            # A developer checkout: the integrity self-check allows it without a release manifest.
+            shutil.copyfile(REPO / 'selfcheck.sh', source / 'selfcheck.sh')
+            (source / '.git').mkdir()
             if helper:
                 handoff = source / 'install-arch.sh'
                 handoff.write_text('#!/bin/sh\nprintf "arch: %s\\n" "$*"\nexit 23\n')
@@ -36,46 +39,54 @@ class ArchInstallerTests(unittest.TestCase):
             for name, body in {
                 'id': 'echo 0',
                 'update-initramfs': f'touch "{root}/backend-probed"; exit 99',
+                # Hermetic and fast: the host's package database can take seconds to search.
+                'dpkg-query': 'exit 1',
             }.items():
                 command = mock / name
                 command.write_text('#!/bin/sh\n' + body + '\n')
                 command.chmod(0o755)
             result = subprocess.run(
                 ['bash', str(source / 'install.sh'), *args],
-                env=dict(os.environ, PATH=str(mock) + ':' + os.environ['PATH']),
+                env=dict(os.environ, ARC_REBAR_DEV='1', PATH=str(mock) + ':' + os.environ['PATH']),
                 capture_output=True, text=True, timeout=10)
-            self.assertFalse((root / 'backend-probed').exists())
-            self.assertFalse((root / 'var').exists())
+            if untouched:
+                self.assertFalse((root / 'backend-probed').exists())
+                self.assertFalse((root / 'var').exists())
             return result.returncode, result.stdout + result.stderr
 
     def test_entrypoint_hands_off_before_debian_backend_checks(self):
         rc, out = self.run_entrypoint(['--experimental-arch', '--yes', '--reinstall'])
         self.assertEqual(rc, 23, out)
-        self.assertEqual(out, 'arch: --experimental-arch --yes --reinstall\n')
+        # The integrity self-check runs first, then the hand-off is the only other output.
+        self.assertIn('== INTEGRITY: is this the official, unmodified arc-rebar? ==', out)
+        self.assertTrue(out.endswith('arch: --experimental-arch --yes --reinstall\n'), out)
 
-    def test_entrypoint_requires_opt_in_before_arch_dispatch(self):
+    def test_entrypoint_hands_off_to_arch_without_any_flag(self):
+        # Arch is a normal install: no opt-in flag is needed.
         for args in ([], ['--yes'], ['--yes', '--reinstall']):
             with self.subTest(args=args):
                 rc, out = self.run_entrypoint(args)
-                self.assertEqual(rc, 2, out)
-                self.assertIn('--experimental-arch', out)
-                self.assertNotIn('arch: ', out)
+                self.assertEqual(rc, 23, out)
+                self.assertTrue(out.endswith('arch: ' + ' '.join(args) + '\n'), out)
+                self.assertNotIn('experimental', out)
 
-    def test_entrypoint_rejects_arch_flag_on_debian_before_changes(self):
-        # initramfs-tools takes precedence even if mkinitcpio is also present.
+    def test_initramfs_tools_takes_precedence_and_old_flag_is_harmless(self):
+        # initramfs-tools takes precedence even if mkinitcpio is also present; the old
+        # --experimental-arch flag is accepted and ignored.
         for arch in (False, True):
+            # The Debian installer proceeds normally (its own backend checks run).
             rc, out = self.run_entrypoint(['--experimental-arch', '--yes'],
-                                          arch=arch, debian=True)
-            self.assertEqual(rc, 2, out)
+                                          arch=arch, debian=True, untouched=False)
             self.assertNotIn('arch: ', out)
+            self.assertNotIn('usage:', out)
 
     def test_entrypoint_reports_missing_arch_source(self):
-        rc, out = self.run_entrypoint(['--experimental-arch'], helper=False)
+        rc, out = self.run_entrypoint([], helper=False)
         self.assertEqual(rc, 2, out)
-        self.assertIn('complete source checkout', out)
+        self.assertIn('install the Arch package', out)
 
     def run_fixture(self, mode='ok', reinstall=False, uninstall=False,
-                    missing=False, cmdline=True, grubfail=False, hookfail=False,
+                    missing=False, cmdline=True, grubfail=False, hookfail=False, grubnoeffect=False,
                     hooks=None, override=False, experimental=True):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -87,6 +98,8 @@ class ArchInstallerTests(unittest.TestCase):
                                '/usr/lib/arc-rebar', '/proc/cmdline'):
                     text = text.replace(prefix, str(root) + prefix)
                 (source / name).write_text(text)
+            shutil.copyfile(REPO / 'selfcheck.sh', source / 'selfcheck.sh')
+            (source / '.git').mkdir()
             for name in ('mkinitcpio/install/arc-rebar', 'mkinitcpio/hooks/arc-rebar'):
                 path = source / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -133,7 +146,8 @@ echo "build $n" > "$FIXTURE/boot/initramfs-linux.img"
 echo "build attempt $n"
 case "$MODE:$n" in fail-all:*|fail-first:1) exit 7;; esac
 exit 0''',
-                'grub-mkconfig': '''echo changed > "$FIXTURE/boot/grub/grub.cfg"
+                'grub-mkconfig': '''if [ "$GRUBNOEFFECT" = 1 ]; then echo changed > "$FIXTURE/boot/grub/grub.cfg"
+else cat "$FIXTURE/etc/default/grub" > "$FIXTURE/boot/grub/grub.cfg"; fi
 echo "grub generation output"
 exit "$GRUBFAIL"''',
                 'lsinitcpio': '''echo arc-rebar-boot
@@ -148,8 +162,8 @@ exit 0''',
                 p = binpath / name
                 p.write_text('#!/bin/bash\n' + body + '\n')
                 p.chmod(0o755)
-            env = dict(os.environ, PATH=str(binpath) + ':' + os.environ['PATH'],
-                       FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)))
+            env = dict(os.environ, ARC_REBAR_DEV='1', PATH=str(binpath) + ':' + os.environ['PATH'],
+                       FIXTURE=str(root), MODE=mode, MISSING=str(int(missing)), GRUBFAIL=str(int(grubfail)), GRUBNOEFFECT=str(int(grubnoeffect)))
             args = ['bash', str(source / ('uninstall-arch.sh' if uninstall else 'install-arch.sh'))]
             if not uninstall:
                 args += (['--experimental-arch'] if experimental else [])
@@ -171,16 +185,12 @@ exit 0''',
         self.assertTrue(backup)
         return out, logs, calls
 
-    def test_arch_install_requires_opt_in_before_probing_or_mutation(self):
-        for reinstall in (False, True):
-            rc, out, before, after, logs, calls, backup = self.run_fixture(
-                experimental=False, reinstall=reinstall)
-            self.assertEqual(rc, 2, out)
-            self.assertIn('--experimental-arch', out)
-            self.assertEqual(before, after)
-            self.assertEqual(logs['probes'], '')
-            self.assertEqual(calls, 0)
-            self.assertFalse(backup)
+    def test_arch_install_needs_no_opt_in_flag(self):
+        # Without the old --experimental-arch flag the install runs normally.
+        rc, out, before, after, logs, calls, backup = self.run_fixture(experimental=False)
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn('experimental', out)
+        self.assertNotEqual(logs['probes'], '')
 
     def test_success_retains_backup_and_correct_order(self):
         rc, out, before, after, logs, calls, backup = self.run_fixture()
@@ -214,6 +224,16 @@ exit 0''',
         out, logs, calls = self.assert_restored(self.run_fixture(cmdline=False, grubfail=True))
         self.assertIn('grub-mkconfig failed', out)
         self.assertIn('grub generation output', logs['grub-build.log'])
+
+    def test_grub_edit_succeeds_when_the_menu_has_realloc(self):
+        rc, out, before, after, logs, calls, backup = self.run_fixture(cmdline=False)
+        self.assertEqual(rc, 0, out)
+        self.assertIn(b'pci=realloc', after['boot/grub/grub.cfg'][0])
+
+    def test_grub_edit_without_effect_restores_config_and_menu(self):
+        # M6: grub-mkconfig "succeeds" but the menu has no pci=realloc: never report success.
+        out, logs, calls = self.assert_restored(self.run_fixture(cmdline=False, grubnoeffect=True))
+        self.assertIn('does not contain pci=realloc', out)
 
     def test_copy_failure_aborts_before_success(self):
         self.assert_restored(self.run_fixture(hookfail=True))

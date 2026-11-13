@@ -26,6 +26,9 @@ class InstallerTests(unittest.TestCase):
         for prefix in ('/etc/', '/boot/', '/var/lib/', '/proc/'):
             source = source.replace(prefix, str(self.root) + prefix)
         self.put('repo/install.sh', source)
+        # A developer checkout: the integrity self-check allows it without a release manifest.
+        self.put('repo/selfcheck.sh', (SOURCE / 'selfcheck.sh').read_text())
+        (self.root / 'repo/.git').mkdir()
         mocks = {
             'id': 'echo 0', 'uname': 'echo 6.12-test', 'setpci': 'exit 99',
             'sync': 'exit 0',
@@ -78,7 +81,7 @@ fi
         for name, body in mocks.items():
             path = self.put('mock/' + name, '#!/bin/bash\n' + body + '\n')
             path.chmod(0o755)
-        self.env = dict(os.environ, PATH=str(self.root / 'mock') + ':' + os.environ['PATH'],
+        self.env = dict(os.environ, ARC_REBAR_DEV='1', PATH=str(self.root / 'mock') + ':' + os.environ['PATH'],
                         BACKEND='initramfs-tools', BACKEND_OWNER='initramfs-tools')
 
     def put(self, name, text):

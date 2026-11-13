@@ -3,3 +3,4 @@ build/
 *.tar.gz
 *.deb
 diag/bin/ocl_test
+__pycache__/

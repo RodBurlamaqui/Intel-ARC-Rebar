@@ -32,7 +32,10 @@ Two traps these tools exist to catch:
 
 ## Install and run
 
-**Step-by-step with expected output: [INSTALL.md](INSTALL.md).** Short version:
+**Step-by-step with expected output: [INSTALL.md](INSTALL.md).** Installed from a package,
+each tool is also `sudo arc-rebar diag <tool>` (for example `sudo arc-rebar diag bar-pin-check`).
+Short version from a source checkout (Debian/Ubuntu package names shown; use your
+distribution's equivalents):
 
 ```
 sudo apt install pciutils vulkan-tools mesa-opencl-icd ocl-icd-libopencl1 gcc make

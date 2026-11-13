@@ -16,7 +16,7 @@ and share relevant excerpts rather than full machine logs.
 - OS and kernel:
 - Driver (i915/xe):
 - arc-rebar version or commit:
-- Initramfs backend (initramfs-tools / proposed mkinitcpio port / other):
+- Initramfs backend (initramfs-tools / mkinitcpio / dracut / other):
 - Physical hardware, VM or passthrough:
 - GPU count and relevant PCIe topology (shared root port/switch, if known):
 

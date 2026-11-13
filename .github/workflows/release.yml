@@ -1,0 +1,81 @@
+name: Release build
+
+# Builds a release from a version tag on GitHub's servers, attaches a signed
+# build attestation (proof that the files were built from this repository at
+# that tag), and creates a DRAFT release. The owner reviews and publishes it.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:   # dry run on a branch: build and check everything, publish nothing
+
+permissions:
+  contents: write      # create the draft release
+  id-token: write      # sign the attestation
+  attestations: write  # store the attestation
+
+jobs:
+  release:
+    name: Build, attest and draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install the packaging tools (Debian, Arch, RPM)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pacman-package-manager libarchive-tools fakeroot zstd rpm cpio >/dev/null
+          # Newer Ubuntu ships makepkg as its own package (only recommended by pacman-package-manager).
+          if apt-cache show makepkg >/dev/null 2>&1; then sudo apt-get install -y -qq makepkg >/dev/null; fi
+          command -v makepkg >/dev/null || { echo "makepkg not available"; exit 1; }
+      - name: Build all packages (reproducible)
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=$(grep -m1 '^Version:' debian/control | awk '{print $2}')
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            [ "v$V" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME does not match debian/control Version $V"; exit 1; }
+          fi
+          tools/verify-manifest.sh
+          ./build-deb.sh
+          ./build-arch.sh
+          ./build-rpm.sh
+          # Packages only: no source archive is published (source installs use git clone of the tag).
+          cd dist
+          sha256sum "arc-rebar_${V}_all.deb" "arc-rebar-$V-1-any.pkg.tar.zst" "arc-rebar-$V-1.noarch.rpm" > SHA256SUMS
+          cat SHA256SUMS
+      - name: Every package passes the tamper check
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=$(grep -m1 '^Version:' debian/control | awk '{print $2}')
+          for p in deb arch rpm; do
+            x=$(mktemp -d)
+            case $p in
+              deb)  dpkg-deb -x "dist/arc-rebar_${V}_all.deb" "$x" ;;
+              arch) bsdtar -xf "dist/arc-rebar-$V-1-any.pkg.tar.zst" -C "$x" ;;
+              rpm)  (cd "$x" && rpm2cpio "$OLDPWD/dist/arc-rebar-$V-1.noarch.rpm" | cpio -idm --quiet) ;;
+            esac
+            sh -c '. "$1/selfcheck.sh"; arc_selfcheck "$1"' _ "$x/usr/share/arc-rebar" || { echo "$p package fails the tamper check"; exit 1; }
+            echo "$p package: tamper check OK"
+          done
+      - name: Attest build provenance
+        if: github.ref_type == 'tag'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.deb
+            dist/*.pkg.tar.zst
+            dist/*.rpm
+      - name: Create a draft release for review
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${GITHUB_REF_NAME#v}
+          gh release create "$GITHUB_REF_NAME" dist/*.deb dist/*.pkg.tar.zst dist/*.rpm dist/SHA256SUMS \
+            --draft --title "arc-rebar $V" \
+            --notes-file .github/release-notes.md
