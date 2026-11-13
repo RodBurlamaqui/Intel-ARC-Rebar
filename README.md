@@ -111,9 +111,9 @@ licensing terms or guarantee support for a particular hardware configuration.*
 > **Please upgrade to 1.0.8.** It includes many bug fixes and safety improvements: a fix for a
 > kernel issue on some systems with Secure Boot, safer installs that automatically restore
 > everything if anything fails, and built-in authenticity checks that confirm every file is the
-> genuine, signed release before anything is installed, so you are protected from tampered or
-> fake copies. Everyone on an older version should upgrade: install the new package, then run
-> `sudo arc-rebar install --reinstall`.
+> genuine, signed release before anything is installed, so you are protected against malware
+> and tampered or counterfeit copies. Everyone on an older version should upgrade: install the
+> new package, then run `sudo arc-rebar install --reinstall`.
 
 **arc-rebar 1.0.8**: one release, with one package for each Linux family. Download it from the
 [latest release](https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases/latest).

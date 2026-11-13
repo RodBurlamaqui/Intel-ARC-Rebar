@@ -8,8 +8,8 @@ Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 **Recommended upgrade for everyone.** It includes many bug fixes and safety improvements:
 a fix for a kernel issue on some systems with Secure Boot, safer installs that automatically
 restore everything if anything fails, and built-in authenticity checks that confirm every file
-is the genuine, signed release before anything is installed, so you are protected from
-tampered or fake copies. After installing the new package, run `sudo arc-rebar install --reinstall`.
+is the genuine, signed release before anything is installed, so you are protected against
+malware and tampered or counterfeit copies. After installing the new package, run `sudo arc-rebar install --reinstall`.
 
 - One release, one package per Linux family: `.deb` (Debian, Ubuntu, Mint,
   Proxmox), Arch `.pkg.tar.zst` (Arch, CachyOS, Manjaro) and `.rpm`

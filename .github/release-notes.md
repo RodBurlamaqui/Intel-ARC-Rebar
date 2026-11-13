@@ -1,4 +1,4 @@
-**Recommended upgrade for everyone.** It includes many bug fixes and safety improvements: a fix for a kernel issue on some systems with Secure Boot, safer installs that automatically restore everything if anything fails, and built-in authenticity checks that confirm every file is the genuine, signed release before anything is installed, so you are protected from tampered or fake copies. After installing the new package, run `sudo arc-rebar install --reinstall`.
+**Recommended upgrade for everyone.** It includes many bug fixes and safety improvements: a fix for a kernel issue on some systems with Secure Boot, safer installs that automatically restore everything if anything fails, and built-in authenticity checks that confirm every file is the genuine, signed release before anything is installed, so you are protected against malware and tampered or counterfeit copies. After installing the new package, run `sudo arc-rebar install --reinstall`.
 
 | Linux | Package |
 |---|---|
