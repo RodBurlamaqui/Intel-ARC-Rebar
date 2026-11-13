@@ -43,7 +43,9 @@ listed=$(awk '{print $2}' "$W/rel/SHA256SUMS" | LC_ALL=C sort | tr '\n' ' ')
 expect=$(printf '%s\n' "$DEB" "$PKG" "$RPM" | LC_ALL=C sort | tr '\n' ' ')
 [ "$listed" = "$expect" ] || die "SHA256SUMS lists [$listed], expected [$expect]"
 for f in "$W"/rel/*; do
-  b=$(basename "$f"); [ "$b" = SHA256SUMS ] || case " $expect " in *" $b "*) ;; *) die "unexpected file in the release: $b";; esac
+  b=$(basename "$f")
+  case "$b" in SHA256SUMS) continue;; SHA256SUMS.asc|*.sig) rm -f -- "$f"; continue;; esac   # earlier signatures: re-signed below
+  case " $expect " in *" $b "*) ;; *) die "unexpected file in the release: $b";; esac
 done
 
 echo "== 2. the tag =="
@@ -83,15 +85,23 @@ for side in ci local; do
   o=$W/cmp/$side; mkdir -p "$o"/{deb,debctl,arch,rpm}
   dpkg-deb -x "$d/$DEB" "$o/deb"; dpkg-deb -e "$d/$DEB" "$o/debctl"
   bsdtar -xf "$d/$PKG" -C "$o/arch"
-  grep -v -E '^(builddate|packager|size) = ' "$o/arch/.PKGINFO" > "$o/arch-pkginfo"; rm -f "$o/arch/.PKGINFO" "$o/arch/.BUILDINFO" "$o/arch/.MTREE"
+  # Package identity and dependencies only; tool versions and build stamps differ between machines.
+  grep -E '^(pkgname|pkgbase|pkgver|pkgdesc|url|arch|license|depend|optdepend|makedepend|checkdepend|conflict|provides|replaces|backup) = ' \
+    "$o/arch/.PKGINFO" | LC_ALL=C sort > "$o/arch-pkginfo" || true
+  rm -f "$o/arch/.PKGINFO" "$o/arch/.BUILDINFO" "$o/arch/.MTREE" "$o/arch/.INSTALL"
+  bsdtar -xOf "$d/$PKG" .INSTALL > "$o/arch-install" 2>/dev/null || true
   (cd "$o/rpm" && rpm2cpio "$d/$RPM" | cpio -idm --quiet)
-  rpm -qp --qf '[%{REQUIRENAME} %{REQUIREFLAGS} %{REQUIREVERSION}\n]' "$d/$RPM" 2>/dev/null | grep -v '^rpmlib(' > "$o/rpm-requires"
-  rpm -qp --scripts "$d/$RPM" > "$o/rpm-scripts" 2>/dev/null
+  # Declared dependencies (names) and the exact scriptlet bodies; rpm versions format the rest differently.
+  rpm -qp --qf '[%{REQUIRENAME}\n]' "$d/$RPM" 2>/dev/null | grep -v -E '^(rpmlib\(|/bin/sh$|/usr/bin/sh$)' | LC_ALL=C sort -u > "$o/rpm-requires" || true
+  for tag in PREIN POSTIN PREUN POSTUN PRETRANS POSTTRANS; do
+    printf '== %s\n' "$tag"; rpm -qp --qf "%{$tag}\n" "$d/$RPM" 2>/dev/null
+  done > "$o/rpm-scripts"
 done
 cmpdirs "$W/cmp/ci/deb" "$W/cmp/local/deb" "$DEB files"
 cmpdirs "$W/cmp/ci/debctl" "$W/cmp/local/debctl" "$DEB control and install scripts"
 cmpdirs "$W/cmp/ci/arch" "$W/cmp/local/arch" "$PKG files"
-diff "$W/cmp/ci/arch-pkginfo" "$W/cmp/local/arch-pkginfo" >&2 || die "$PKG metadata differs"; echo "  [ok] $PKG metadata"
+diff "$W/cmp/ci/arch-pkginfo" "$W/cmp/local/arch-pkginfo" >&2 || die "$PKG metadata differs"
+diff "$W/cmp/ci/arch-install" "$W/cmp/local/arch-install" >&2 || die "$PKG install script differs"; echo "  [ok] $PKG metadata and install script"
 cmpdirs "$W/cmp/ci/rpm" "$W/cmp/local/rpm" "$RPM files"
 diff "$W/cmp/ci/rpm-requires" "$W/cmp/local/rpm-requires" >&2 || die "$RPM dependencies differ"
 diff "$W/cmp/ci/rpm-scripts" "$W/cmp/local/rpm-scripts" >&2 || die "$RPM install scripts differ"; echo "  [ok] $RPM dependencies and scripts"

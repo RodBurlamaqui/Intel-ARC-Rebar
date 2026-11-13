@@ -73,4 +73,4 @@ jobs:
           V=${GITHUB_REF_NAME#v}
           gh release create "$GITHUB_REF_NAME" dist/*.deb dist/*.pkg.tar.zst dist/*.rpm dist/SHA256SUMS \
             --draft --title "arc-rebar $V" \
-            --notes "Draft built by GitHub Actions from tag $GITHUB_REF_NAME. Verify a download: \`sha256sum -c SHA256SUMS\` and \`gh attestation verify <file> -R RodBurlamaqui/Intel-ARC-Rebar\`."
+            --notes-file .github/release-notes.md

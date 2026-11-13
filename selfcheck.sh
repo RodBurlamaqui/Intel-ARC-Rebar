@@ -34,9 +34,9 @@ arc_selfcheck() {
     return 1
   fi
   # --ignore-time-conflict: a wrong system clock must not make a genuine copy look tampered with.
-  _st=$(gpgv --status-fd 1 --ignore-time-conflict --keyring "$_d/docs/signing-key.gpg" "$_m.asc" "$_m" 2>/dev/null)
+  _st=$(gpgv --status-fd 1 --ignore-time-conflict --keyring "$_d/docs/signing-key.gpg" "$_m.asc" "$_m" 2>/dev/null || true)
   case "$_st" in *'[GNUPG:] BADSIG'*|*'[GNUPG:] ERRSIG'*|*'[GNUPG:] REVKEYSIG'*) _st=;; esac
-  if ! printf '%s\n' "$_st" | grep -q "^\[GNUPG:\] VALIDSIG $ARC_REBAR_KEY_FPR "; then
+  if ! printf '%s\n' "$_st" | grep "^\[GNUPG:\] VALIDSIG $ARC_REBAR_KEY_FPR " >/dev/null; then
     echo "  [FAIL] the file list is not signed by the arc-rebar maintainer's key"
     case "$(date +%Y 2>/dev/null)" in 19??|20[01]?|202[0-5]) echo "         Your system date looks wrong ($(date 2>/dev/null)). Correct it, then retry.";; esac
     return 1

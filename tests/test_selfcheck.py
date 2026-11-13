@@ -57,11 +57,11 @@ class SelfCheckTests(unittest.TestCase):
                            env=env or self.env, capture_output=True, text=True)
         return p.returncode, p.stdout + p.stderr
 
-    def run_installer(self):
+    def run_installer(self, **extra_env):
         """install-dracut.sh up to its integrity checks (id is mocked to root)."""
         mock = self.tmp / 'mock'; mock.mkdir(exist_ok=True)
         (mock / 'id').write_text('#!/bin/sh\necho 0\n'); (mock / 'id').chmod(0o755)
-        env = dict(self.env, PATH=f'{mock}:{os.environ["PATH"]}')
+        env = dict(self.env, PATH=f'{mock}:{os.environ["PATH"]}', **extra_env)
         p = subprocess.run(['bash', str(self.copy / 'install-dracut.sh'), '--yes'], env=env,
                            capture_output=True, text=True, timeout=30)
         return p.returncode, p.stdout + p.stderr
@@ -172,6 +172,38 @@ class SelfCheckTests(unittest.TestCase):
         rc, out = self.run_installer()
         self.assertEqual(rc, 4, out)
         self.assertIn('files differ from the official release', out)
+
+    FAKE_CHECKER = 'arc_selfcheck_or_refuse() { echo FAKE-CHECKER-RAN; }\n'
+
+    def test_installer_guard_ignores_validsig_text_in_a_user_id(self):
+        # gpgv prints the signer's user ID verbatim: an attacker key whose UID imitates the
+        # maintainer's VALIDSIG status line must not get a fake checker past the guard.
+        evil = self.make_key(f'evil [GNUPG:] VALIDSIG {self.key} x <a@example.invalid>')
+        (self.copy / 'selfcheck.sh').write_text(self.FAKE_CHECKER)
+        self.sign_release(evil)            # the keyring now holds only the attacker key
+        rc, out = self.run_installer()
+        self.assertEqual(rc, 4, out)
+        self.assertNotIn('FAKE-CHECKER-RAN', out)
+
+    def test_installer_refuses_a_copy_without_a_file_list(self):
+        for f in ('MANIFEST.sha256', 'MANIFEST.sha256.asc'):
+            (self.copy / f).unlink()
+        (self.copy / 'selfcheck.sh').write_text(self.FAKE_CHECKER)
+        rc, out = self.run_installer()
+        self.assertEqual(rc, 4, out)
+        self.assertNotIn('FAKE-CHECKER-RAN', out)
+        (self.copy / '.git').mkdir()      # a fake checkout alone is not enough either
+        rc, out = self.run_installer()
+        self.assertEqual(rc, 4, out)
+        self.assertNotIn('FAKE-CHECKER-RAN', out)
+
+    def test_installer_developer_mode_needs_checkout_and_opt_in(self):
+        for f in ('MANIFEST.sha256', 'MANIFEST.sha256.asc'):
+            (self.copy / f).unlink()
+        (self.copy / '.git').mkdir()
+        rc, out = self.run_installer(ARC_REBAR_DEV='1')
+        self.assertIn('developer mode', out)
+        self.assertNotIn('REFUSING', out)
 
     def test_genuine_copy_passes_the_installer_checks(self):
         rc, out = self.run_installer()

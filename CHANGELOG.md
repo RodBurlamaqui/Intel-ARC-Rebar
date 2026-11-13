@@ -5,8 +5,11 @@ The original 2026-09-05 investigation was developed and verified on a Supermicro
 Debian 13, kernel 7.1.8, xe driver. 1.0.3 is the first published release.
 
 ## 1.0.8 — 2026-11-12
-**Recommended upgrade for everyone.** It fixes a kernel issue on some systems with
-Secure Boot, where an earlier version could report success without applying the fix.
+**Recommended upgrade for everyone.** It includes many bug fixes and safety improvements:
+a fix for a kernel issue on some systems with Secure Boot, safer installs that automatically
+restore everything if anything fails, and built-in authenticity checks that confirm every file
+is the genuine, signed release before anything is installed, so you are protected from
+tampered or fake copies. After installing the new package, run `sudo arc-rebar install --reinstall`.
 
 - One release, one package per Linux family: `.deb` (Debian, Ubuntu, Mint,
   Proxmox), Arch `.pkg.tar.zst` (Arch, CachyOS, Manjaro) and `.rpm`

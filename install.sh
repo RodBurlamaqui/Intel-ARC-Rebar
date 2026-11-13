@@ -18,12 +18,17 @@ for a in "$@"; do case "$a" in
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 S=$(dirname "$(readlink -f "$0")"); SCRIPT=$S/scripts/init-premount/arc-rebar
 # Independent second check, before trusting the checker itself: the file list must be
-# signed by the pinned maintainer key and selfcheck.sh must match it.
-if [ -f "$S/MANIFEST.sha256" ]; then
+# signed by the pinned maintainer key and selfcheck.sh must match it. No file list:
+# refused, except a developer source checkout with ARC_REBAR_DEV=1.
+if [ ! -f "$S/MANIFEST.sha256" ]; then
+  [ -d "$S/.git" ] && [ "${ARC_REBAR_DEV:-}" = 1 ] || { echo "REFUSING: this copy of arc-rebar has no signed file list: it is incomplete or modified."
+    echo "Download the official version from https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases"; exit 4; }
+else
   command -v gpgv >/dev/null || { echo "gpgv is required to check this copy is genuine (install gpgv / gnupg2 / gnupg / gpg2)"; exit 4; }
   _gst=$(gpgv --status-fd 1 --ignore-time-conflict --keyring "$S/docs/signing-key.gpg" "$S/MANIFEST.sha256.asc" "$S/MANIFEST.sha256" 2>/dev/null || true)
   case "$_gst" in *'[GNUPG:] BADSIG'*|*'[GNUPG:] ERRSIG'*|*'[GNUPG:] REVKEYSIG'*) _gst=;; esac
-  { case "$_gst" in *'[GNUPG:] VALIDSIG C3CFCBF8EE592C27BCBE1E498D8ED73D0C2DE44B '*) true;; *) false;; esac &&
+  # Whole status lines only: a signer's user ID is printed verbatim and could imitate one.
+  { printf '%s\n' "$_gst" | grep '^\[GNUPG:\] VALIDSIG C3CFCBF8EE592C27BCBE1E498D8ED73D0C2DE44B ' >/dev/null &&
     (cd "$S" && grep '^[0-9a-f]\{64\}  selfcheck\.sh$' MANIFEST.sha256 | sha256sum --strict --quiet -c -) >/dev/null 2>&1; } ||
     { echo "REFUSING: this copy of arc-rebar has been modified or is not an official release."
       echo "Download the official version from https://github.com/RodBurlamaqui/Intel-ARC-Rebar/releases"; exit 4; }
