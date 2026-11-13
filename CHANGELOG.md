@@ -35,7 +35,8 @@ malware and tampered or counterfeit copies. After installing the new package, ru
   `arc-rebar version`.
 - Signed, reproducible releases: every package is built by GitHub Actions with a
   build attestation and signed by the maintainer (`SHA256SUMS.asc`, `.sig` per package);
-  the `.deb` and `.rpm` are byte-identical when rebuilt. SECURITY.md explains how to check
+  rebuilt with the same packaging tools, the `.deb` and `.rpm` are byte-identical, and with
+  other tool versions their contents are identical. SECURITY.md explains how to check
   a download.
 - Every shipped file carries a copyright and licence notice.
 - Licence for v1.0.8 and later: a plain-language summary; distribution only from the
