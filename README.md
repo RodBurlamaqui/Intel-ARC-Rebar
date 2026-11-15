@@ -48,6 +48,34 @@ modifying firmware, the kernel, or Intel's drivers**. It runs from the initramfs
 at every boot, before the GPU driver loads, and it includes the diagnostics that
 tell you whether you have the problem and prove the fix worked.
 
+### What is ReBAR?
+
+**ReBAR stands for Resizable BAR**, a PCI Express feature that allows a computer to adjust how much of a device’s memory is directly accessible to the CPU. **BAR** means **Base Address Register**. On a graphics card, a memory BAR defines an address window through which the CPU can access the card’s dedicated video memory, called **VRAM**. [Source](https://www.intel.com/content/www/us/en/support/articles/000090831/software.html)
+
+#### The detailed explanation
+
+Your computer’s **CPU** runs the operating system and application logic. Your **GPU** processes graphics and other parallel workloads, using its own VRAM to store textures, rendering data, and other working data.
+
+Traditionally, graphics cards often expose a **256 MiB window** of VRAM for direct CPU access—even if the card contains several gigabytes of memory. The driver manages access beyond that window through mechanisms such as remapping or data transfers.
+
+**That does not turn an 8 GB graphics card into a 256 MB graphics card.** The GPU can still use its own memory. The restriction is how much VRAM the **CPU can directly address through that window at one time**. [Source](https://learn.microsoft.com/en-us/windows-hardware/drivers/display/resizable-bar-support)
+
+Resizable BAR allows the system to enlarge that window to a size the graphics card supports. When the configuration permits, the window can cover **the card’s entire VRAM**, allowing the CPU to directly address any part of it without the restrictions of a small mapping. [Source](https://www.intel.com/content/www/us/en/support/articles/000090831/software.html)
+
+This can improve the efficiency of CPU access to GPU memory and improve performance in workloads that benefit from it. **The improvement varies:** some applications benefit, others show little difference, and some configurations or workloads can perform worse. ReBAR is not a guaranteed speed boost for every application. [Source](https://www.nvidia.com/en-us/geforce/news/geforce-rtx-30-series-resizable-bar-support/)
+
+ReBAR requires support across the graphics card, system platform, firmware, and driver. Having a compatible GPU alone does not guarantee that the feature is enabled or working. [Source](https://www.nvidia.com/en-us/geforce/news/gfecnt/20211/geforce-rtx-30-series-resizable-bar-support/)
+
+#### In simpler terms
+
+Think of your graphics card’s memory as a **warehouse** and the CPU as someone who needs access to its contents.
+
+- **With a small BAR:** the CPU can directly reach only a small section at a time. Software has to manage access to the rest.
+- **With a full-size BAR:** the CPU can directly reach any part of the warehouse through one large address window.
+- **The warehouse itself stays the same size:** ReBAR does not add memory or give the GPU more processing power.
+
+**ReBAR gives the CPU a larger window into the graphics card’s existing memory.** It does not add VRAM, overclock the card, or increase the physical speed of the PCIe connection.
+
 ### Help keep arc-rebar moving
 
 I've heard from users who thought their Intel Arc cards were stuck with serious
