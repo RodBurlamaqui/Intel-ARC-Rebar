@@ -176,9 +176,7 @@ support. Stars show interest in the project; compatibility comes from documented
 hardware results. Reports from Arch, Fedora, RHEL and openSUSE systems are welcome.
 Multi-GPU operation is in testing.
 
-![Intel Arc B580 Limited Edition, exploded view](docs/img/intel-arc-b580-press.jpg)
-
-<sub>Intel Arc B580 Limited Edition. Photo © Intel Corporation, from Intel's newsroom press kit for the Arc B-Series launch (Dec 2024), reproduced with credit. The photo is Intel's and is **not** covered by this project's licence.</sub>
+![Conceptual dual-fan GPU illustration, exploded view](docs/img/intel-arc-b580-press.jpg)
 
 ![Why the VRAM window is stuck at 256 MB and how arc-rebar fixes it](docs/img/arc-rebar-pin.svg)
 
@@ -720,7 +718,7 @@ packaging/  build-arch.sh  build-rpm.sh   Arch and RPM package recipes and build
 tools/  sign-release.sh            release signing (make-manifest.sh, sign-release.sh) and checks (verify-manifest.sh)
 MANIFEST.sha256 (+ .asc)          the signed list of every shipped file, checked by every install
 docs/signing-key.asc              the public key that signs every release (see SECURITY.md)
-docs/img/intel-arc-b580-press.jpg  Intel's press photo of the card (© Intel Corporation, credited; not under this licence)
+docs/img/intel-arc-b580-press.jpg  Custom conceptual GPU illustration (exploded view)
 docs/img/arc-rebar-pin.svg        the mechanism diagram (original artwork)
 docs/ROOT-CAUSE.md                the full investigation, with the kernel log evidence
 docs/TESTS.md                     every test command used, with before/after numbers
@@ -761,9 +759,7 @@ Software License Agreement in [LICENSE](LICENSE):
 - **No tampering** — don't remove or bypass licence checks, signatures or notices (§3.5).
 - **No warranty** — see LICENSE §5–6 and [DISCLAIMER.md](DISCLAIMER.md).
 
-Not an open-source licence. The B580 product photo in `docs/img/` is © Intel
-Corporation (Intel newsroom press kit) and is excluded from this licence. The
-underlying technique — programming the ReBAR
+Not an open-source licence. The underlying technique — programming the ReBAR
 control register and re-enumerating the root port — is not claimed; it was first
 published by andersevenrud for a Supermicro H11SSL-i. This licence covers this
 implementation only.
